@@ -1,0 +1,31 @@
+# Browser Use Cloud — Documentation Index
+
+> Managed browser automation platform with stealth browsers, CAPTCHA solving, residential proxies, and AI agents. Available via REST API and Python/TypeScript SDK.
+
+## Getting Started
+
+- [Quickstart, Pricing & FAQ](https://docs.browser-use.com/cloud/quickstart) — Setup, first task, structured output, live view, pricing tiers, and troubleshooting.
+
+## API Reference
+
+- [Cloud API v2](https://docs.browser-use.com/cloud/api-v2) — Full REST API: tasks, sessions, browsers (CDP), files, profiles, skills, marketplace, billing. 30+ endpoints with request/response schemas.
+- [BU Agent API v3](https://docs.browser-use.com/cloud/api-v3) — Next-generation session-based API with token billing, workspaces, message history, and file I/O. 16 endpoints. Use for new projects.
+
+## Sessions & Authentication
+
+- [Sessions, Profiles & Authentication](https://docs.browser-use.com/cloud/sessions) — Session lifecycle, browser profiles, profile sync, authentication strategies (secrets, 1Password), social media automation.
+
+## Browser Access
+
+- [Browser API (Direct CDP)](https://docs.browser-use.com/cloud/browser-api) — Connect directly via CDP WebSocket or SDK. Playwright, Puppeteer, and Selenium integration examples.
+
+## Platform Features
+
+- [Cloud Features](https://docs.browser-use.com/cloud/features) — Proxies & stealth, webhooks (HMAC verification), workspaces, skills marketplace, MCP server, live view & iframe embedding.
+- [Cloud Patterns & Tutorials](https://docs.browser-use.com/cloud/patterns) — Parallel execution, streaming steps, geo-scraping, file downloads, structured output, and integration tutorials (n8n, OpenClaw, Playwright).
+
+## Guides
+
+- [Building a Chat Interface](https://docs.browser-use.com/cloud/guides/chat-ui) — Full-stack chat UI with live browser view. Session creation, message polling, follow-up tasks, stop strategies.
+- [Browser-Use as a Subagent](https://docs.browser-use.com/cloud/guides/subagent) — Delegate entire web tasks from any orchestrator: CLI agents, Python (LangChain/CrewAI), TypeScript, MCP clients, workflow engines.
+- [Adding Browser-Use Tools to Your Agent](https://docs.browser-use.com/cloud/guides/tools-integration) — Add individual browser actions to an existing agent's tool set via CLI, CDP+Playwright, MCP, or existing Playwright/Puppeteer/Selenium scripts.

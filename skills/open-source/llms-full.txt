@@ -1,0 +1,1777 @@
+# Browser Use Open Source — Complete Reference
+
+> Complete documentation for the Browser Use open-source Python library: installation, LLM providers, agent configuration, browser control, custom tools, Actor API, MCP integrations, monitoring, and example patterns.
+
+---
+
+# Quickstart & Production Deployment
+
+## Table of Contents
+- [Installation](#installation)
+- [Environment Variables](#environment-variables)
+- [First Agent](#first-agent)
+- [Production with @sandbox](#production-with-sandbox)
+
+---
+
+## Installation
+
+```bash
+pip install uv
+uv venv --python 3.12
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+uv pip install browser-use
+uvx browser-use install     # Downloads Chromium
+```
+
+## Environment Variables
+
+```bash
+# Browser Use (recommended) — https://cloud.browser-use.com/new-api-key
+BROWSER_USE_API_KEY=
+
+# Google — https://aistudio.google.com/app/u/1/apikey
+GOOGLE_API_KEY=
+
+# OpenAI
+OPENAI_API_KEY=
+
+# Anthropic
+ANTHROPIC_API_KEY=
+```
+
+## First Agent
+
+### ChatBrowserUse (Recommended — fastest, cheapest, highest accuracy)
+
+```python
+from browser_use import Agent, ChatBrowserUse
+from dotenv import load_dotenv
+import asyncio
+
+load_dotenv()
+
+async def main():
+    llm = ChatBrowserUse()
+    agent = Agent(task="Find the number 1 post on Show HN", llm=llm)
+    await agent.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Google Gemini
+
+```python
+from browser_use import Agent, ChatGoogle
+from dotenv import load_dotenv
+import asyncio
+
+load_dotenv()
+
+async def main():
+    llm = ChatGoogle(model="gemini-flash-latest")
+    agent = Agent(task="Find the number 1 post on Show HN", llm=llm)
+    await agent.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### OpenAI
+
+```python
+from browser_use import Agent, ChatOpenAI
+from dotenv import load_dotenv
+import asyncio
+
+load_dotenv()
+
+async def main():
+    llm = ChatOpenAI(model="gpt-4.1-mini")
+    agent = Agent(task="Find the number 1 post on Show HN", llm=llm)
+    await agent.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Anthropic
+
+```python
+from browser_use import Agent, ChatAnthropic
+from dotenv import load_dotenv
+import asyncio
+
+load_dotenv()
+
+async def main():
+    llm = ChatAnthropic(model='claude-sonnet-4-0', temperature=0.0)
+    agent = Agent(task="Find the number 1 post on Show HN", llm=llm)
+    await agent.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+See `references/open-source/models.md` for all 15+ providers.
+
+---
+
+## Production with @sandbox
+
+The `@sandbox` decorator is the easiest way to deploy to production. The agent runs next to the browser on cloud infrastructure with minimal latency.
+
+### Basic Deployment
+
+```python
+from browser_use import Browser, sandbox, ChatBrowserUse
+from browser_use.agent.service import Agent
+import asyncio
+
+@sandbox()
+async def my_task(browser: Browser):
+    agent = Agent(task="Find the top HN post", browser=browser, llm=ChatBrowserUse())
+    await agent.run()
+
+asyncio.run(my_task())
+```
+
+### With Proxies
+
+```python
+@sandbox(cloud_proxy_country_code='us')
+async def stealth_task(browser: Browser):
+    agent = Agent(task="Your task", browser=browser, llm=ChatBrowserUse())
+    await agent.run()
+```
+
+### With Authentication (Profile Sync)
+
+1. Sync local cookies:
+```bash
+export BROWSER_USE_API_KEY=your_key && curl -fsSL https://browser-use.com/profile.sh | sh
+```
+
+2. Use the returned profile_id:
+```python
+@sandbox(cloud_profile_id='your-profile-id')
+async def authenticated_task(browser: Browser):
+    agent = Agent(task="Your authenticated task", browser=browser, llm=ChatBrowserUse())
+    await agent.run()
+```
+
+### Sandbox Parameters
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `BROWSER_USE_API_KEY` | str | API key (env var) | Required |
+| `cloud_profile_id` | str | Browser profile UUID | None |
+| `cloud_proxy_country_code` | str | us, uk, fr, it, jp, au, de, fi, ca, in | None |
+| `cloud_timeout` | int | Minutes (max: 15 free, 240 paid) | None |
+| `on_browser_created` | Callable | Receives `data.live_url` | None |
+| `on_log` | Callable | Receives `log.level`, `log.message` | None |
+| `on_result` | Callable | Success callback | None |
+| `on_error` | Callable | Receives `error.error` | None |
+
+### Event Callbacks
+
+```python
+from browser_use.sandbox import BrowserCreatedData, LogData, ResultData, ErrorData
+
+@sandbox(
+    cloud_profile_id='your-profile-id',
+    cloud_proxy_country_code='us',
+    on_browser_created=lambda data: print(f'Live: {data.live_url}'),
+    on_log=lambda log: print(f'{log.level}: {log.message}'),
+    on_result=lambda result: print('Done!'),
+    on_error=lambda error: print(f'Error: {error.error}'),
+)
+async def task(browser: Browser):
+    agent = Agent(task="your task", browser=browser, llm=ChatBrowserUse())
+    await agent.run()
+```
+
+All callbacks can be sync or async.
+
+### Local Development
+
+```bash
+git clone https://github.com/browser-use/browser-use
+cd browser-use
+uv sync --all-extras --dev
+
+# Helper scripts
+./bin/setup.sh   # Complete setup
+./bin/lint.sh    # Formatting, linting, type checking
+./bin/test.sh    # CI test suite
+
+# Run examples
+uv run examples/simple.py
+```
+
+### Telemetry
+
+Opt out with `ANONYMIZED_TELEMETRY=false` env var. Zero performance impact.
+
+---
+
+# Supported LLM Models
+
+## Table of Contents
+- [Browser Use (Recommended)](#browser-use)
+- [Google Gemini](#google-gemini)
+- [OpenAI](#openai)
+- [Anthropic](#anthropic)
+- [Azure OpenAI](#azure-openai)
+- [AWS Bedrock](#aws-bedrock)
+- [Groq](#groq)
+- [OCI (Oracle)](#oci-oracle)
+- [Ollama (Local)](#ollama-local)
+- [Vercel AI Gateway](#vercel-ai-gateway)
+- [OpenAI-Compatible APIs](#openai-compatible-apis)
+
+---
+
+## Browser Use
+
+Optimized for browser automation — highest accuracy, fastest speed, lowest token cost.
+
+```python
+from browser_use import ChatBrowserUse
+llm = ChatBrowserUse()                    # bu-latest (default)
+llm = ChatBrowserUse(model='bu-2-0')      # Premium model
+```
+
+**Env:** `BROWSER_USE_API_KEY` — get at https://cloud.browser-use.com/new-api-key
+
+**Models & Pricing (per 1M tokens):**
+| Model | Input | Cached | Output |
+|-------|-------|--------|--------|
+| bu-1-0 (default) | $0.20 | $0.02 | $2.00 |
+| bu-2-0 (premium) | $0.60 | $0.06 | $3.50 |
+
+## Google Gemini
+
+```python
+from browser_use import ChatGoogle
+llm = ChatGoogle(model="gemini-flash-latest")
+```
+
+**Env:** `GOOGLE_API_KEY` (free at https://aistudio.google.com/app/u/1/apikey)
+
+Note: `GEMINI_API_KEY` is deprecated, use `GOOGLE_API_KEY`.
+
+## OpenAI
+
+```python
+from browser_use import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4.1-mini")
+# o3 recommended for complex tasks
+llm = ChatOpenAI(model="o3")
+```
+
+**Env:** `OPENAI_API_KEY`
+
+Supports custom `base_url` for OpenAI-compatible APIs.
+
+## Anthropic
+
+```python
+from browser_use import ChatAnthropic
+llm = ChatAnthropic(model='claude-sonnet-4-0', temperature=0.0)
+```
+
+**Env:** `ANTHROPIC_API_KEY`
+
+## Azure OpenAI
+
+```python
+from browser_use import ChatAzureOpenAI
+llm = ChatAzureOpenAI(
+    model="gpt-4o",
+    api_version="2025-03-01-preview",
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+)
+```
+
+**Env:** `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`
+
+Supports Responses API for models like `gpt-5.1-codex-mini`.
+
+## AWS Bedrock
+
+```python
+from browser_use import ChatAWSBedrock
+llm = ChatAWSBedrock(model="us.anthropic.claude-sonnet-4-20250514-v1:0", region="us-east-1")
+
+# Or via Anthropic wrapper
+from browser_use import ChatAnthropicBedrock
+llm = ChatAnthropicBedrock(model="us.anthropic.claude-sonnet-4-20250514-v1:0", aws_region="us-east-1")
+```
+
+**Env:** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`
+
+Supports profiles, IAM roles, SSO via standard AWS credential chain.
+
+## Groq
+
+```python
+from browser_use import ChatGroq
+llm = ChatGroq(model="meta-llama/llama-4-maverick-17b-128e-instruct")
+```
+
+**Env:** `GROQ_API_KEY`
+
+## OCI (Oracle)
+
+```python
+from browser_use import ChatOCIRaw
+llm = ChatOCIRaw(
+    model="meta.llama-3.1-70b-instruct",
+    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+    compartment_id="your-compartment-id",
+)
+```
+
+Requires `~/.oci/config` setup. Auth types: `API_KEY`, `INSTANCE_PRINCIPAL`, `RESOURCE_PRINCIPAL`.
+
+## Ollama (Local)
+
+```python
+from browser_use import ChatOllama
+llm = ChatOllama(model="llama3", num_ctx=32000)
+```
+
+Requires `ollama serve` running locally. Use `num_ctx` for context window (default may be too small).
+
+## Vercel AI Gateway
+
+Proxy to multiple providers with automatic fallback:
+
+```python
+from browser_use import ChatVercel
+llm = ChatVercel(
+    model='anthropic/claude-sonnet-4',
+    provider_options={
+        'gateway': {
+            'order': ['vertex', 'anthropic'],  # Fallback order
+        }
+    },
+)
+```
+
+**Env:** `AI_GATEWAY_API_KEY` (or `VERCEL_OIDC_TOKEN` on Vercel)
+
+## OpenAI-Compatible APIs
+
+Any provider with an OpenAI-compatible endpoint works via `ChatOpenAI`:
+
+### Qwen (Alibaba)
+```python
+llm = ChatOpenAI(model="qwen-vl-max", base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+```
+**Env:** `ALIBABA_CLOUD`
+
+### ModelScope
+```python
+llm = ChatOpenAI(model="Qwen/Qwen2.5-VL-72B-Instruct", base_url="https://api-inference.modelscope.cn/v1")
+```
+**Env:** `MODELSCOPE_API_KEY`
+
+### DeepSeek
+```python
+llm = ChatOpenAI(model="deepseek-chat", base_url="https://api.deepseek.com")
+```
+**Env:** `DEEPSEEK_API_KEY`
+
+### Novita
+```python
+llm = ChatOpenAI(model="deepseek/deepseek-r1", base_url="https://api.novita.ai/v3/openai")
+```
+**Env:** `NOVITA_API_KEY`
+
+### OpenRouter
+```python
+llm = ChatOpenAI(model="deepseek/deepseek-r1", base_url="https://openrouter.ai/api/v1")
+```
+**Env:** `OPENROUTER_API_KEY`
+
+### Langchain
+See example at [examples/models/langchain](https://github.com/browser-use/browser-use/tree/main/examples/models/langchain).
+
+---
+
+# Agent Configuration & Behavior
+
+## Table of Contents
+- [Basic Usage](#basic-usage)
+- [All Parameters](#all-parameters)
+- [Output Format](#output-format)
+- [Structured Output](#structured-output)
+- [Prompting Guide](#prompting-guide)
+- [Lifecycle Hooks](#lifecycle-hooks)
+- [Timeout Environment Variables](#timeout-environment-variables)
+
+---
+
+## Basic Usage
+
+```python
+from browser_use import Agent, ChatBrowserUse
+
+agent = Agent(
+    task="Search for latest news about AI",
+    llm=ChatBrowserUse(),
+)
+
+async def main():
+    history = await agent.run(max_steps=500)
+```
+
+- `task`: The task to automate
+- `llm`: LLM instance (see `models.md`)
+- `max_steps` (default: `500`): Maximum agent steps
+
+## All Parameters
+
+### Core Settings
+- `tools`: Registry of tools the agent can call
+- `skills` (or `skill_ids`): List of skill IDs to load (e.g., `['skill-uuid']` or `['*']` for all). Requires `BROWSER_USE_API_KEY`
+- `browser`: Browser object for browser settings
+- `output_model_schema`: Pydantic model class for structured output validation
+
+### Vision & Processing
+- `use_vision` (default: `True`): `True` always includes screenshots, `"auto"` includes screenshot tool but only uses vision when requested, `False` never
+- `vision_detail_level` (default: `'auto'`): `'low'`, `'high'`, or `'auto'`
+- `page_extraction_llm`: Separate LLM for page content extraction (default: same as `llm`)
+
+### Fallback & Resilience
+- `fallback_llm`: Backup LLM when primary fails. Primary exhausts its retry logic (5 attempts with exponential backoff) first. Triggers on: 429 (rate limit), 401 (auth), 402 (payment), 500/502/503/504 (server errors). Once switched, fallback is used for rest of run.
+
+### Actions & Behavior
+- `initial_actions`: Actions to run before main task without LLM
+- `max_actions_per_step` (default: `5`): Max actions per step (e.g., fill 5 form fields at once)
+- `max_failures` (default: `5`): Max retries for steps with errors
+- `final_response_after_failure` (default: `True`): Force one final model call after max_failures
+- `use_thinking` (default: `True`): Enable explicit reasoning steps
+- `flash_mode` (default: `False`): Fast mode — skips evaluation, next goal, thinking; uses memory only. Overrides `use_thinking`
+
+### System Messages
+- `override_system_message`: Completely replace default system prompt
+- `extend_system_message`: Add instructions to default system prompt
+
+### File & Data Management
+- `save_conversation_path`: Path to save conversation history
+- `save_conversation_path_encoding` (default: `'utf-8'`)
+- `available_file_paths`: File paths the agent can access
+- `sensitive_data`: Dict of sensitive data (see `examples.md` for patterns)
+
+### Visual Output
+- `generate_gif` (default: `False`): Generate GIF of actions. Set to `True` or string path
+- `include_attributes`: HTML attributes to include in page analysis
+
+### Performance & Limits
+- `max_history_items`: Max steps to keep in LLM memory (`None` = all)
+- `llm_timeout` (default: auto-detected per model — Groq: 30s, Gemini: 75s, Gemini 3 Pro: 90s, o3/Claude/DeepSeek: 90s, others: 75s): Seconds for LLM calls
+- `step_timeout` (default: `180`): Seconds for each step
+- `directly_open_url` (default: `True`): Auto-open URLs detected in task
+
+### Advanced
+- `calculate_cost` (default: `False`): Track API costs (access via `history.usage`)
+- `display_files_in_done_text` (default: `True`)
+
+### Backwards Compatibility
+- `controller` → alias for `tools`
+- `browser_session` → alias for `browser`
+
+---
+
+## Output Format
+
+`run()` returns an `AgentHistoryList`:
+
+```python
+history = await agent.run()
+
+# Basic access
+history.urls()                    # Visited URLs
+history.screenshot_paths()        # Screenshot file paths
+history.screenshots()             # Screenshots as base64
+history.action_names()            # Executed action names
+history.extracted_content()       # Extracted content from all actions
+history.errors()                  # Errors (None for clean steps)
+history.model_actions()           # All actions with parameters
+history.model_outputs()           # All model outputs
+history.last_action()             # Last action
+
+# Analysis
+history.final_result()            # Final extracted content (last step)
+history.is_done()                 # Agent completed?
+history.is_successful()           # Completed successfully? (None if not done)
+history.has_errors()              # Any errors?
+history.model_thoughts()          # Reasoning (AgentBrain objects)
+history.action_results()          # All ActionResult objects
+history.action_history()          # Truncated action history
+history.number_of_steps()         # Step count
+history.total_duration_seconds()  # Total duration
+
+# Structured output
+history.structured_output         # Parsed structured output (if output_model_schema set)
+```
+
+## Structured Output
+
+Use `output_model_schema` with a Pydantic model:
+
+```python
+from pydantic import BaseModel
+
+class SearchResult(BaseModel):
+    title: str
+    url: str
+
+agent = Agent(task="...", llm=llm, output_model_schema=SearchResult)
+history = await agent.run()
+result = history.structured_output  # SearchResult instance
+```
+
+---
+
+## Prompting Guide
+
+### Be Specific
+
+```python
+# Good
+task = """
+1. Go to https://quotes.toscrape.com/
+2. Use extract action with the query "first 3 quotes with their authors"
+3. Save results to quotes.csv using write_file action
+"""
+
+# Bad
+task = "Go to web and make money"
+```
+
+### Name Actions Directly
+
+```python
+task = """
+1. Use search action to find "Python tutorials"
+2. Use click to open first result in a new tab
+3. Use scroll action to scroll down 2 pages
+4. Use extract to extract the names of the first 5 items
+"""
+```
+
+### Handle Interaction Problems via Keyboard
+
+```python
+task = """
+If the submit button cannot be clicked:
+1. Use send_keys action with "Tab Tab Enter"
+2. Or use send_keys with "ArrowDown ArrowDown Enter"
+"""
+```
+
+### Custom Actions Integration
+
+```python
+@tools.action("Get 2FA code from authenticator app")
+async def get_2fa_code():
+    pass
+
+task = """
+Login with 2FA:
+1. Enter username/password
+2. When prompted for 2FA, use get_2fa_code action
+3. NEVER try to extract 2FA codes from the page manually
+"""
+```
+
+### Error Recovery
+
+```python
+task = """
+1. Go to openai.com to find their CEO
+2. If navigation fails due to anti-bot protection:
+   - Use google search to find the CEO
+3. If page times out, use go_back and try alternative approach
+"""
+```
+
+---
+
+## Lifecycle Hooks
+
+Two hooks available via `agent.run()`:
+
+| Hook | When Called |
+|------|------------|
+| `on_step_start` | Before agent processes current state |
+| `on_step_end` | After agent executes all actions for step |
+
+```python
+async def my_hook(agent: Agent):
+    state = await agent.browser_session.get_browser_state_summary()
+    print(f'Current URL: {state.url}')
+
+await agent.run(on_step_start=my_hook, on_step_end=my_hook)
+```
+
+### Data Available in Hooks
+
+Full access to Agent instance:
+
+- `agent.task` — current task; `agent.add_new_task(...)` — queue new task
+- `agent.tools` — Tools() object and Registry
+  - `agent.tools.registry.execute_action('click', {'index': 123}, browser_session=agent.browser_session)`
+- `agent.sensitive_data` — sensitive data dict (mutable)
+- `agent.settings` — all config options
+- `agent.llm` — direct LLM access
+- `agent.state` — internal state (thoughts, outputs, actions)
+- `agent.history` — execution history:
+  - `.model_thoughts()`, `.model_outputs()`, `.model_actions()`
+  - `.extracted_content()`, `.urls()`
+- `agent.browser_session` — BrowserSession + CDP:
+  - `.agent_focus_target_id` — current target ID
+  - `.get_or_create_cdp_session()` — CDP session
+  - `.get_tabs()`, `.get_current_page_url()`, `.get_current_page_title()`
+- `agent.pause()` / `agent.resume()` — control execution
+
+### Hook Example: CDP Access
+
+```python
+async def my_hook(agent: Agent):
+    cdp_session = await agent.browser_session.get_or_create_cdp_session()
+    doc = await cdp_session.cdp_client.send.DOM.getDocument(session_id=cdp_session.session_id)
+    html = await cdp_session.cdp_client.send.DOM.getOuterHTML(
+        params={'nodeId': doc['root']['nodeId']}, session_id=cdp_session.session_id
+    )
+```
+
+**Tips:**
+- Keep hooks efficient (same execution thread)
+- Most use cases are better served by custom tools
+- Increase `step_timeout` if hooks take long
+
+---
+
+## Timeout Environment Variables
+
+Fine-tune timeouts via environment variables (values in seconds):
+
+### Browser Actions
+| Variable | Default |
+|----------|---------|
+| `TIMEOUT_NavigateToUrlEvent` | 30.0 |
+| `TIMEOUT_ClickElementEvent` | 15.0 |
+| `TIMEOUT_ClickCoordinateEvent` | 15.0 |
+| `TIMEOUT_TypeTextEvent` | 60.0 |
+| `TIMEOUT_ScrollEvent` | 8.0 |
+| `TIMEOUT_ScrollToTextEvent` | 15.0 |
+| `TIMEOUT_SendKeysEvent` | 60.0 |
+| `TIMEOUT_UploadFileEvent` | 30.0 |
+| `TIMEOUT_GetDropdownOptionsEvent` | 15.0 |
+| `TIMEOUT_SelectDropdownOptionEvent` | 8.0 |
+| `TIMEOUT_GoBackEvent` | 15.0 |
+| `TIMEOUT_GoForwardEvent` | 15.0 |
+| `TIMEOUT_RefreshEvent` | 15.0 |
+| `TIMEOUT_WaitEvent` | 60.0 |
+| `TIMEOUT_ScreenshotEvent` | 15.0 |
+| `TIMEOUT_BrowserStateRequestEvent` | 30.0 |
+
+### Browser Lifecycle
+| Variable | Default |
+|----------|---------|
+| `TIMEOUT_BrowserStartEvent` | 30.0 |
+| `TIMEOUT_BrowserStopEvent` | 45.0 |
+| `TIMEOUT_BrowserLaunchEvent` | 30.0 |
+| `TIMEOUT_BrowserKillEvent` | 30.0 |
+| `TIMEOUT_BrowserConnectedEvent` | 30.0 |
+
+### Tab Management
+| Variable | Default |
+|----------|---------|
+| `TIMEOUT_SwitchTabEvent` | 10.0 |
+| `TIMEOUT_CloseTabEvent` | 10.0 |
+| `TIMEOUT_TabCreatedEvent` | 30.0 |
+| `TIMEOUT_TabClosedEvent` | 10.0 |
+
+### Storage & Downloads
+| Variable | Default |
+|----------|---------|
+| `TIMEOUT_SaveStorageStateEvent` | 45.0 |
+| `TIMEOUT_LoadStorageStateEvent` | 45.0 |
+| `TIMEOUT_FileDownloadedEvent` | 30.0 |
+
+---
+
+# Browser Configuration
+
+## Table of Contents
+- [Basic Usage](#basic-usage)
+- [All Parameters](#all-parameters)
+- [Authentication Strategies](#authentication-strategies)
+- [Real Browser Connection](#real-browser-connection)
+- [Remote / Cloud Browser](#remote--cloud-browser)
+
+---
+
+## Basic Usage
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+browser = Browser(
+    headless=False,
+    window_size={'width': 1000, 'height': 700},
+)
+
+agent = Agent(task='Search for Browser Use', browser=browser, llm=ChatBrowserUse())
+await agent.run()
+```
+
+`Browser` is an alias for `BrowserSession` — same class.
+
+## All Parameters
+
+### Core
+- `cdp_url`: CDP URL for existing browser (e.g., `"http://localhost:9222"`)
+
+### Display & Appearance
+- `headless` (default: `None`): Auto-detects display. `True`/`False`/`None`
+- `window_size`: `{'width': 1920, 'height': 1080}` or `ViewportSize`
+- `window_position` (default: `{'width': 0, 'height': 0}`)
+- `viewport`: Content area size
+- `no_viewport` (default: `None`): Disable viewport emulation
+- `device_scale_factor`: DPI (`2.0` for retina)
+
+### Browser Behavior
+- `keep_alive` (default: `None`): Keep browser running after agent completes
+- `allowed_domains`: Restrict navigation with patterns:
+  - `'example.com'` → `https://example.com/*`
+  - `'*.example.com'` → domain + subdomains
+  - `'http*://example.com'` → both protocols
+  - `'chrome-extension://*'` → extensions
+  - TLD wildcards (`example.*`) NOT allowed
+  - Auto-optimized to sets for 100+ domains (O(1) lookup)
+- `prohibited_domains`: Block domains (same patterns). `allowed_domains` takes precedence
+- `enable_default_extensions` (default: `True`): uBlock Origin, cookie handlers, ClearURLs
+- `cross_origin_iframes` (default: `False`)
+- `is_local` (default: `True`): `False` for remote browsers
+
+### User Data & Profiles
+- `user_data_dir` (default: auto temp): Profile data dir. `None` for incognito
+- `profile_directory` (default: `'Default'`): Chrome profile name
+- `storage_state`: Cookies/localStorage as file path or dict
+
+### Network & Security
+- `proxy`: `ProxySettings(server='http://host:8080', bypass='localhost', username='user', password='pass')`
+- `permissions` (default: `['clipboardReadWrite', 'notifications']`)
+- `headers`: HTTP headers for remote browsers
+
+### Browser Launch
+- `executable_path`: Custom browser path
+- `channel`: `'chromium'`, `'chrome'`, `'chrome-beta'`, `'msedge'`
+- `args`: Additional CLI args list
+- `env`: Environment vars dict
+- `chromium_sandbox` (default: `True` except Docker)
+- `devtools` (default: `False`): Requires `headless=False`
+- `ignore_default_args`: List or `True` for all
+
+### Timing & Performance
+- `minimum_wait_page_load_time` (default: `0.25`)
+- `wait_for_network_idle_page_load_time` (default: `0.5`)
+- `wait_between_actions` (default: `0.5`)
+
+### AI Integration
+- `highlight_elements` (default: `True`)
+- `paint_order_filtering` (default: `True`): Remove hidden elements (experimental)
+
+### Downloads & Files
+- `accept_downloads` (default: `True`)
+- `downloads_path`: Download directory
+- `auto_download_pdfs` (default: `True`)
+
+### Device Emulation
+- `user_agent`: Custom user agent string
+- `screen`: Screen size info
+
+### Recording & Debugging
+- `record_video_dir`: Save as `.mp4`
+- `record_video_size` (default: ViewportSize)
+- `record_video_framerate` (default: `30`)
+- `record_har_path`: Network traces as `.har`
+- `traces_dir`: Complete trace files
+- `record_har_content` (default: `'embed'`): `'omit'`/`'embed'`/`'attach'`
+- `record_har_mode` (default: `'full'`): `'full'`/`'minimal'`
+
+### Advanced
+- `disable_security` (default: `False`): **NOT RECOMMENDED**
+- `deterministic_rendering` (default: `False`): **NOT RECOMMENDED**
+
+### Class Methods
+
+```python
+# Auto-detect Chrome and first available profile
+browser = Browser.from_system_chrome()
+browser = Browser.from_system_chrome(profile_directory='Profile 5')
+
+# List available profiles
+profiles = Browser.list_chrome_profiles()
+# [{'directory': 'Default', 'name': 'Person 1'}, {'directory': 'Profile 1', 'name': 'Work'}]
+```
+
+---
+
+## Authentication Strategies
+
+| Approach | Best For | Setup |
+|----------|----------|-------|
+| Real Browser | Personal automation, existing logins | Low |
+| Storage State | Production, CI/CD, headless | Medium |
+| TOTP 2FA | Authenticator apps | Low |
+| Email/SMS 2FA | Email/SMS verification | Medium |
+
+### Storage State Persistence
+
+```python
+# Export cookies/localStorage
+await browser.export_storage_state('auth.json')
+
+# Load on next run
+browser = Browser(storage_state='auth.json')
+```
+
+Auto-saves periodically and on shutdown. Auto-loads and merges on startup.
+
+### TOTP 2FA
+
+Pass secret in `sensitive_data` with key ending in `bu_2fa_code`:
+
+```python
+agent = Agent(
+    task="Login to my account",
+    llm=llm,
+    sensitive_data={
+        'google_bu_2fa_code': 'JBSWY3DPEHPK3PXP'  # TOTP secret
+    },
+)
+```
+
+Agent generates fresh 6-digit codes on demand. Find secrets in:
+- 1Password: Edit item → One-Time Password → Show secret
+- Google Authenticator: "Can't scan it?" during setup
+- Authy: Desktop app settings → Export
+
+### Email/SMS 2FA
+
+- **AgentMail**: Disposable inboxes for email verification
+- **1Password SDK**: Retrieve codes from password manager
+- **Gmail API**: Read 2FA codes (requires OAuth 2.0 setup)
+
+### Security Best Practices
+
+- Restrict domains: `Browser(allowed_domains=['*.example.com'])`
+- Disable vision for sensitive pages: `Agent(use_vision=False)`
+- Use storage state instead of passwords when possible
+
+---
+
+## Real Browser Connection
+
+Use your existing Chrome with saved logins:
+
+```python
+# Auto-detect (recommended)
+browser = Browser.from_system_chrome()
+
+# Manual paths
+browser = Browser(
+    executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    user_data_dir='~/Library/Application Support/Google/Chrome',
+    profile_directory='Default',
+)
+```
+
+Close Chrome completely before running.
+
+### Platform Paths
+
+| Platform | executable_path | user_data_dir |
+|----------|----------------|---------------|
+| macOS | `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` | `~/Library/Application Support/Google/Chrome` |
+| Windows | `C:\Program Files\Google\Chrome\Application\chrome.exe` | `%LocalAppData%\Google\Chrome\User Data` |
+| Linux | `/usr/bin/google-chrome` | `~/.config/google-chrome` |
+
+---
+
+## Remote / Cloud Browser
+
+### Browser-Use Cloud (Recommended)
+
+```python
+# Simple
+browser = Browser(use_cloud=True)
+
+# Advanced — bypasses captchas, geo-restrictions
+browser = Browser(
+    cloud_profile_id='your-profile-id',
+    cloud_proxy_country_code='us',  # us, uk, fr, it, jp, au, de, fi, ca, in
+    cloud_timeout=30,               # minutes (free: 15, paid: 240)
+)
+```
+
+**Prereqs:** `BROWSER_USE_API_KEY` env var from https://cloud.browser-use.com/new-api-key
+
+### CDP URL (Any Provider)
+
+```python
+browser = Browser(cdp_url="http://remote-server:9222")
+```
+
+### With Proxy
+
+```python
+from browser_use.browser import ProxySettings
+
+browser = Browser(
+    proxy=ProxySettings(
+        server="http://proxy-server:8080",
+        username="proxy-user",
+        password="proxy-pass"
+    ),
+    cdp_url="http://remote-server:9222"
+)
+```
+
+---
+
+# Tools & Custom Actions
+
+## Table of Contents
+- [Quick Example](#quick-example)
+- [Adding Custom Tools](#adding-custom-tools)
+- [Injectable Parameters](#injectable-parameters)
+- [Available Default Tools](#available-default-tools)
+- [Removing Tools](#removing-tools)
+- [Tool Response (ActionResult)](#tool-response)
+
+---
+
+## Quick Example
+
+```python
+from browser_use import Tools, ActionResult, BrowserSession
+
+tools = Tools()
+
+@tools.action('Ask human for help with a question')
+async def ask_human(question: str, browser_session: BrowserSession) -> ActionResult:
+    answer = input(f'{question} > ')
+    return ActionResult(extracted_content=f'The human responded with: {answer}')
+
+agent = Agent(task='Ask human for help', llm=llm, tools=tools)
+```
+
+> **Warning:** Parameter MUST be named `browser_session: BrowserSession`, not `browser: Browser`. Agent injects by name matching — wrong name fails silently.
+
+## Adding Custom Tools
+
+```python
+@tools.action(description='Fill out banking forms', allowed_domains=['https://mybank.com'])
+async def fill_bank_form(account_number: str) -> ActionResult:
+    return ActionResult(extracted_content=f'Filled form for account {account_number}')
+```
+
+**Decorator parameters:**
+- `description` (required): What the tool does — LLM uses this to decide when to call
+- `allowed_domains`: Domains where tool can run (default: all)
+
+### Pydantic Input
+
+```python
+from pydantic import BaseModel, Field
+
+class Car(BaseModel):
+    name: str = Field(description='Car name, e.g. "Toyota Camry"')
+    price: int = Field(description='Price in USD')
+
+@tools.action(description='Save cars to file')
+def save_cars(cars: list[Car]) -> str:
+    with open('cars.json', 'w') as f:
+        json.dump([c.model_dump() for c in cars], f)
+    return f'Saved {len(cars)} cars'
+```
+
+### Browser Interaction in Custom Tools
+
+```python
+@tools.action(description='Click submit button via CSS selector')
+async def click_submit(browser_session: BrowserSession):
+    page = await browser_session.must_get_current_page()
+    elements = await page.get_elements_by_css_selector('button[type="submit"]')
+    if not elements:
+        return ActionResult(extracted_content='No submit button found')
+    await elements[0].click()
+    return ActionResult(extracted_content='Clicked!')
+```
+
+## Injectable Parameters
+
+The agent fills function parameters by name. These special names are auto-injected:
+
+| Parameter Name | Type | Description |
+|---------------|------|-------------|
+| `browser_session` | `BrowserSession` | Current browser session (CDP access) |
+| `cdp_client` | | Direct Chrome DevTools Protocol client |
+| `page_extraction_llm` | `BaseChatModel` | The LLM passed to agent |
+| `file_system` | `FileSystem` | File system access |
+| `available_file_paths` | `list[str]` | Files available for upload/processing |
+| `has_sensitive_data` | `bool` | Whether action contains sensitive data |
+
+### Page Methods (via browser_session)
+
+```python
+page = await browser_session.must_get_current_page()
+
+# CSS selector
+elements = await page.get_elements_by_css_selector('button.submit')
+
+# LLM-powered (natural language)
+element = await page.get_element_by_prompt("login button", llm=page_extraction_llm)
+element = await page.must_get_element_by_prompt("login button", llm=page_extraction_llm)  # raises if not found
+```
+
+## Available Default Tools
+
+Source: [tools/service.py](https://github.com/browser-use/browser-use/blob/main/browser_use/tools/service.py)
+
+### Navigation & Browser Control
+- `search` — Search queries (DuckDuckGo, Google, Bing)
+- `navigate` — Navigate to URLs
+- `go_back` — Go back in history
+- `wait` — Wait for specified seconds
+
+### Page Interaction
+- `click` — Click elements by index
+- `input` — Input text into form fields
+- `upload_file` — Upload files
+- `scroll` — Scroll page up/down
+- `find_text` — Scroll to specific text
+- `send_keys` — Send keys (Enter, Escape, Tab, etc.)
+
+### JavaScript
+- `evaluate` — Execute custom JS (shadow DOM, selectors, extraction)
+
+### Tab Management
+- `switch` — Switch between tabs
+- `close` — Close tabs
+
+### Content Extraction
+- `extract` — Extract data using LLM
+
+### Visual
+- `screenshot` — Request screenshot in next browser state
+
+### Form Controls
+- `dropdown_options` — Get dropdown values
+- `select_dropdown` — Select dropdown option
+
+### File Operations
+- `write_file` — Write to files
+- `read_file` — Read files
+- `replace_file` — Replace text in files
+
+### Task Completion
+- `done` — Complete the task (always available)
+
+## Removing Tools
+
+```python
+tools = Tools(exclude_actions=['search', 'wait'])
+agent = Agent(task='...', llm=llm, tools=tools)
+```
+
+## Tool Response
+
+### Simple Return
+
+```python
+@tools.action('My tool')
+def my_tool() -> str:
+    return "Task completed successfully"
+```
+
+### ActionResult (Full Control)
+
+```python
+@tools.action('Advanced tool')
+def advanced_tool() -> ActionResult:
+    return ActionResult(
+        extracted_content="Main result",
+        long_term_memory="Remember this for all future steps",
+        error="Something went wrong",
+        is_done=True,
+        success=True,
+        attachments=["file.pdf"],
+    )
+```
+
+### ActionResult Fields
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `extracted_content` | None | Main result passed to LLM |
+| `include_extracted_content_only_once` | False | Show large content only once, then drop |
+| `long_term_memory` | None | Always included in LLM input for all future steps |
+| `error` | None | Error message (auto-caught exceptions set this) |
+| `is_done` | False | Tool completes entire task |
+| `success` | None | Task success (only with `is_done=True`) |
+| `attachments` | None | Files to show user |
+| `metadata` | None | Debug/observability data |
+
+### Context Control Strategy
+
+1. **Short content, always visible**: Return string
+2. **Long content shown once + persistent summary**: `extracted_content` + `include_extracted_content_only_once=True` + `long_term_memory`
+3. **Never show, just remember**: Use `long_term_memory` alone
+
+---
+
+# Actor API (Legacy Direct Browser Control)
+
+Low-level Playwright-like browser automation built on CDP. Use for precise, deterministic operations alongside the AI agent.
+
+## Table of Contents
+- [Architecture](#architecture)
+- [Browser Methods](#browser-methods)
+- [Page Methods](#page-methods)
+- [Element Methods](#element-methods)
+- [Mouse Methods](#mouse-methods)
+- [Examples](#examples)
+
+---
+
+## Architecture
+
+```
+Browser (BrowserSession) → Page → Element
+                                → Mouse
+                                → AI Features (extract, find by prompt)
+```
+
+NOT Playwright — built on CDP with a subset of the Playwright API. Key differences:
+- `get_elements_by_css_selector()` returns immediately (no visibility wait)
+- Manual timing required after navigation
+- `evaluate()` requires arrow function format: `() => {}`
+
+## Browser Methods
+
+```python
+browser = Browser()
+await browser.start()
+
+page = await browser.new_page("https://example.com")  # Open new tab
+pages = await browser.get_pages()                       # List all pages
+current = await browser.get_current_page()              # Active page
+await browser.close_page(page)                          # Close tab
+await browser.stop()                                    # Cleanup
+```
+
+## Page Methods
+
+### Navigation
+- `goto(url: str)` — Navigate to URL
+- `go_back()` — Back in history
+- `go_forward()` — Forward in history
+- `reload()` — Reload page
+
+### Element Finding
+- `get_elements_by_css_selector(selector: str) -> list[Element]` — Immediate return
+- `get_element(backend_node_id: int) -> Element` — By CDP node ID
+- `get_element_by_prompt(prompt: str, llm) -> Element | None` — LLM-powered
+- `must_get_element_by_prompt(prompt: str, llm) -> Element` — Raises if not found
+
+### JavaScript & Controls
+- `evaluate(page_function: str, *args) -> str` — Execute JS (arrow function format)
+- `press(key: str)` — Keyboard input
+- `set_viewport_size(width: int, height: int)`
+- `screenshot(format='jpeg', quality=None) -> str` — Base64 screenshot
+
+### Information
+- `get_url() -> str`
+- `get_title() -> str`
+- `mouse -> Mouse` — Mouse instance
+
+### AI Features
+- `extract_content(prompt: str, structured_output: type[T], llm) -> T` — LLM-powered extraction
+
+## Element Methods
+
+### Interactions
+- `click(button='left', click_count=1, modifiers=None)`
+- `fill(text: str, clear=True)` — Clear field and type
+- `hover()`
+- `focus()`
+- `check()` — Toggle checkbox/radio
+- `select_option(values: str | list[str])` — Select dropdown
+- `drag_to(target: Element | Position)`
+
+### Properties
+- `get_attribute(name: str) -> str | None`
+- `get_bounding_box() -> BoundingBox | None`
+- `get_basic_info() -> ElementInfo`
+- `screenshot(format='jpeg') -> str`
+
+## Mouse Methods
+
+```python
+mouse = page.mouse
+await mouse.click(x=100, y=200, button='left', click_count=1)
+await mouse.move(x=500, y=600, steps=1)
+await mouse.down(button='left')
+await mouse.up(button='left')
+await mouse.scroll(x=0, y=100, delta_x=None, delta_y=-500)
+```
+
+## Examples
+
+### Mixed Agent + Actor
+
+```python
+async def main():
+    llm = ChatOpenAI(api_key="your-key")
+    browser = Browser()
+    await browser.start()
+
+    # Actor: precise navigation
+    page = await browser.new_page("https://github.com/login")
+    email = await page.must_get_element_by_prompt("username field", llm=llm)
+    await email.fill("your-username")
+
+    # Agent: AI-driven completion
+    agent = Agent(browser=browser, llm=llm)
+    await agent.run("Complete login and navigate to repositories")
+
+    await browser.stop()
+```
+
+### JavaScript Execution
+
+```python
+title = await page.evaluate('() => document.title')
+result = await page.evaluate('(x, y) => x + y', 10, 20)
+stats = await page.evaluate('''() => ({
+    url: location.href,
+    links: document.querySelectorAll('a').length
+})''')
+```
+
+### LLM-Powered Extraction
+
+```python
+from pydantic import BaseModel
+
+class ProductInfo(BaseModel):
+    name: str
+    price: float
+
+product = await page.extract_content("Extract product name and price", ProductInfo, llm=llm)
+```
+
+### Best Practices
+
+- Use `asyncio.sleep()` after navigation-triggering actions
+- Check URL/title changes to verify state transitions
+- Implement retry logic for flaky elements
+- Always call `browser.stop()` for cleanup
+
+---
+
+# Integrations (MCP, Skills, Docs)
+
+## Table of Contents
+- [MCP Server (Cloud)](#mcp-server-cloud)
+- [MCP Server (Local)](#mcp-server-local)
+- [Skills](#skills)
+- [Documentation MCP](#documentation-mcp)
+
+---
+
+## MCP Server (Cloud)
+
+HTTP-based MCP server at `https://api.browser-use.com/mcp`
+
+### Setup
+
+**Claude Code:**
+```bash
+claude mcp add --transport http browser-use https://api.browser-use.com/mcp
+```
+
+**Claude Desktop** (macOS `~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "type": "http",
+      "url": "https://api.browser-use.com/mcp",
+      "headers": { "x-browser-use-api-key": "your-api-key" }
+    }
+  }
+}
+```
+
+**Cursor** (`~/.cursor/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "type": "http",
+      "url": "https://api.browser-use.com/mcp",
+      "headers": { "x-browser-use-api-key": "your-api-key" }
+    }
+  }
+}
+```
+
+**Windsurf** (`~/.codeium/windsurf/mcp_config.json`):
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "type": "http",
+      "url": "https://api.browser-use.com/mcp",
+      "headers": { "x-browser-use-api-key": "your-api-key" }
+    }
+  }
+}
+```
+
+### Cloud MCP Tools
+
+| Tool | Cost | Description |
+|------|------|-------------|
+| `browser_task` | $0.01 + per-step | Run browser automation task |
+| `execute_skill` | $0.02 | Execute a skill |
+| `list_skills` | Free | List available skills |
+| `get_cookies` | Free | Get cookies |
+| `list_browser_profiles` | Free | List cloud profiles |
+| `monitor_task` | Free | Check task progress |
+
+`browser_task` params: `task` (required), `max_steps` (1-10, default 8), `profile_id` (UUID)
+
+---
+
+## MCP Server (Local)
+
+Free, self-hosted stdio-based server:
+
+```bash
+uvx --from 'browser-use[cli]' browser-use --mcp
+```
+
+### Claude Desktop Config
+
+macOS (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "command": "/Users/your-username/.local/bin/uvx",
+      "args": ["--from", "browser-use[cli]", "browser-use", "--mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+Note: Use full path to `uvx` on macOS/Linux (run `which uvx` to find it).
+
+### Local MCP Tools
+
+**Agent:** `retry_with_browser_use_agent` — full automation task
+
+**Direct Control:**
+- `browser_navigate` — Go to URL
+- `browser_click` — Click element by index
+- `browser_type` — Type text
+- `browser_get_state` — Page state + interactive elements
+- `browser_scroll` — Scroll page
+- `browser_go_back` — Back in history
+
+**Tabs:** `browser_list_tabs`, `browser_switch_tab`, `browser_close_tab`
+
+**Extraction:** `browser_extract_content` — Structured extraction
+
+**Sessions:** `browser_list_sessions`, `browser_close_session`, `browser_close_all`
+
+### Environment Variables
+
+- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` — LLM key (required)
+- `BROWSER_USE_HEADLESS` — `false` to show browser
+- `BROWSER_USE_DISABLE_SECURITY` — `true` to disable security
+- `BROWSER_USE_LOGGING_LEVEL` — `DEBUG` for verbose logs
+
+### Programmatic Usage
+
+```python
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def use_browser_mcp():
+    server_params = StdioServerParameters(
+        command="uvx",
+        args=["--from", "browser-use[cli]", "browser-use", "--mcp"]
+    )
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            result = await session.call_tool("browser_navigate", arguments={"url": "https://example.com"})
+```
+
+---
+
+## Skills
+
+Load cloud skills into agents as reusable API endpoints:
+
+```python
+agent = Agent(
+    task='Analyze TikTok and Instagram profiles',
+    skills=[
+        'a582eb44-e4e2-4c55-acc2-2f5a875e35e9',  # TikTok Scraper
+        'f8d91c2a-3b4e-4f7d-9a1e-6c8e2d3f4a5b',  # Instagram Scraper
+    ],
+    llm=ChatBrowserUse()
+)
+await agent.run()
+```
+
+- Use `skills=['*']` for all skills (each adds ~200 tokens to prompt)
+- Requires `BROWSER_USE_API_KEY`
+- Browse/create at [cloud.browser-use.com/skills](https://cloud.browser-use.com/skills)
+- Cookies auto-injected from browser; if missing, LLM navigates to obtain them
+
+---
+
+## Documentation MCP
+
+Read-only docs access (no browser automation):
+
+**Claude Code:**
+```bash
+claude mcp add --transport http browser-use-docs https://docs.browser-use.com/mcp
+```
+
+**Cursor** (`~/.cursor/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "browser-use-docs": { "url": "https://docs.browser-use.com/mcp" }
+  }
+}
+```
+
+No API key needed. Provides API reference, config options, best practices, examples.
+
+---
+
+# Monitoring & Observability
+
+## Table of Contents
+- [Cost Tracking](#cost-tracking)
+- [Laminar](#laminar)
+- [OpenLIT (OpenTelemetry)](#openlit-opentelemetry)
+- [Telemetry](#telemetry)
+
+---
+
+## Cost Tracking
+
+```python
+agent = Agent(task="...", llm=llm, calculate_cost=True)
+history = await agent.run()
+
+# Access usage data
+usage = history.usage
+# Or via service
+summary = await agent.token_cost_service.get_usage_summary()
+```
+
+## Laminar
+
+Native integration for AI agent monitoring with browser session video replay.
+
+### Setup
+
+```bash
+pip install lmnr
+```
+
+```python
+from lmnr import Laminar
+
+Laminar.initialize()  # Set LMNR_PROJECT_API_KEY env var
+```
+
+### Features
+
+- Agent execution step capture with timeline
+- Browser session recordings (full video replay)
+- Cost and token tracking
+- Trace visualization
+
+### Authentication
+
+Use `browser-use auth` for cloud sync (OAuth Device Flow), or self-host Laminar.
+
+## OpenLIT (OpenTelemetry)
+
+Zero-code OpenTelemetry instrumentation:
+
+### Setup
+
+```bash
+pip install openlit browser-use
+```
+
+```python
+import openlit
+
+openlit.init()  # That's it — auto-instruments browser-use
+```
+
+### Features
+
+- Execution flow visualization
+- Cost and token tracking
+- Debug failures with agent thought process
+- Performance optimization insights
+
+### Custom OTLP Endpoint
+
+```python
+openlit.init(otlp_endpoint="http://your-collector:4318")
+```
+
+### Integrations
+
+Works with: Jaeger, Prometheus, Grafana, Datadog, New Relic, Elastic APM.
+
+### Self-Hosted
+
+```bash
+docker run -d -p 3000:3000 -p 4318:4318 openlit/openlit
+```
+
+## Telemetry
+
+Browser Use collects anonymous usage data via PostHog.
+
+### Opt Out
+
+```bash
+ANONYMIZED_TELEMETRY=false
+```
+
+Or in Python:
+
+```python
+import os
+os.environ["ANONYMIZED_TELEMETRY"] = "false"
+```
+
+Zero performance impact. Source: [telemetry service](https://github.com/browser-use/browser-use/tree/main/browser_use/telemetry).
+
+---
+
+# Example Patterns & Templates
+
+## Table of Contents
+- [Fast Agent](#fast-agent)
+- [Parallel Browsers](#parallel-browsers)
+- [Follow-Up Tasks](#follow-up-tasks)
+- [Sensitive Data](#sensitive-data)
+- [Playwright Integration](#playwright-integration)
+
+---
+
+## Fast Agent
+
+Maximize speed with optimized config:
+
+```python
+from browser_use import Agent, Browser, BrowserProfile, ChatGroq
+
+# Fast LLM (Groq or Gemini Flash Lite)
+llm = ChatGroq(model="meta-llama/llama-4-maverick-17b-128e-instruct")
+
+# Minimize wait times
+browser = Browser(
+    minimum_wait_page_load_time=0.1,
+    wait_between_actions=0.1,
+)
+
+agent = Agent(
+    task="Find top HN post",
+    llm=llm,
+    browser=browser,
+    flash_mode=True,  # Skip LLM thinking, use memory only
+    extend_system_message="Be fast. Execute multiple actions per step.",
+)
+
+await agent.run()
+```
+
+**Key optimizations:**
+- `flash_mode=True` — skip evaluation, next goal, thinking
+- Low wait times — `0.1` instead of defaults
+- Fast LLM — Groq or Gemini Flash Lite
+- Multi-action prompts — fill multiple fields per step
+
+## Parallel Browsers
+
+Run multiple agents concurrently:
+
+```python
+import asyncio
+from browser_use import Agent, Browser, ChatBrowserUse
+
+async def run_task(task: str, index: int):
+    browser = Browser(user_data_dir=f'./temp-profile-{index}')
+    try:
+        agent = Agent(task=task, llm=ChatBrowserUse(), browser=browser)
+        result = await agent.run()
+        return result
+    finally:
+        await browser.close()
+
+async def main():
+    tasks = [
+        "Find the latest AI news on TechCrunch",
+        "Get Bitcoin price from CoinGecko",
+        "Find top Python packages on PyPI",
+    ]
+    results = await asyncio.gather(*[run_task(t, i) for i, t in enumerate(tasks)])
+```
+
+Each agent gets its own browser with a separate profile to avoid conflicts.
+
+## Follow-Up Tasks
+
+Chain tasks in a persistent browser session:
+
+```python
+from browser_use import Agent, Browser, ChatBrowserUse
+
+browser = Browser(keep_alive=True)
+await browser.start()
+
+agent = Agent(
+    task="Go to GitHub and search for 'browser-use'",
+    llm=ChatBrowserUse(),
+    browser=browser,
+)
+await agent.run()
+
+# Queue follow-up in same browser (cookies/localStorage preserved)
+agent.add_new_task("Click on the first repository and extract the star count")
+await agent.run()
+
+await browser.close()
+```
+
+`keep_alive=True` keeps browser open between tasks. Agent maintains memory and browser state.
+
+## Sensitive Data
+
+Handle credentials without exposing to LLM:
+
+```python
+agent = Agent(
+    task="Login to example.com",
+    llm=llm,
+    sensitive_data={
+        'x_user': 'my-username',       # All sites
+        'x_pass': 'my-password',       # All sites
+    },
+    browser=Browser(allowed_domains=['*.example.com']),
+)
+```
+
+- LLM sees placeholder names (`x_user`, `x_pass`), not real values
+- Real values injected into form fields at execution time
+- Never appears in logs or LLM context
+
+### Per-Domain Credentials
+
+```python
+sensitive_data = {
+    'github_user': 'gh-username',
+    'github_pass': 'gh-password',
+    'gmail_user': 'gmail-address',
+}
+```
+
+### Best Practices
+
+- Use `Browser(allowed_domains=[...])` to restrict navigation
+- Set `use_vision=False` for sensitive pages
+- Prefer `storage_state='auth.json'` over sending passwords
+- Use TOTP secrets with `bu_2fa_code` suffix for 2FA (see `browser.md`)
+
+## Playwright Integration
+
+Share Chrome between Playwright and Browser-Use via CDP:
+
+```python
+import subprocess
+from playwright.async_api import async_playwright
+from browser_use import Agent, Browser, Tools, ChatBrowserUse
+
+# 1. Start Chrome with remote debugging
+proc = subprocess.Popen([
+    'google-chrome', '--remote-debugging-port=9222', '--user-data-dir=/tmp/chrome-debug'
+])
+
+pw = None
+try:
+    # 2. Connect Playwright
+    pw = await async_playwright().start()
+    pw_browser = await pw.chromium.connect_over_cdp("http://localhost:9222")
+    pw_page = pw_browser.contexts[0].pages[0]
+
+    # 3. Connect Browser-Use to same Chrome
+    browser = Browser(cdp_url="http://localhost:9222")
+
+    # 4. Custom tools using Playwright
+    tools = Tools()
+
+    @tools.action(description='Fill form field using Playwright selector')
+    async def pw_fill(selector: str, value: str) -> str:
+        await pw_page.fill(selector, value)
+        return f'Filled {selector}'
+
+    @tools.action(description='Take Playwright screenshot')
+    async def pw_screenshot() -> str:
+        await pw_page.screenshot(path='screenshot.png')
+        return 'Screenshot saved'
+
+    # 5. Agent orchestrates using both
+    agent = Agent(task="Fill out the form", llm=ChatBrowserUse(), browser=browser, tools=tools)
+    await agent.run()
+finally:
+    if pw:
+        await pw.stop()
+    proc.terminate()
+    proc.wait()
+```
+
+Both Playwright and Browser-Use operate on the same pages through the shared CDP connection.

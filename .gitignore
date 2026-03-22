@@ -53,6 +53,9 @@ credentials.json
 token.json
 
 !docs/docs.json
+!llms.txt
+!**/llms.txt
+!**/llms-full.txt
 
 
 temp-profile-*
