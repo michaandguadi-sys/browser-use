@@ -1,0 +1,2182 @@
+# Browser Use Cloud — Complete Reference
+
+> Complete documentation for Browser Use Cloud: REST API (v2 & v3), SDK, sessions, browser access, features, and integration guides.
+
+---
+
+# Cloud Quickstart, Pricing & FAQ
+
+## Table of Contents
+- [Overview](#overview)
+- [Setup](#setup)
+- [First Task](#first-task)
+- [Structured Output](#structured-output)
+- [Live View](#live-view)
+- [Pricing](#pricing)
+- [FAQ & Troubleshooting](#faq--troubleshooting)
+
+---
+
+## Overview
+
+Browser Use Cloud is the hosted platform for web automation. Stealth browsers with anti-fingerprinting, CAPTCHA solving, residential proxies in 195+ countries. Usage-based pricing via API keys.
+
+- Web app: https://cloud.browser-use.com/
+- API base: `https://api.browser-use.com/api/v2/`
+- Auth header: `X-Browser-Use-API-Key: <key>`
+
+## Setup
+
+### Python
+
+```bash
+pip install browser-use-sdk
+```
+
+```python
+from browser_use_sdk import BrowserUse
+client = BrowserUse()  # Uses BROWSER_USE_API_KEY env var
+```
+
+### TypeScript
+
+```bash
+npm install browser-use-sdk
+```
+
+```typescript
+import BrowserUse from 'browser-use-sdk';
+const client = new BrowserUse();  // Uses BROWSER_USE_API_KEY env var
+```
+
+### cURL
+
+```bash
+export BROWSER_USE_API_KEY=your-key
+```
+
+## First Task
+
+### SDK
+
+```python
+result = await client.run("Search for top Hacker News post and return title and URL")
+print(result.output)
+```
+
+### cURL
+
+```bash
+curl -X POST https://api.browser-use.com/api/v2/tasks \
+     -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"task": "Search for the top Hacker News post and return the title and url."}'
+```
+
+Response: `{"id": "<task-id>", "sessionId": "<session-id>"}`
+
+## Structured Output
+
+```python
+from pydantic import BaseModel
+
+class HNPost(BaseModel):
+    title: str
+    url: str
+    points: int
+
+result = await client.run(
+    "Find top Hacker News post",
+    output_schema=HNPost
+)
+print(result.output)  # HNPost instance
+```
+
+## Live View
+
+Every session has a `liveUrl`:
+
+```bash
+curl https://api.browser-use.com/api/v2/sessions/<sessionId> \
+     -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY"
+```
+
+Open the `liveUrl` to watch the agent work in real-time.
+
+---
+
+## Pricing
+
+### AI Agent Tasks
+$0.01 init + per-step (varies by model):
+
+| Model | Per Step |
+|-------|---------|
+| Browser Use LLM | $0.002 |
+| Browser Use 2.0 | $0.006 |
+| Gemini Flash Lite | $0.005 |
+| GPT-4.1 Mini | $0.004 |
+| O3 | $0.03 |
+| Claude Sonnet 4.6 | $0.05 |
+
+Typical task: 10 steps = ~$0.03 (with Browser Use LLM)
+
+### V3 API (Token-Based)
+| Model | Input/1M | Output/1M |
+|-------|---------|----------|
+| BU Mini (Gemini 3 Flash) | ~$0.72 | ~$4.20 |
+| BU Max (Claude Sonnet 4.6) | ~$3.60 | ~$18.00 |
+
+### Browser Sessions
+- PAYG: $0.06/hour
+- Business: $0.03/hour
+- Billed upfront, proportional refund on stop. Min 1 minute.
+
+### Skills
+- Creation: $2 (PAYG), $1 (Business). Refinements free.
+- Execution: $0.02 (PAYG), $0.01 (Business)
+
+### Proxies
+- PAYG: $10/GB, Business: $5/GB, Scaleup: $4/GB
+
+### Tiers
+- **Business**: 25% off per-step, 50% off sessions/skills/proxy
+- **Scaleup**: 50% off per-step, 60% off proxy
+- **Enterprise**: Contact for ZDR, compliance, on-prem
+
+---
+
+## FAQ & Troubleshooting
+
+**Slow tasks?**
+- Switch models (Browser Use LLM is fastest)
+- Set `start_url` to skip navigation
+- Use closer proxy country
+
+**Agent failed?**
+- Check `liveUrl` to see what happened
+- Simplify instructions
+- Set `start_url`
+
+**Login issues?**
+- Profile sync (easiest): `curl -fsSL https://browser-use.com/profile.sh | sh`
+- Secrets (per-domain credentials)
+- 1Password (most secure, auto 2FA)
+
+**Blocked by site?**
+- Stealth is on by default
+- Try different proxy country
+- Set `flash_mode=False` (slower but more careful)
+
+**Rate limited?**
+- Auto-retry with backoff
+- Upgrade plan if consistent
+
+**Stop a session:**
+```bash
+curl -X PATCH https://api.browser-use.com/api/v2/sessions/<id> \
+     -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"action": "stop"}'
+```
+
+---
+
+# Cloud API v2 (Stable)
+
+Full-featured REST API for tasks, sessions, browsers, profiles, skills, and marketplace.
+
+## Table of Contents
+- [Authentication](#authentication)
+- [Common cURL Examples](#common-curl-examples)
+- [Tasks](#tasks)
+- [Sessions](#sessions)
+- [Browsers (CDP)](#browsers-cdp)
+- [Files](#files)
+- [Profiles](#profiles)
+- [Skills](#skills)
+- [Marketplace](#marketplace)
+- [Billing](#billing)
+- [Pagination](#pagination)
+- [Enums](#enums)
+- [Response Schemas](#response-schemas)
+
+---
+
+## Authentication
+
+- **Header:** `X-Browser-Use-API-Key: <your-key>`
+- **Base URL:** `https://api.browser-use.com/api/v2`
+- **Get key:** https://cloud.browser-use.com/new-api-key
+
+All endpoints require the `X-Browser-Use-API-Key` header.
+
+## Common cURL Examples
+
+### Create a task
+
+```bash
+curl -X POST https://api.browser-use.com/api/v2/tasks \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"task": "Find the top Hacker News post and return title and URL"}'
+```
+
+Response: `{"id": "<task-id>", "sessionId": "<session-id>"}`
+
+### Poll task status
+
+```bash
+curl https://api.browser-use.com/api/v2/tasks/<task-id>/status \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY"
+```
+
+### Get session live URL
+
+```bash
+curl https://api.browser-use.com/api/v2/sessions/<session-id> \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY"
+```
+
+Response includes `liveUrl` — open it to watch the agent work.
+
+### Create a CDP browser
+
+```bash
+curl -X POST https://api.browser-use.com/api/v2/browsers \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"proxyCountryCode": "us", "timeout": 30}'
+```
+
+Response includes `cdpUrl` (WebSocket) and `liveUrl`.
+
+### Stop a session
+
+```bash
+curl -X PATCH https://api.browser-use.com/api/v2/sessions/<session-id> \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "stop"}'
+```
+
+### Upload a file to a session
+
+```bash
+# 1. Get presigned URL
+curl -X POST https://api.browser-use.com/api/v2/files/sessions/<session-id>/presigned-url \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"fileName": "input.pdf", "contentType": "application/pdf", "sizeBytes": 102400}'
+
+# 2. Upload via multipart POST using the returned URL and ALL returned fields (S3-style presigned POST)
+# Include every key-value pair from the response's `fields` object as form fields:
+curl -X POST "<presigned-url>" \
+  -F "key=<fields.key>" \
+  -F "policy=<fields.policy>" \
+  -F "x-amz-algorithm=<fields.x-amz-algorithm>" \
+  -F "x-amz-credential=<fields.x-amz-credential>" \
+  -F "x-amz-date=<fields.x-amz-date>" \
+  -F "x-amz-signature=<fields.x-amz-signature>" \
+  -F "Content-Type=application/pdf" \
+  -F "file=@input.pdf"
+```
+
+The v2 presigned URL response includes `fields` for a multipart POST form upload (S3-style). **Include all returned fields** as form fields — they contain the signing data. Presigned URLs expire after **120 seconds**. Max file size: **10 MB**.
+
+---
+
+## Tasks
+
+**GET /tasks** — Paginated list with filtering.
+Query: `pageSize?`, `pageNumber?`, `sessionId?` (uuid), `filterBy?` (TaskStatus), `after?` (datetime), `before?` (datetime)
+Response: `{ items: TaskItemView[], totalItems, pageNumber, pageSize }`
+
+**POST /tasks** — Create and run a task. Auto-creates session or uses existing.
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| task | string | **yes** | Task prompt (1-50,000 chars) |
+| llm | SupportedLLMs | no | Model (default: browser-use-llm) |
+| startUrl | string | no | Initial URL (saves steps) |
+| maxSteps | integer | no | Max agent steps (default: 100) |
+| structuredOutput | string | no | JSON schema string |
+| sessionId | uuid | no | Run in existing session |
+| metadata | object | no | Key-value metadata (string values) |
+| secrets | object | no | Domain-scoped credentials (string values) |
+| allowedDomains | string[] | no | Restrict navigation |
+| opVaultId | string | no | 1Password vault ID |
+| highlightElements | boolean | no | Highlight interactive elements |
+| flashMode | boolean | no | Fast mode (skip evaluation/thinking) |
+| thinking | boolean | no | Extended reasoning |
+| vision | boolean\|"auto" | no | Screenshot mode |
+| systemPromptExtension | string | no | Append to system prompt |
+| judge | boolean | no | Enable quality judge |
+| skillIds | string[] | no | Skills to use during task |
+
+Response (202): `{ id: uuid, sessionId: uuid }`
+Errors: 400 (session busy/stopped), 404 (session not found), 422 (validation), 429 (rate limit)
+
+**GET /tasks/{task_id}** — Detailed task info with steps and output files.
+Response: TaskView
+
+**GET /tasks/{task_id}/status** — Poll task status (lighter than full GET).
+Response: `{ status: TaskStatus }`
+
+**PATCH /tasks/{task_id}** — Control task execution.
+Body: `{ action: TaskUpdateAction }` — `stop`, `pause`, `resume`, or `stop_task_and_session`
+Response: TaskView. Errors: 404, 422.
+
+**GET /tasks/{task_id}/logs** — Download URL for execution logs.
+Response: `{ downloadUrl: string }`. Errors: 404, 500.
+
+---
+
+## Sessions
+
+**GET /sessions** — Paginated list.
+Query: `pageSize?`, `pageNumber?`, `filterBy?` (SessionStatus)
+
+**POST /sessions** — Create a session.
+Body: `{ profileId?: uuid, proxyCountryCode?: string, startUrl?: string }`
+Response (201): SessionItemView. Errors: 404 (profile not found), 429 (too many concurrent).
+
+**GET /sessions/{id}** — Session details with tasks and share URL.
+Response: SessionView
+
+**PATCH /sessions/{id}** — Stop session and all running tasks.
+Body: `{ action: "stop" }`. Errors: 404, 422.
+
+**POST /sessions/{id}/purge** — Purge session data.
+Response: 200.
+
+**GET /sessions/{id}/public-share** — Get share info.
+Response: ShareView. Errors: 404.
+
+**POST /sessions/{id}/public-share** — Create or return existing share.
+Response (201): ShareView.
+
+**DELETE /sessions/{id}/public-share** — Remove share.
+Response: 204.
+
+---
+
+## Browsers (CDP)
+
+**POST /browsers** — Create a CDP browser session.
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| profileId | uuid | no | Browser profile |
+| proxyCountryCode | string | no | Residential proxy (195+ countries) |
+| timeout | integer | no | Session timeout in minutes (max 240) |
+| browserScreenWidth | integer | no | Browser width in pixels |
+| browserScreenHeight | integer | no | Browser height in pixels |
+| customProxy | object | no | `{ host, port, username?, password? }` (HTTP or SOCKS5) |
+
+**Pricing:** $0.05/hour. Billed upfront, proportional refund on stop. Ceil to nearest minute (min 1 min). Free: 15 min max. Paid: 4 hours max.
+
+Response (201): BrowserSessionItemView (includes `cdpUrl` and `liveUrl`).
+Errors: 403 (timeout exceeded for free), 404 (profile not found), 429 (too many concurrent).
+
+**GET /browsers/{id}** — Browser session details.
+
+**PATCH /browsers/{id}** — Stop browser (unused time refunded).
+Body: `{ action: "stop" }`
+
+---
+
+## Files
+
+**POST /files/sessions/{id}/presigned-url** — Get upload URL for session files.
+Body: `{ fileName: string, contentType: UploadContentType, sizeBytes: integer }`
+Response: `{ url: string, method: "POST", fields: {}, fileName: string, expiresIn: integer }`
+Errors: 400 (unsupported type), 404, 500.
+
+**POST /files/browsers/{id}/presigned-url** — Same for browser sessions.
+
+**GET /files/tasks/{task_id}/output-files/{file_id}** — Download URL for task output.
+Response: `{ id: uuid, fileName: string, downloadUrl: string }`
+Errors: 404, 500.
+
+**Upload flow:** Get presigned URL → POST multipart form with returned `fields` + file → URL expires in 120s → Max 10 MB.
+
+---
+
+## Profiles
+
+**GET /profiles** — Paginated list. Query: `pageSize?`, `pageNumber?`
+
+**POST /profiles** — Create profile (persistent cookies/localStorage between tasks).
+Body: `{ name?: string }`. Response (201): ProfileView. Error: 402 (subscription needed).
+
+**GET /profiles/{id}** — Profile details.
+
+**DELETE /profiles/{id}** — Permanently delete. Response: 204.
+
+**PATCH /profiles/{id}** — Update name. Body: `{ name?: string }`
+
+---
+
+## Skills
+
+**POST /skills** — Create a skill (turn a website into an API endpoint).
+Body: `{ goal: string, agent_prompt: string, ... }`
+Response: SkillView.
+
+**GET /skills** — List all skills.
+
+**GET /skills/{id}** — Get skill details.
+
+**POST /skills/{id}/execute** — Execute a skill.
+Body: `{ parameters: {} }`
+
+**POST /skills/{id}/refine** — Refine with feedback (free).
+Body: `{ feedback: string }`
+
+**POST /skills/{id}/cancel** — Cancel skill training.
+
+**POST /skills/{id}/rollback** — Rollback to previous version.
+
+**GET /skills/{id}/executions** — List skill executions.
+
+**GET /skills/{id}/executions/{eid}/output** — Get execution output.
+
+---
+
+## Marketplace
+
+**GET /marketplace/skills** — Browse community skills.
+
+**GET /marketplace/skills/{slug}** — Get marketplace skill details.
+
+**POST /marketplace/skills/{id}/clone** — Clone skill to your workspace.
+
+**POST /marketplace/skills/{id}/execute** — Execute a marketplace skill.
+Body: `{ parameters: {} }`
+
+---
+
+## Billing
+
+**GET /billing/account** — Account info and credits.
+Response: `{ name?, monthlyCreditsBalanceUsd, additionalCreditsBalanceUsd, totalCreditsBalanceUsd, rateLimit, planInfo: { planName, subscriptionStatus?, subscriptionId?, subscriptionCurrentPeriodEnd?, subscriptionCanceledAt? }, projectId }`
+
+---
+
+## Pagination
+
+All list endpoints use page-based pagination:
+
+| Param | Type | Description |
+|-------|------|-------------|
+| pageSize | integer | Items per page |
+| pageNumber | integer | Page number (1-based) |
+
+Response includes: `{ items: [...], totalItems, pageNumber, pageSize }`
+
+---
+
+## Enums
+
+| Enum | Values |
+|------|--------|
+| TaskStatus | `started`, `paused`, `finished`, `stopped` |
+| TaskUpdateAction | `stop`, `pause`, `resume`, `stop_task_and_session` |
+| SessionStatus | `active`, `stopped` |
+| BrowserSessionStatus | `active`, `stopped` |
+| ProxyCountryCode | `us`, `uk`, `fr`, `it`, `jp`, `au`, `de`, `fi`, `ca`, `in` (+185 more) |
+| SupportedLLMs | `browser-use-llm`, `gpt-4.1`, `gpt-4.1-mini`, `o4-mini`, `o3`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-flash-latest`, `gemini-flash-lite-latest`, `claude-sonnet-4-20250514`, `gpt-4o`, `gpt-4o-mini`, `llama-4-maverick-17b-128e-instruct`, `claude-3-7-sonnet-20250219` |
+| UploadContentType | `image/jpg`, `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/svg+xml`, `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `application/vnd.ms-excel`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `text/plain`, `text/csv`, `text/markdown` |
+
+## Response Schemas
+
+**TaskItemView:** id, sessionId, llm, task, status, startedAt, finishedAt?, metadata?, output?, browserUseVersion?, isSuccess?
+
+**TaskView:** extends TaskItemView + steps: TaskStepView[], outputFiles: FileView[]
+
+**TaskStepView:** number, memory, evaluationPreviousGoal, nextGoal, url, screenshotUrl?, actions: string[]
+
+**FileView:** id, fileName
+
+**SessionItemView:** id, status, liveUrl?, startedAt, finishedAt?
+
+**SessionView:** extends SessionItemView + tasks: TaskItemView[], publicShareUrl?
+
+**BrowserSessionItemView:** id, status, liveUrl?, cdpUrl?, timeoutAt, startedAt, finishedAt?
+
+**ProfileView:** id, name?, lastUsedAt?, createdAt, updatedAt, cookieDomains?: string[]
+
+**ShareView:** shareToken, shareUrl, viewCount, lastViewedAt?
+
+**AccountView:** name?, monthlyCreditsBalanceUsd, additionalCreditsBalanceUsd, totalCreditsBalanceUsd, rateLimit, planInfo, projectId
+
+---
+
+# BU Agent API (v3 — Experimental)
+
+Next-generation agent API. Session-based, token-based billing, workspaces, message history.
+
+## Table of Contents
+- [Authentication](#authentication)
+- [SDK Setup](#sdk-setup)
+- [run() — Execute a Task](#run--execute-a-task)
+- [REST Endpoints](#rest-endpoints)
+- [Sessions](#sessions)
+- [Messages](#messages)
+- [Files](#files)
+- [Workspaces](#workspaces)
+- [Polling & Terminal Statuses](#polling--terminal-statuses)
+- [Error Handling](#error-handling)
+- [Session Statuses & Enums](#session-statuses--enums)
+- [Response Schemas](#response-schemas)
+
+---
+
+## Authentication
+
+- **Header:** `X-Browser-Use-API-Key: <your-key>`
+- **Base URL:** `https://api.browser-use.com/api/v3`
+- **Get key:** https://cloud.browser-use.com/new-api-key
+
+Same package as v2, different import path:
+
+## SDK Setup
+
+```python
+# Python (async — recommended)
+from browser_use_sdk.v3 import AsyncBrowserUse
+client = AsyncBrowserUse()  # Uses BROWSER_USE_API_KEY env var
+
+# Python (sync)
+from browser_use_sdk.v3 import BrowserUse
+client = BrowserUse()
+```
+
+```typescript
+// TypeScript
+import { BrowserUse } from "browser-use-sdk/v3";
+const client = new BrowserUse();
+```
+
+Constructor: `api_key`, `base_url`, `timeout` (HTTP request timeout, not polling).
+
+## run() — Execute a Task
+
+```python
+result = await client.run("Find the top HN post")
+print(result.output)    # str
+print(result.id)        # session UUID
+print(result.status)    # e.g. "idle"
+print(result.total_cost_usd)  # cost breakdown
+```
+
+### Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| task | string | **Required.** What to do. |
+| model | string | `"bu-mini"` (default, faster/cheaper) or `"bu-max"` (more capable) |
+| output_schema | Pydantic/Zod | Structured output schema |
+| session_id | string | Reuse existing session |
+| keep_alive | boolean | Keep session idle after task (default: false) |
+| max_cost_usd | float | Cost cap in USD; agent stops if exceeded |
+| profile_id | string | Browser profile UUID |
+| proxy_country_code | string | Residential proxy country (195+ countries) |
+| workspace_id | string | Attach workspace for file I/O |
+
+### Structured Output
+
+```python
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: float
+
+result = await client.run("Get product info", output_schema=Product)
+print(result.output)  # Product instance
+```
+
+### SessionResult Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| output | str / BaseModel | Task result (typed if schema provided) |
+| id | uuid | Session ID |
+| status | string | Session status |
+| model | string | bu-mini or bu-max |
+| title | string? | Auto-generated title |
+| live_url | string | Real-time browser monitoring URL |
+| profile_id | string? | Echo of request |
+| proxy_country_code | string? | Echo of request |
+| max_cost_usd | float? | Echo of request |
+| total_input_tokens | int | Input tokens used |
+| total_output_tokens | int | Output tokens used |
+| llm_cost_usd | string | LLM cost |
+| proxy_cost_usd | string | Proxy cost |
+| proxy_used_mb | string | Proxy data used |
+| total_cost_usd | string | Total cost |
+| created_at | datetime | Session creation time |
+| updated_at | datetime | Last update time |
+
+---
+
+## REST Endpoints
+
+All 16 endpoints in the v3 API:
+
+### Sessions
+
+**POST /sessions** — Create session and/or dispatch task.
+Body: `{ task?, model?, session_id?, keep_alive?, max_cost_usd?, profile_id?, proxy_country_code?, output_schema? (JSON Schema dict) }`
+Response: SessionView
+
+**GET /sessions** — List sessions.
+Query: `page?` (int), `page_size?` (int)
+Response: `{ sessions: SessionView[], total, page, page_size }`
+
+**GET /sessions/{id}** — Get session details (includes cost breakdown).
+Response: SessionView
+
+**DELETE /sessions/{id}** — Delete session.
+Response: 204
+
+**POST /sessions/{id}/stop** — Stop session or task.
+Query: `strategy?` — `"session"` (default, destroy sandbox) or `"task"` (stop task only, keep session alive)
+Response: 200
+
+### Messages
+
+**GET /sessions/{id}/messages** — Cursor-paginated message history.
+
+| Param | Type | Description |
+|-------|------|-------------|
+| limit | int | Max messages per page (default 50, max 100) |
+| after | string | Cursor for forward pagination |
+| before | string | Cursor for backward pagination |
+
+Response: `{ messages: [{ id, role: "user"|"assistant", data: string, timestamp }], next_cursor?, has_more: boolean }`
+
+### Files
+
+**GET /sessions/{id}/files** — List files in session workspace.
+
+| Param | Type | Description |
+|-------|------|-------------|
+| include_urls | boolean | Include presigned download URLs (60s expiry) |
+| prefix | string | Filter by path prefix (e.g. `"outputs/"`) |
+| limit | int | Max per page (default 50, max 100) |
+| cursor | string | Pagination cursor |
+
+Response: `{ files: [{ path, size, last_modified, url? }], next_cursor?, has_more }`
+
+**POST /sessions/{id}/files/upload** — Get presigned upload URLs.
+Body: `{ files: [{ name: string, content_type: string }] }`
+Response: `{ files: [{ name, upload_url, path }] }`
+
+Upload via **PUT** to `upload_url` with matching `Content-Type` header. Max **10 files** per batch. Presigned URLs expire in **120 seconds**. Max file size: **10 MB**.
+
+### Workspaces
+
+**POST /workspaces** — Create persistent workspace.
+Body: `{ name?: string, metadata?: object }`
+Response: WorkspaceView
+
+**GET /workspaces** — List workspaces.
+Query: `page?`, `page_size?`
+Response: `{ items: WorkspaceView[], total, page, page_size }`
+
+**GET /workspaces/{id}** — Get workspace details.
+
+**PATCH /workspaces/{id}** — Update workspace.
+Body: `{ name?: string, metadata?: object }`
+
+**DELETE /workspaces/{id}** — Delete workspace and all files (irreversible).
+
+**GET /workspaces/{id}/files** — List workspace files.
+Query: `include_urls?`, `prefix?`, `limit?`, `cursor?`
+Response: same format as session files
+
+**GET /workspaces/{id}/size** — Storage usage.
+Response: `{ size_bytes: int, quota_bytes: int }`
+
+**POST /workspaces/{id}/files/upload** — Upload files to workspace.
+Same format as session file upload.
+
+---
+
+## Polling & Terminal Statuses
+
+`run()` polls automatically:
+- **Interval:** 2 seconds
+- **Timeout:** 300 seconds (5 minutes) — raises `TimeoutError` if exceeded
+- **Terminal statuses:** `idle`, `stopped`, `timed_out`, `error`
+
+### Stop Strategies
+
+| Strategy | Behavior |
+|----------|----------|
+| `"session"` (default) | Destroy sandbox completely |
+| `"task"` | Stop current task, keep session alive for follow-ups |
+
+```python
+await client.sessions.stop(session_id, strategy="task")   # keep session
+await client.sessions.stop(session_id, strategy="session") # destroy
+```
+
+---
+
+## Error Handling
+
+```python
+from browser_use_sdk.v3 import AsyncBrowserUse, BrowserUseError
+
+try:
+    result = await client.run("Do something")
+except TimeoutError:
+    print("Polling timed out (5 min default)")
+except BrowserUseError as e:
+    print(f"API error: {e}")
+```
+
+---
+
+## Session Statuses & Enums
+
+| Status | Description |
+|--------|-------------|
+| `created` | Session created, not yet running |
+| `idle` | Task completed, session still alive (keep_alive=True) |
+| `running` | Task in progress |
+| `stopped` | Manually stopped |
+| `timed_out` | Session timed out |
+| `error` | Session errored |
+
+**Models:** `bu-mini` (default, faster/cheaper), `bu-max` (more capable)
+
+## Response Schemas
+
+**SessionView (v3):** id, status, model, title?, live_url, output?, profile_id?, proxy_country_code?, max_cost_usd?, total_input_tokens, total_output_tokens, llm_cost_usd, proxy_cost_usd, proxy_used_mb, total_cost_usd, created_at, updated_at
+
+**MessageView:** id, role ("user"|"assistant"), data (string), timestamp
+
+**FileInfo:** path, size, last_modified, url?
+
+**WorkspaceView:** id, name?, metadata?, created_at, updated_at, size_bytes?
+
+**Key concepts:**
+- **Autonomous execution** — agent decides how many steps (no max_steps param)
+- **Cost control** — `max_cost_usd` caps spending; check `total_cost_usd` on result
+- **Integrations** — agent auto-discovers third-party services (email, Slack, calendars)
+- **File I/O** — upload before task, download from workspace after. Max 10 files per batch, download URLs expire in 60s
+
+---
+
+# Sessions, Profiles & Authentication
+
+## Table of Contents
+- [Sessions](#sessions)
+- [Profiles](#profiles)
+- [Profile Sync](#profile-sync)
+- [Authentication Strategies](#authentication-strategies)
+- [1Password Integration](#1password-integration)
+- [Social Media Automation](#social-media-automation)
+
+---
+
+## Sessions
+
+Sessions are stateful browser environments. Each has one browser, runs agents sequentially.
+
+### Auto-Created Sessions
+
+Most tasks auto-create a session:
+```python
+result = await client.run("Find top HN post")  # Session auto-created
+```
+
+### Manual Sessions
+
+For multi-step workflows or custom config:
+
+```python
+session = await client.sessions.create(
+    profile_id="uuid",           # Persistent profile
+    proxy_country_code="us",     # Residential proxy
+    start_url="https://example.com",
+)
+
+# Run multiple tasks in same session
+await client.run("First task", session_id=session.id)
+await client.run("Follow-up task", session_id=session.id)
+
+# Get live URL for monitoring
+session_info = await client.sessions.get(session.id)
+print(session_info.live_url)  # Watch agent in real-time
+
+await client.sessions.stop(session.id)
+```
+
+### Live View & Sharing
+
+Every session has a `liveUrl` for real-time monitoring. Create public share links:
+
+```python
+share = await client.sessions.create_share(session.id)
+print(share.share_url)  # Anyone with link can view
+```
+
+## Profiles
+
+Profiles persist browser state (cookies, localStorage, passwords) across sessions.
+
+### CRUD
+
+```python
+# Create
+profile = await client.profiles.create(name="my-profile")
+
+# List
+profiles = await client.profiles.list()
+
+# Update
+await client.profiles.update(profile.id, name="new-name")
+
+# Delete
+await client.profiles.delete(profile.id)
+```
+
+### Usage Patterns
+
+- **Per-user**: One profile per end-user for personalized sessions
+- **Per-site**: One profile per website (e.g., "github-profile", "gmail-profile")
+- **Warm-up**: Login once, reuse across all future tasks
+
+**Important:**
+- Profile state saved when session ends — always call `sessions.stop()`
+- Concurrent sessions read from snapshot at start — won't see each other's changes
+- Refresh profiles older than 7 days
+
+## Profile Sync
+
+Upload local browser cookies to cloud profiles:
+
+```bash
+export BROWSER_USE_API_KEY=your_key
+curl -fsSL https://browser-use.com/profile.sh | sh
+```
+
+Opens a browser where you log into sites. Returns a `profile_id` to use in tasks.
+
+## Authentication Strategies
+
+### 1. Profile Sync (Easiest)
+
+Log in locally, sync cookies to cloud:
+```bash
+curl -fsSL https://browser-use.com/profile.sh | sh
+```
+
+### 2. Secrets (Domain-Scoped)
+
+Pass credentials as key-value pairs, scoped to domains:
+
+```python
+result = await client.run(
+    task="Login and check dashboard",
+    secrets={
+        "username": "my-user",
+        "password": "my-pass",
+    },
+    allowed_domains=["*.example.com"],
+)
+```
+
+Supports wildcards and multiple domains for OAuth/SSO flows.
+
+### 3. Profiles + Secrets (Combined)
+
+Use profile for cookies (skip login flow) with secrets as fallback:
+
+```python
+session = await client.sessions.create(profile_id="uuid")
+await client.run(
+    task="Check dashboard",
+    session_id=session.id,
+    secrets={"password": "backup-pass"},
+)
+await client.sessions.stop(session.id)  # Save profile state
+```
+
+## 1Password Integration
+
+Auto-fill passwords and TOTP/2FA codes from 1Password vault:
+
+### Setup
+1. Create a dedicated vault in 1Password
+2. Create a service account with vault access
+3. Connect to Browser Use Cloud (settings page)
+4. Use `op_vault_id` param in tasks
+
+```python
+result = await client.run(
+    task="Login to GitHub",
+    op_vault_id="vault-uuid",
+    allowed_domains=["*.github.com"],
+)
+```
+
+Credentials never appear in logs — filled programmatically by 1Password.
+
+## Social Media Automation
+
+Anti-bot detection requires consistent fingerprint + IP + cookies:
+
+### Setup
+1. Create blank profile
+2. Open session with profile + proxy → manually log in via `liveUrl`
+3. Stop session (saves profile state)
+
+### Ongoing
+- Always use same profile + same proxy country
+- Refresh profiles older than 7 days
+
+```python
+session = await client.sessions.create(
+    profile_id="social-profile-uuid",
+    proxy_country_code="us",  # Always same country
+)
+await client.run("Post update to Twitter", session_id=session.id)
+await client.sessions.stop(session.id)
+```
+
+---
+
+# Browser API (Direct CDP Access)
+
+Connect directly to Browser Use stealth browsers via Chrome DevTools Protocol.
+
+## Table of Contents
+- [WebSocket Connection](#websocket-connection)
+- [SDK Approach](#sdk-approach)
+- [Playwright Integration](#playwright-integration)
+- [Puppeteer Integration](#puppeteer-integration)
+- [Selenium Integration](#selenium-integration)
+
+---
+
+## WebSocket Connection
+
+Single URL with all config as query params. Browser **auto-starts on connect** and **auto-stops on disconnect** — no REST calls needed to start or stop.
+
+```
+wss://connect.browser-use.com?apiKey=YOUR_KEY&proxyCountryCode=us&timeout=30
+```
+
+CDP discovery is also available over HTTPS (for tools that use HTTP auto-discovery):
+```
+https://connect.browser-use.com/json/version?apiKey=YOUR_API_KEY
+```
+
+### Query Parameters
+
+| Param | Required | Description |
+|-------|----------|-------------|
+| `apiKey` | **yes** | API key |
+| `proxyCountryCode` | no | Residential proxy country (195+ countries) |
+| `profileId` | no | Browser profile UUID |
+| `timeout` | no | Session timeout in minutes (max 240) |
+| `browserScreenWidth` | no | Browser width in pixels |
+| `browserScreenHeight` | no | Browser height in pixels |
+| `customProxy.host` | no | Custom proxy host |
+| `customProxy.port` | no | Custom proxy port |
+| `customProxy.username` | no | Custom proxy username |
+| `customProxy.password` | no | Custom proxy password |
+
+## SDK Approach
+
+```python
+# Create browser
+browser = await client.browsers.create(
+    profile_id="uuid",
+    proxy_country_code="us",
+    timeout=60,
+)
+
+print(browser.cdp_url)   # wss://... for CDP connection
+print(browser.live_url)  # View in browser
+
+# Stop (unused time refunded)
+await client.browsers.stop(browser.id)
+```
+
+## Playwright Integration
+
+```python
+from playwright.async_api import async_playwright
+
+# Create cloud browser
+browser_session = await client.browsers.create(proxy_country_code="us")
+
+# Connect Playwright
+pw = await async_playwright().start()
+browser = await pw.chromium.connect_over_cdp(browser_session.cdp_url)
+page = browser.contexts[0].pages[0]
+
+# Normal Playwright code
+await page.goto("https://example.com")
+await page.fill("#email", "user@example.com")
+await page.click("button[type=submit]")
+content = await page.content()
+
+# Cleanup
+await pw.stop()
+await client.browsers.stop(browser_session.id)
+```
+
+## Puppeteer Integration
+
+```javascript
+const puppeteer = require('puppeteer-core');
+
+const browser = await client.browsers.create({ proxyCountryCode: 'us' });
+const puppeteerBrowser = await puppeteer.connect({ browserWSEndpoint: browser.cdpUrl });
+const page = (await puppeteerBrowser.pages())[0];
+
+await page.goto('https://example.com');
+// ... normal Puppeteer code
+
+await puppeteerBrowser.close();
+await client.browsers.stop(browser.id);
+```
+
+## Selenium Integration
+
+```python
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+browser_session = await client.browsers.create(proxy_country_code="us")
+
+options = Options()
+options.debugger_address = browser_session.cdp_url.replace("wss://", "").replace("ws://", "").replace("/devtools/browser/", "")
+driver = webdriver.Chrome(options=options)
+
+driver.get("https://example.com")
+# ... normal Selenium code
+
+driver.quit()
+await client.browsers.stop(browser_session.id)
+```
+
+### Session Limits
+
+- Free: 15 minutes max
+- Paid: 4 hours max
+- Pricing: $0.05/hour, billed upfront, proportional refund on early stop, min 1 minute
+
+---
+
+# Cloud Features
+
+## Table of Contents
+- [Proxies & Stealth](#proxies--stealth)
+- [Webhooks](#webhooks)
+- [Workspaces](#workspaces)
+- [Skills](#skills)
+- [MCP Server](#mcp-server)
+- [Live View](#live-view)
+
+---
+
+## Proxies & Stealth
+
+Stealth is on by default — anti-fingerprinting, CAPTCHA solving, ad/cookie blocking, Cloudflare bypass.
+
+### Residential Proxies (195+ Countries)
+
+Default: US residential proxy always active.
+
+```python
+# Common countries
+session = await client.sessions.create(proxy_country_code="us")  # or gb, de, fr, jp, au, br, in, kr, ca, es, it, nl, se, sg...
+```
+
+### Custom Proxy (HTTP or SOCKS5)
+
+```python
+from browser_use_sdk import CustomProxy
+
+session = await client.sessions.create(
+    custom_proxy=CustomProxy(
+        url="http://proxy-host:8080",
+        username="user",
+        password="pass",
+    )
+)
+```
+
+### Disable Proxy (Not Recommended)
+
+```python
+session = await client.sessions.create(proxy_country_code=None)
+```
+
+---
+
+## Webhooks
+
+Real-time notifications when tasks complete.
+
+### Events
+
+| Event | Description |
+|-------|-------------|
+| `agent.task.status_update` | Task status changed (started/finished/stopped) |
+| `test` | Test webhook delivery |
+
+### Payload
+
+```json
+{
+  "type": "agent.task.status_update",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "payload": {
+    "task_id": "task_abc123",
+    "session_id": "session_xyz",
+    "status": "finished",
+    "metadata": {}
+  }
+}
+```
+
+### Signature Verification (HMAC-SHA256)
+
+Headers: `X-Browser-Use-Signature`, `X-Browser-Use-Timestamp`
+
+The signature is computed over `{timestamp}.{body}` where body is JSON with sorted keys and no extra whitespace. Reject requests older than 5 minutes to prevent replay attacks.
+
+```python
+import hmac, hashlib, json, time
+
+def verify_webhook(body: bytes, signature: str, timestamp: str, secret: str) -> bool:
+    # Reject requests older than 5 minutes
+    try:
+        ts = int(timestamp)
+    except (ValueError, TypeError):
+        return False
+    if abs(time.time() - ts) > 300:
+        return False
+    try:
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError):
+        return False
+    message = f"{timestamp}.{json.dumps(payload, separators=(',', ':'), sort_keys=True)}"
+    expected = hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)
+```
+
+---
+
+## Workspaces
+
+Persistent file storage across sessions (v3 API). Max 10 files per upload.
+
+```python
+from browser_use_sdk.v3 import AsyncBrowserUse
+client = AsyncBrowserUse()
+
+# Create workspace
+workspace = await client.workspaces.create(name="my-data")
+
+# Create a session
+session = await client.sessions.create()
+
+# Upload files before task
+await client.sessions.upload_files(
+    session.id,
+    workspace_id=workspace.id,
+    files=[open("input.pdf", "rb")]
+)
+
+# Download files after task
+files = await client.sessions.files(session.id)
+for f in files:
+    url = f.download_url  # Presigned URL (60s expiry)
+
+# Manage workspaces
+workspaces = await client.workspaces.list()
+await client.workspaces.delete(workspace.id)
+```
+
+---
+
+## Skills
+
+Turn website interactions into reusable, deterministic API endpoints.
+
+### Anatomy
+
+- **Goal**: Full spec with parameters and return data
+- **Demonstration**: agent_prompt showing how to perform the task once
+
+### Create & Execute
+
+```python
+# Create (~30s, $2 PAYG)
+skill = await client.skills.create(
+    goal="Extract product price from Amazon",
+    demonstration="Navigate to product page, find price element..."
+)
+
+# Execute ($0.02 PAYG)
+result = await client.skills.execute(skill.id, params={"url": "https://amazon.com/dp/..."})
+
+# Refine (free)
+await client.skills.refine(skill.id, feedback="Also extract the rating")
+```
+
+### Marketplace
+
+```python
+skills = await client.marketplace.list()
+cloned = await client.marketplace.clone(skill_id)
+result = await client.marketplace.execute(skill_id, params={})
+```
+
+Browse at [cloud.browser-use.com/skills](https://cloud.browser-use.com/skills).
+
+### Load Skills in Local Agent
+
+```python
+agent = Agent(
+    task="...",
+    skills=['skill-uuid-1', 'skill-uuid-2'],  # or ['*'] for all
+    llm=ChatBrowserUse()
+)
+```
+
+---
+
+## MCP Server
+
+HTTP-based MCP at `https://api.browser-use.com/mcp`
+
+| Tool | Cost | Description |
+|------|------|-------------|
+| `browser_task` | $0.01 + per-step | Run automation task |
+| `execute_skill` | $0.02 | Execute skill |
+| `list_skills` | Free | List skills |
+| `get_cookies` | Free | Get cookies |
+| `list_browser_profiles` | Free | List profiles |
+| `monitor_task` | Free | Check task progress |
+
+Setup: See `references/open-source/integrations.md` for Claude/Cursor/Windsurf config.
+
+---
+
+## Live View
+
+### Human Takeover
+
+Pause agent, let human take over via `liveUrl`:
+
+```python
+session = await client.sessions.create(keep_alive=True)  # v3
+await client.run("Navigate to checkout", session_id=session.id)
+# Agent pauses at checkout
+
+print(session.live_url)  # Human opens this, enters payment details
+
+await client.run("Confirm the order", session_id=session.id)
+await client.sessions.stop(session.id)
+```
+
+`liveUrl` gives full mouse/keyboard control.
+
+### Iframe Embed
+
+Embed live view in your app — no X-Frame-Options or CSP restrictions:
+
+```html
+<iframe
+  src="{session.live_url}"
+  width="1280"
+  height="720"
+  style="border: none;"
+></iframe>
+```
+
+No polling needed — updates in real-time.
+
+---
+
+# Cloud Patterns & Tutorials
+
+## Table of Contents
+- [Parallel Execution](#parallel-execution)
+- [Streaming Steps](#streaming-steps)
+- [Geo-Scraping](#geo-scraping)
+- [File Downloads](#file-downloads)
+- [Structured Output](#structured-output)
+- [Tutorials](#tutorials)
+
+---
+
+## Parallel Execution
+
+### Concurrent Extraction
+
+Each `run()` auto-creates its own session — no manual management:
+
+```python
+import asyncio
+
+async def extract(query: str):
+    return await client.run(f"Search for '{query}' and extract top 3 results")
+
+results = await asyncio.gather(
+    extract("AI startups"),
+    extract("climate tech"),
+    extract("quantum computing"),
+)
+```
+
+### Shared Config (Same Profile + Proxy)
+
+For authenticated concurrent tasks:
+
+```python
+sessions = [
+    await client.sessions.create(profile_id="uuid", proxy_country_code="us")
+    for _ in range(3)
+]
+
+tasks = [
+    client.run(f"Task {i}", session_id=s.id)
+    for i, s in enumerate(sessions)
+]
+results = await asyncio.gather(*tasks)
+
+for s in sessions:
+    await client.sessions.stop(s.id)
+```
+
+**Warning:** Concurrent sessions read profile state from snapshot at start — they won't see each other's changes. Works for read-heavy tasks, not state-modifying.
+
+---
+
+## Streaming Steps
+
+Stream agent progress in real-time:
+
+```python
+async for step in client.run("Find top HN post", stream=True):
+    print(f"Step {step.number}: {step.next_goal} (URL: {step.url})")
+```
+
+Returns step number, next goal, and current URL per step.
+
+---
+
+## Geo-Scraping
+
+Location-dependent content via residential proxies:
+
+```python
+from pydantic import BaseModel
+
+class Pricing(BaseModel):
+    product: str
+    price: str
+    currency: str
+
+# Japan pricing
+result = await client.run(
+    "Get iPhone 16 Pro price from Apple Japan",
+    output_schema=Pricing,
+    session_settings={"proxy_country_code": "jp"},
+)
+print(result.output)  # Pricing(product="iPhone 16 Pro", price="159,800", currency="JPY")
+```
+
+195+ countries available. Combine with structured output for typed comparison.
+
+---
+
+## File Downloads
+
+Retrieve files downloaded during tasks:
+
+```python
+# Run task that downloads files
+result = await client.run("Download the Q4 report PDF from example.com")
+
+# Get task details with output files
+task = await client.tasks.get(result.id)
+
+for file in task.output_files:
+    output = await client.files.task_output(task.id, file.id)
+    # output.download_url — presigned URL, download promptly (expires quickly)
+```
+
+For uploads: use presigned URLs (10 MB max, 120s expiry):
+
+```python
+url_info = await client.files.session_url(
+    session_id,
+    file_name="input.pdf",
+    content_type="application/pdf",
+    size_bytes=1024,
+)
+# Upload to url_info.url with url_info.fields
+```
+
+---
+
+## Structured Output
+
+Extract typed data with Pydantic (Python) or Zod (TypeScript):
+
+```python
+from pydantic import BaseModel
+
+class Company(BaseModel):
+    name: str
+    founded: int
+    ceo: str
+    revenue: str
+
+result = await client.run(
+    "Find information about OpenAI",
+    output_schema=Company,
+)
+print(result.output)  # Company instance
+```
+
+**Tips:**
+- Keep schemas flat — nesting adds complexity
+- Typical task: 8-12 steps with Browser Use 2.0
+
+---
+
+## Tutorials
+
+### Chat UI (Next.js)
+
+Full-stack chat interface with real-time session monitoring. Uses v3 + v2 SDKs.
+- Source: [github.com/browser-use/chat-ui-example](https://github.com/browser-use/chat-ui-example)
+- Pattern: Create idle session → navigate → fire-and-forget task → poll messages → embed liveUrl
+
+### n8n Integration
+
+HTTP Request nodes (no custom nodes needed):
+1. POST `/api/v2/tasks` to create task
+2. Poll GET `/api/v2/tasks/{id}` until done
+3. Or use webhooks for event-driven workflows
+
+Works with Make, Zapier, Pipedream, and custom orchestrators.
+
+### OpenClaw (WhatsApp/Telegram/Discord)
+
+Self-hosted AI gateway. Two options:
+1. **Cloud browser via CDP**: Configure `cdpUrl` with query params in openclaw.json
+2. **CLI as skill**: `npx skills add` — agents learn CLI commands
+
+### Playwright Integration
+
+Connect Playwright to cloud stealth browser:
+```python
+browser = await client.browsers.create(proxy_country_code="us")
+pw_browser = await playwright.chromium.connect_over_cdp(browser.cdp_url)
+# Normal Playwright code on stealth infrastructure
+```
+
+See `references/cloud/browser-api.md` for full examples.
+
+---
+
+# Guide: Building a Chat Interface
+
+Build a conversational UI where users chat with a Browser Use agent and watch it work in real-time.
+
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Architecture](#architecture)
+- [SDK Setup](#sdk-setup)
+- [Creating a Session](#creating-a-session)
+- [Polling Messages](#polling-messages)
+- [Sending Follow-ups](#sending-follow-ups)
+- [Stopping Tasks](#stopping-tasks)
+- [Live Browser View](#live-browser-view)
+- [Python Equivalent](#python-equivalent)
+- [SDK Methods Summary](#sdk-methods-summary)
+
+---
+
+## Prerequisites
+
+- You have a web app (or are building one) — Next.js/React shown, but the SDK calls work from any backend
+- You're using the **Cloud API** because you need `liveUrl` for real-time browser streaming
+- `BROWSER_USE_API_KEY` from https://cloud.browser-use.com/new-api-key
+
+## Architecture
+
+Two pages:
+1. **Home** — user types a task → app creates an idle session → navigates to session page → fires task
+2. **Session** — polls for messages, shows live browser in iframe, lets user send follow-ups
+
+All SDK calls live in a single API file. The key pattern: create session first (instant), dispatch task second (fire-and-forget), navigate immediately so the user sees the browser while the task starts.
+
+## SDK Setup
+
+Uses both SDK versions — v3 for sessions/messages, v2 for profiles (not on v3 yet).
+
+```typescript
+// api.ts
+import { BrowserUse as BrowserUseV3 } from "browser-use-sdk/v3";
+import { BrowserUse as BrowserUseV2 } from "browser-use-sdk";
+
+const apiKey = process.env.NEXT_PUBLIC_BROWSER_USE_API_KEY ?? "";
+const v3 = new BrowserUseV3({ apiKey });
+const v2 = new BrowserUseV2({ apiKey });
+```
+
+> **Warning:** `NEXT_PUBLIC_` exposes the key to the browser. In production, move SDK calls to server actions or API routes.
+
+## Creating a Session
+
+Two functions: one creates an idle session, another dispatches a task into it.
+
+```typescript
+// api.ts
+export async function createSession(opts: {
+  model: string;
+  profileId?: string;
+  proxyCountryCode?: string;
+}) {
+  return v3.sessions.create({
+    model: opts.model as "bu-mini" | "bu-max",
+    keepAlive: true,  // Keep session open for follow-ups
+    ...(opts.profileId && { profileId: opts.profileId }),
+    ...(opts.proxyCountryCode && { proxyCountryCode: opts.proxyCountryCode }),
+  });
+}
+
+export async function sendTask(sessionId: string, task: string) {
+  return v3.sessions.create({ sessionId, task, keepAlive: true });
+}
+```
+
+### Page flow — fire-and-forget for instant navigation
+
+```typescript
+// page.tsx
+async function handleSend(message: string) {
+  // 1. Create idle session
+  const session = await createSession({ model });
+
+  // 2. Navigate immediately (user sees browser while task dispatches)
+  router.push(`/session/${session.id}`);
+
+  // 3. Fire-and-forget the task
+  sendTask(session.id, message).catch(console.error);
+}
+```
+
+### Populate dropdowns
+
+```typescript
+export async function listProfiles() {
+  return v2.profiles.list({ pageSize: 100 });
+}
+
+export async function listWorkspaces() {
+  return v3.workspaces.list({ pageSize: 100 });
+}
+```
+
+## Polling Messages
+
+Poll session status and messages at 1s intervals. Stop when terminal.
+
+```typescript
+// api.ts
+export async function getSession(id: string) {
+  return v3.sessions.get(id);
+}
+
+export async function getMessages(id: string, limit = 100) {
+  return v3.sessions.messages(id, { limit });
+}
+```
+
+### React Query polling
+
+```typescript
+// session-context.tsx
+const TERMINAL = new Set(["stopped", "error", "timed_out"]);
+
+// Poll session status every 1s
+const { data: session } = useQuery({
+  queryKey: ["session", sessionId],
+  queryFn: () => api.getSession(sessionId),
+  refetchInterval: (query) => {
+    const s = query.state.data?.status;
+    return s && TERMINAL.has(s) ? false : 1000;
+  },
+});
+
+const isTerminal = !!session && TERMINAL.has(session.status);
+const isActive = !!session && !isTerminal;
+
+// Poll messages every 1s while active
+const { data: rawResponse } = useQuery({
+  queryKey: ["messages", sessionId],
+  queryFn: () => api.getMessages(sessionId),
+  refetchInterval: isActive ? 1000 : false,
+});
+```
+
+## Sending Follow-ups
+
+Reuse `sendTask` with optimistic updates so messages appear instantly:
+
+```typescript
+const sendMessage = useCallback(async (task: string) => {
+  const tempMsg = {
+    id: `opt-${Date.now()}`,
+    role: "user",
+    content: task,
+    createdAt: new Date().toISOString(),
+  };
+  setOptimistic((prev) => [...prev, tempMsg]);
+
+  try {
+    await api.sendTask(sessionId, task);
+  } catch (err) {
+    setOptimistic((prev) => prev.filter((m) => m.id !== tempMsg.id));
+  }
+}, [sessionId]);
+```
+
+## Stopping Tasks
+
+Stop the current task but keep the session alive for follow-ups:
+
+```typescript
+export async function stopTask(id: string) {
+  await v3.sessions.stop(id, { strategy: "task" });
+}
+```
+
+`strategy: "task"` stops only the running task. `strategy: "session"` would destroy the sandbox entirely.
+
+## Live Browser View
+
+Every session has a `liveUrl`. Embed it in an iframe — no X-Frame-Options or CSP restrictions:
+
+```tsx
+<iframe
+  src={session?.liveUrl}
+  width="100%"
+  height="720"
+  style={{ border: "none" }}
+/>
+```
+
+Updates in real-time, no polling needed. The user can also interact with the browser directly via the iframe.
+
+## Python Equivalent
+
+Same pattern with asyncio polling:
+
+```python
+import asyncio
+from browser_use_sdk.v3 import AsyncBrowserUse
+
+async def main():
+    client = AsyncBrowserUse()
+
+    # Create session and dispatch task
+    session = await client.sessions.create(task="Find the top HN post", keep_alive=True)
+    print(f"Live: {session.live_url}")
+
+    # Poll messages
+    seen = set()
+    while True:
+        s = await client.sessions.get(str(session.id))
+        msgs = await client.sessions.messages(str(session.id), limit=100)
+
+        for m in msgs.messages:
+            if str(m.id) not in seen:
+                seen.add(str(m.id))
+                print(f"[{m.role}] {m.data[:200]}")
+
+        if s.status.value in ("idle", "stopped", "error", "timed_out"):
+            print(f"\nDone — {s.output}")
+            break
+        await asyncio.sleep(2)
+
+asyncio.run(main())
+```
+
+## SDK Methods Summary
+
+| Method | Purpose |
+|--------|---------|
+| `v3.sessions.create()` | Create session, dispatch tasks |
+| `v3.sessions.get()` | Poll session status |
+| `v3.sessions.messages()` | Get conversation history |
+| `v3.sessions.stop()` | Stop current task |
+| `v3.workspaces.list()` | Populate workspace dropdown |
+| `v2.profiles.list()` | Populate profile dropdown |
+
+Full source: [github.com/browser-use/chat-ui-example](https://github.com/browser-use/chat-ui-example)
+
+---
+
+# Guide: Browser-Use as a Subagent
+
+Delegate entire web tasks to browser-use from your orchestrator. Task in, result out — browser-use handles all browsing autonomously.
+
+## Table of Contents
+- [When to Use This Pattern](#when-to-use-this-pattern)
+- [Pick Your Integration](#pick-your-integration)
+- [Shell Command Agents (CLI)](#shell-command-agents-cli)
+- [Python Agents (Cloud SDK)](#python-agents-cloud-sdk)
+- [TypeScript/JS Agents](#typescriptjs-agents)
+- [MCP-Native Agents](#mcp-native-agents)
+- [HTTP / Workflow Engines](#http--workflow-engines)
+- [Cross-Cutting Concerns](#cross-cutting-concerns)
+
+---
+
+## When to Use This Pattern
+
+Your system has an orchestrator — some agent, pipeline, or workflow engine that coordinates multiple capabilities. At some point it decides "I need data from the web" or "I need to interact with a website." It delegates to browser-use, which autonomously navigates, clicks, extracts, and returns a result. The orchestrator never touches the browser.
+
+**Use subagent when:**
+- You want a black box: task in → result out
+- The web task is self-contained (search, extract, fill a form)
+- You don't need action-by-action control
+
+**Use [tools integration](tools-integration.md) instead when:**
+- Your agent needs to make individual browser decisions (click this, then check that)
+- You want your agent's reasoning loop to drive the browser
+
+## Pick Your Integration
+
+| Your agent type | Best approach |
+|----------------|---------------|
+| CLI coding agent in sandbox (Claude Code, Codex, OpenCode, Cline, Windsurf, Cursor bg, Hermes, OpenClaw) | [CLI cloud passthrough](#shell-command-agents-cli) |
+| Python framework (LangChain, CrewAI, AutoGen, PydanticAI, custom) | [Python Agent wrapper](#python-framework-agents) |
+| TypeScript/JS (Vercel AI SDK, LangChain.js, custom) | [Cloud SDK](#typescriptjs-agents) |
+| MCP client (Claude Desktop, Cursor with MCP) | [MCP browser_task tool](#mcp-native-agents) |
+| Workflow engine (n8n, Make, Zapier, Temporal) or any HTTP client | [Cloud REST API](#http--workflow-engines) |
+
+---
+
+## Shell Command Agents (CLI)
+
+**For:** Agents running in sandboxes/VMs with terminal access.
+
+The agent delegates a complete task to the cloud via CLI commands. No Python imports needed.
+
+```bash
+# 1. Set API key (once)
+browser-use cloud login $BROWSER_USE_API_KEY
+
+# 2. Fire off a task
+browser-use cloud v2 POST /tasks '{"task": "Find the top HN post and return title and URL"}'
+# Returns: {"id": "<task-id>", "sessionId": "<session-id>"}
+
+# 3. Poll until done (blocks)
+browser-use cloud v2 poll <task-id>
+
+# 4. Get the result
+browser-use cloud v2 GET /tasks/<task-id>
+# Returns full TaskView with output, steps, outputFiles
+```
+
+For structured output, pass a JSON schema:
+```bash
+browser-use cloud v2 POST /tasks '{
+  "task": "Find the CEO of OpenAI",
+  "structuredOutput": "{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"},\"company\":{\"type\":\"string\"}},\"required\":[\"name\",\"company\"]}"
+}'
+```
+
+---
+
+## Python Agents (Cloud SDK)
+
+**For:** LangChain, CrewAI, AutoGen, PydanticAI, Semantic Kernel, or custom Python agents. Uses the Cloud SDK — no local browser needed.
+
+```python
+from browser_use_sdk import AsyncBrowserUse
+from pydantic import BaseModel
+
+client = AsyncBrowserUse()
+
+# Simple
+async def browse(task: str) -> str:
+    result = await client.run(task)
+    return result.output
+
+# Structured output
+class SearchResult(BaseModel):
+    title: str
+    url: str
+
+async def browse_structured(task: str) -> SearchResult:
+    result = await client.run(task, output_schema=SearchResult)
+    return result.output  # SearchResult instance
+```
+
+Multi-step with `keep_alive`:
+```python
+session = await client.sessions.create(proxy_country_code="us")
+await client.run("Log into site", session_id=str(session.id), keep_alive=True)
+result = await client.run("Extract data", session_id=str(session.id))
+await client.sessions.stop(str(session.id))
+```
+
+---
+
+## TypeScript/JS Agents
+
+**For:** Vercel AI SDK, LangChain.js, or custom TypeScript agents.
+
+```typescript
+import { BrowserUse } from "browser-use-sdk";
+import { z } from "zod";
+
+const client = new BrowserUse();
+
+// Simple
+async function browse(task: string): Promise<string> {
+  const result = await client.run(task);
+  return result.output;
+}
+
+// Structured
+const SearchResult = z.object({
+  title: z.string(),
+  url: z.string(),
+});
+
+async function browseStructured(task: string) {
+  const result = await client.run(task, { schema: SearchResult });
+  return result.output; // { title: string, url: string }
+}
+```
+
+Multi-step with `keepAlive`:
+```typescript
+const session = await client.sessions.create({ proxyCountryCode: "us" });
+await client.run("Log into site", { sessionId: session.id, keepAlive: true });
+const result = await client.run("Extract data", { sessionId: session.id });
+await client.sessions.stop(session.id);
+```
+
+---
+
+## MCP-Native Agents
+
+**For:** Claude Desktop, Cursor with MCP enabled, any MCP client.
+
+### Cloud MCP (entire task delegation)
+
+Add to MCP config:
+```json
+{
+  "mcpServers": {
+    "browser-use": {
+      "url": "https://api.browser-use.com/mcp",
+      "headers": { "X-Browser-Use-API-Key": "YOUR_KEY" }
+    }
+  }
+}
+```
+
+The agent gets a `browser_task` tool. It calls it with a task description, gets back the result.
+
+### Local MCP (free, open-source)
+
+The `retry_with_browser_use_agent` tool delegates an entire task to the local Agent:
+
+```bash
+uvx --from 'browser-use[cli]' browser-use --mcp
+```
+
+---
+
+## HTTP / Workflow Engines
+
+**For:** n8n, Make, Zapier, Temporal, serverless functions, any HTTP client.
+
+### Create task → Poll → Get result
+
+```bash
+# 1. Create task
+curl -X POST https://api.browser-use.com/api/v2/tasks \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"task": "Find the top HN post and return title+URL"}'
+# → {"id": "task-uuid", "sessionId": "session-uuid"}
+
+# 2. Poll status
+curl https://api.browser-use.com/api/v2/tasks/<task-id>/status \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY"
+# → {"status": "finished"}
+
+# 3. Get result
+curl https://api.browser-use.com/api/v2/tasks/<task-id> \
+  -H "X-Browser-Use-API-Key: $BROWSER_USE_API_KEY"
+# → Full TaskView with output, steps, outputFiles
+```
+
+Or use webhooks for event-driven workflows (see `../features.md`).
+
+---
+
+## Cross-Cutting Concerns
+
+### Structured output
+
+- **Cloud SDK Python:** `output_schema=MyPydanticModel` → `result.output` (typed)
+- **Cloud SDK TypeScript:** `{ schema: ZodSchema }` → `result.output` (typed)
+- **Cloud REST:** `"structuredOutput": "<json-schema-string>"` → `output` in response
+
+### Error handling
+
+```python
+from browser_use_sdk import AsyncBrowserUse, BrowserUseError
+
+try:
+    result = await client.run(task, max_cost_usd=0.10)
+except TimeoutError:
+    pass  # Polling timed out (5 min default)
+except BrowserUseError as e:
+    pass  # API error
+```
+
+### Cost control
+
+- **Cloud v2:** Per-step pricing. Use `max_steps` to limit.
+- **Cloud v3:** `max_cost_usd=0.10` caps spending. Check `result.total_cost_usd`.
+
+### Cleanup
+
+Always stop sessions when done:
+```python
+session = await client.sessions.create(proxy_country_code="us")
+try:
+    result = await client.run(task, session_id=str(session.id))
+finally:
+    await client.sessions.stop(str(session.id))
+```
+
+---
+
+# Guide: Adding Browser-Use Tools to Your Agent
+
+Add individual browser actions to your existing agent's tool set. Your agent stays in control and drives the browser action by action.
+
+## Table of Contents
+- [When to Use This Pattern](#when-to-use-this-pattern)
+- [Pick Your Integration](#pick-your-integration)
+- [Shell Command Agents (CLI)](#shell-command-agents-cli)
+- [TypeScript/JS: CDP + Playwright](#typescriptjs-cdp--playwright)
+- [MCP-Native Agents](#mcp-native-agents)
+- [Existing Playwright/Puppeteer/Selenium](#existing-playwrightpuppeteerselenium)
+- [Decision Summary](#decision-summary)
+
+---
+
+## When to Use This Pattern
+
+Your agent already has tools (search, code execution, file I/O, etc.) and its own reasoning loop. You want to add browser capabilities — navigate, click, type, extract — as tools your agent can call. You don't want to hand off to browser-use's Agent; your agent makes the decisions.
+
+**Use tools integration when:**
+- Your agent needs action-by-action browser control
+- You want browser actions alongside your other tools
+- Your agent's reasoning should drive what gets clicked/typed
+
+**Use [subagent](subagent.md) instead when:**
+- You want to delegate an entire web task as a black box
+- You don't need control over individual browser actions
+
+## Pick Your Integration
+
+| Your agent type | Best approach | Control level |
+|----------------|---------------|--------------|
+| CLI coding agent in sandbox | [CLI commands](#shell-command-agents-cli) | Per-command |
+| TypeScript/JS | [CDP + Playwright](#typescriptjs-cdp--playwright) | Playwright API |
+| MCP client (Claude Desktop, Cursor) | [Local MCP server](#mcp-native-agents) | MCP tools |
+| Existing Playwright/Puppeteer/Selenium | [CDP WebSocket (stealth)](#existing-playwrightpuppeteerselenium) | Your existing API |
+| HTTP only / any language | Cloud REST: `POST /browsers` → CDP URL | CDP |
+
+---
+
+## Shell Command Agents (CLI)
+
+**For:** Claude Code, Codex, OpenCode, Cline, Windsurf, Cursor background agents, Hermes, OpenClaw — any coding agent running in a VM/container with terminal access.
+
+**Setup:** Install the CLI and load the browser-use SKILL.md into the agent's context. The agent calls browser commands as shell tool invocations.
+
+```bash
+uv pip install 'browser-use[cli]'
+```
+
+**Core workflow** — the agent calls these commands one at a time, reading output between each:
+
+```bash
+# 1. Navigate
+browser-use open https://example.com
+
+# 2. Observe — ALWAYS run state first to get element indices
+browser-use state
+# Output: URL, title, list of clickable elements with indices
+# e.g. [0] <input type="search" placeholder="Search...">
+#      [1] <button>Submit</button>
+#      [2] <a href="/about">About</a>
+
+# 3. Interact — use indices from state
+browser-use input 0 "search query"    # Type into element 0
+browser-use click 1                   # Click element 1
+
+# 4. Verify — re-run state to see result
+browser-use state
+
+# 5. Extract data
+browser-use get text 3               # Get element text
+browser-use get html --selector "h1" # Get scoped HTML
+browser-use eval "document.title"    # Execute JavaScript
+browser-use screenshot result.png    # Capture visual state
+
+# 6. Wait for dynamic content
+browser-use wait selector ".results" # Wait for element
+browser-use wait text "Success"      # Wait for text
+
+# 7. Cleanup
+browser-use close
+```
+
+**Key details:**
+- Background daemon keeps browser alive between commands (~50ms latency per call)
+- Agent's reasoning loop decides which command to call next
+- `state` output is the agent's "eyes" — it reads element indices and decides what to click
+- Commands can be chained with `&&` when intermediate output isn't needed
+- `--json` flag for machine-readable output
+- `--headed` for visible browser (debugging)
+- `--profile "Default"` for authenticated browsing with saved Chrome logins
+
+---
+
+## TypeScript/JS: CDP + Playwright
+
+**For:** TypeScript agents that need browser primitives. Connect Playwright to a cloud stealth browser.
+
+```typescript
+import { chromium } from "playwright";
+
+// Connect to cloud stealth browser (no local Chrome needed)
+const browser = await chromium.connectOverCDP(
+  "wss://connect.browser-use.com?apiKey=YOUR_KEY&proxyCountryCode=us"
+);
+const page = browser.contexts()[0].pages()[0];
+
+// Your agent calls these as tools:
+await page.goto("https://example.com");
+await page.fill("#search", "query");
+await page.click("button[type=submit]");
+const text = await page.textContent(".result");
+const screenshot = await page.screenshot();
+
+await browser.close();
+// Browser auto-stops when WebSocket disconnects
+```
+
+For local browser (no cloud):
+```typescript
+import { chromium } from "playwright";
+
+const browser = await chromium.launch();
+const page = await browser.newPage();
+// ... same Playwright API
+await browser.close();
+```
+
+---
+
+## MCP-Native Agents
+
+**For:** Claude Desktop, Cursor with MCP, any MCP client that discovers tools via protocol.
+
+Start the local MCP server:
+```bash
+uvx --from 'browser-use[cli]' browser-use --mcp
+```
+
+The agent gets individual browser tools:
+- `browser_navigate(url)` — go to URL
+- `browser_click(index)` — click element by index
+- `browser_type(index, text)` — type into element
+- `browser_get_state(include_screenshot)` — get page state with element indices
+- `browser_extract_content(query)` — LLM-powered extraction
+- `browser_screenshot(full_page)` — capture page
+- `browser_scroll(direction)` — scroll up/down
+- `browser_go_back()` — browser back
+- `browser_list_tabs()`, `browser_switch_tab(id)`, `browser_close_tab(id)` — tab management
+
+The agent calls these one at a time, using its own reasoning to decide the next action.
+
+---
+
+## Existing Playwright/Puppeteer/Selenium
+
+**For:** You already have browser automation scripts and want to run them on stealth infrastructure (anti-fingerprinting, CAPTCHA handling, residential proxies).
+
+Zero code changes — just change the connection URL:
+
+### Playwright
+```python
+# Before: local browser
+browser = await playwright.chromium.launch()
+
+# After: cloud stealth browser
+browser = await playwright.chromium.connect_over_cdp(
+    "wss://connect.browser-use.com?apiKey=KEY&proxyCountryCode=us"
+)
+# Rest of your code stays exactly the same
+```
+
+### Puppeteer
+```javascript
+// Before
+const browser = await puppeteer.launch();
+
+// After
+const browser = await puppeteer.connect({
+  browserWSEndpoint: "wss://connect.browser-use.com?apiKey=KEY&proxyCountryCode=us"
+});
+```
+
+Browser auto-starts on connect, auto-stops on disconnect. Pricing: $0.05/hour.
+
+---
+
+## Decision Summary
+
+| Condition | Best option |
+|-----------|------------|
+| Agent has terminal access (sandbox/VM) | CLI commands |
+| TypeScript/JS | CDP WebSocket + Playwright |
+| MCP client (Claude Desktop, Cursor) | Local MCP server |
+| HTTP only / any language | Cloud REST: `POST /browsers` → CDP URL |
+| Existing Playwright/Puppeteer scripts | CDP WebSocket (stealth cloud browser) |
+
+> **Note:** For Python agents that want fine-grained browser control via direct imports (Actor API, Tools Registry, MCPClient), see the **open-source** skill's reference docs.

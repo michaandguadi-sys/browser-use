@@ -1,0 +1,24 @@
+# Browser Use Open Source — Documentation Index
+
+> Self-hosted Python library for AI-driven browser automation. Bring your own LLM and run on your own infrastructure. Requires Python >= 3.11.
+
+## Getting Started
+
+- [Quickstart & Production Deployment](https://docs.browser-use.com/open-source/quickstart) — Installation, environment variables, first agent (ChatBrowserUse, Gemini, OpenAI, Anthropic), `@sandbox` decorator for production, event callbacks, telemetry.
+
+## Core Reference
+
+- [Supported LLM Models](https://docs.browser-use.com/open-source/models) — 15+ providers: Browser Use, Google Gemini, OpenAI, Anthropic, Azure OpenAI, AWS Bedrock, Groq, OCI, Ollama, Vercel AI Gateway, OpenAI-compatible APIs (Qwen, DeepSeek, OpenRouter, etc.).
+- [Agent Configuration & Behavior](https://docs.browser-use.com/open-source/agent) — All agent parameters, output format (AgentHistoryList), structured output, prompting guide, lifecycle hooks (on_step_start/end), timeout environment variables.
+- [Browser Configuration](https://docs.browser-use.com/open-source/browser) — All browser parameters, authentication strategies (storage state, TOTP 2FA, email/SMS), real browser connection, remote/cloud browser, proxy settings.
+- [Tools & Custom Actions](https://docs.browser-use.com/open-source/tools) — Custom tool decorator, injectable parameters, all 20+ built-in tools, removing tools, ActionResult fields and context control strategy.
+- [Actor API (Legacy Direct Control)](https://docs.browser-use.com/open-source/actor) — Low-level CDP-based browser control: Browser, Page, Element, Mouse methods. Use for deterministic operations alongside the AI agent.
+
+## Integrations & Observability
+
+- [Integrations (MCP, Skills, Docs)](https://docs.browser-use.com/open-source/integrations) — Cloud MCP server setup (Claude Code/Desktop/Cursor/Windsurf), local MCP server, skills loading, documentation MCP.
+- [Monitoring & Observability](https://docs.browser-use.com/open-source/monitoring) — Cost tracking, Laminar (video replay), OpenLIT (OpenTelemetry), telemetry opt-out.
+
+## Examples
+
+- [Example Patterns & Templates](https://docs.browser-use.com/open-source/examples) — Fast agent config, parallel browsers, follow-up tasks, sensitive data handling, Playwright integration via shared CDP.
