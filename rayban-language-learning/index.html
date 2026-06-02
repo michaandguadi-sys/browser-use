@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<title>LingoLens — learn a language through your glasses</title>
+	<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+	<div id="app">
+		<header>
+			<div class="logo"><span class="glyph">◉</span> LingoLens</div>
+			<div class="spacer"></div>
+			<div class="mode-toggle" id="modeToggle">
+				<button data-mode="look" class="active">Look &amp; Learn</button>
+				<button data-mode="conversation">Conversation</button>
+			</div>
+			<label class="visually-hidden" for="langSelect">Target language</label>
+			<select id="langSelect" title="Language to learn"></select>
+		</header>
+
+		<main>
+			<!-- ===== Look & Learn (camera) ===== -->
+			<section class="view active" id="look">
+				<video id="video" autoplay muted playsinline></video>
+				<canvas id="overlay"></canvas>
+				<div class="hud-frame"></div>
+
+				<div id="startPane">
+					<h1>Point your view at the world</h1>
+					<p>
+						LingoLens labels whatever it sees in your target language, live — the way the
+						glasses would overlay it for you. Tap any label to hear it. Repetition does the teaching.
+					</p>
+					<button class="big-btn" id="startCam">Start camera</button>
+					<button class="big-btn ghost" id="goConv">…or practice a conversation instead</button>
+					<p style="font-size:12px">Camera stays on your device. Nothing is uploaded.</p>
+				</div>
+
+				<div id="status" hidden><span class="dot">●</span> <span id="statusText">loading model…</span></div>
+				<button class="fab" id="toggleLog" hidden>📚 Vocab</button>
+
+				<aside id="vocabLog">
+					<h3>Words you've seen</h3>
+					<div id="vocabItems"></div>
+				</aside>
+			</section>
+
+			<!-- ===== Conversation ===== -->
+			<section class="view" id="conversation">
+				<div class="conv-inner">
+					<div class="scenario-grid" id="scenarioGrid"></div>
+					<p class="hint">Tap a response to hear it and mark it learned. The grey bubble is what the other person says.</p>
+					<div id="exchanges"></div>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<footer>LingoLens · on-device object detection + speech · prototype for Ray-Ban Meta–style heads-up learning</footer>
+
+	<!-- TensorFlow.js + COCO-SSD for in-browser object detection (no API key, no server) -->
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+
+	<script src="dictionary.js"></script>
+	<script src="app.js"></script>
+</body>
+</html>
