@@ -1,27 +1,43 @@
 ---
 import Base from '../layouts/Base.astro';
+import Terrain from '../components/Terrain.astro';
 ---
 
-<Base lang="en" title="Page not found | Micha Rössler" description="This page does not exist." alt={{ en: '/', de: '/de/' }} solidHeader>
-	<div class="wrap nf">
-		<p class="meta">404 · Off route</p>
-		<h1>This trail ends here.</h1>
-		<p class="prose">The page you were looking for does not exist (anymore). <span lang="de">Diese Seite gibt es nicht (mehr).</span></p>
-		<p class="nf-links">
-			<a class="btn btn--signal" href="/">Home</a>
-			<a class="btn" href="/work/">Work</a>
-			<a class="btn" href="/de/">Deutsch</a>
-		</p>
+<Base lang="en" title="Page not found | Micha Rössler" description="This page does not exist." alt={{ en: '/', de: '/de/' }} sheet="X/404" solidHeader>
+	<div class="sheet sheet--basalt nf">
+		<div class="wrap nf-in">
+			<div>
+				<p class="meta">404 · Off route</p>
+				<h1 class="h2">This trail ends here.</h1>
+				<p class="prose">The page you were looking for does not exist (anymore). <span lang="de">Diese Seite gibt es nicht (mehr).</span></p>
+				<p class="nf-links">
+					<a class="btn btn--primary" href="/">Home</a>
+					<a class="btn" href="/work/">Work</a>
+					<a class="btn" href="/de/">Deutsch</a>
+				</p>
+			</div>
+			<Terrain id="sajama" lang="en" />
+		</div>
 	</div>
 </Base>
 
 <style>
 	.nf {
-		padding-top: 10rem;
-		min-height: 70vh;
+		padding-top: calc(var(--neat) + 56px + clamp(3rem, 7vw, 6rem));
+		padding-bottom: clamp(4rem, 9vw, 7rem);
+		min-height: 80vh;
+	}
+	.nf-in {
+		display: grid;
+		gap: 3rem;
+		align-items: center;
+	}
+	@media (min-width: 960px) {
+		.nf-in {
+			grid-template-columns: 1fr 1fr;
+		}
 	}
 	h1 {
-		font-size: var(--step-6);
 		margin: 0.75rem 0 1.5rem;
 	}
 	.nf-links {

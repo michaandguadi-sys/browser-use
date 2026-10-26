@@ -3,7 +3,10 @@ import '../styles/global.css';
 import { getImage } from 'astro:assets';
 import { href, other, ui, type Lang } from '../i18n';
 import { pic } from '../data/projects';
+import { dms, type Place } from '../data/terrain';
 import portrait from '../assets/micha-portrait.jpg';
+import serifFont from '@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-normal.woff2?url';
+import monoFont from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
 
 interface Props {
 	lang: Lang;
@@ -13,10 +16,13 @@ interface Props {
 	ogImage?: string;
 	jsonLd?: Record<string, unknown>[];
 	solidHeader?: boolean;
+	sheet?: string; // sheet ID shown rotated in the margin, e.g. "A/01"
+	place?: Place; // real coordinates of the page's place, for the neatline ticks
 }
 
-const { lang, title, description, alt, ogImage = 'bolivia-ridge-climbers', jsonLd = [], solidHeader = false } =
+const { lang, title, description, alt, ogImage = 'bolivia-ridge-climbers', jsonLd = [], solidHeader = false, sheet = 'A/00', place } =
 	Astro.props;
+const coords = place ? dms(place, lang) : null;
 const t = ui[lang];
 const site = Astro.site!;
 const canonical = new URL(alt[lang], site).href;
@@ -46,6 +52,9 @@ const person = {
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{title}</title>
+		<script is:inline>document.documentElement.classList.add('js');</script>
+		<link rel="preload" href={serifFont} as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href={monoFont} as="font" type="font/woff2" crossorigin />
 		<meta name="description" content={description} />
 		<link rel="canonical" href={canonical} />
 		<link rel="alternate" hreflang="en" href={new URL(alt.en, site).href} />
@@ -53,7 +62,7 @@ const person = {
 		<link rel="alternate" hreflang="x-default" href={new URL(alt.en, site).href} />
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 		<link rel="sitemap" href="/sitemap-index.xml" />
-		<meta name="theme-color" content="#0e0f0d" />
+		<meta name="theme-color" content="#111315" />
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content="Micha Rössler" />
 		<meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} />
@@ -64,15 +73,33 @@ const person = {
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
 		<meta name="twitter:card" content="summary_large_image" />
+		<script type="speculationrules" is:inline>
+			{ "prerender": [{ "where": { "href_matches": "/*" }, "eagerness": "moderate" }] }
+		</script>
 		<script type="application/ld+json" set:html={JSON.stringify([person, ...jsonLd])} />
 	</head>
 	<body>
 		<a class="skip" href="#main">{t.skip}</a>
+
+		<div class="neatline" aria-hidden="true">
+			<span class="nl-ticks nl-top"></span>
+			<span class="nl-ticks nl-bot"></span>
+			<span class="nl-ticks nl-left"></span>
+			<span class="nl-ticks nl-right"></span>
+			{
+				coords && (
+					<>
+						<span class="nl-c nl-c-lat">{coords.lat}</span>
+						<span class="nl-c nl-c-lon">{coords.lon}</span>
+					</>
+				)
+			}
+			<span class="nl-sheet">MR-SHEET-{sheet}</span>
+		</div>
+
 		<header class:list={['site-header', { solid: solidHeader }]}>
-			<div class="wrap bar">
-				<a class="brand" href={href(lang, 'home')}>
-					<span>Micha Rössler</span>
-				</a>
+			<div class="bar">
+				<a class="brand" href={href(lang, 'home')}>Micha Rössler</a>
 				<nav aria-label={lang === 'de' ? 'Hauptnavigation' : 'Main'}>
 					<ul>
 						<li><a href={href(lang, 'work')}>{t.nav.work}</a></li>
@@ -92,7 +119,7 @@ const person = {
 			<slot />
 		</main>
 
-		<footer class="site-footer">
+		<footer class="site-footer sheet sheet--basalt">
 			<div class="wrap foot">
 				<div class="foot-big">
 					<p class="meta">{lang === 'en' ? 'Available worldwide · based on the road' : 'Weltweit verfügbar · zuhause unterwegs'}</p>
@@ -113,6 +140,16 @@ const person = {
 						<li><a href={href(lang, 'privacy')}>{t.privacy}</a></li>
 						<li class="meta">© {new Date().getFullYear()} Micha Roessler LLC</li>
 					</ul>
+					<p class="meta foot-credit">
+						<span>MR-SHEET-{sheet}</span>
+						<span>
+							{
+								lang === 'en'
+									? 'Terrain: AWS Terrain Tiles (Mapzen) · SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey'
+									: 'Gelände: AWS Terrain Tiles (Mapzen) · SRTM- und GMTED2010-Geländedaten mit freundlicher Genehmigung des U.S. Geological Survey'
+							}
+						</span>
+					</p>
 				</div>
 			</div>
 		</footer>
@@ -126,9 +163,9 @@ const person = {
 							io.unobserve(e.target);
 						}
 					}),
-				{ rootMargin: '0px 0px -8% 0px' },
+				{ rootMargin: '0px 0px -10% 0px' },
 			);
-			document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+			document.querySelectorAll('.reveal, [data-trace]').forEach((el) => io.observe(el));
 
 			const header = document.querySelector('.site-header');
 			const onScroll = () => header?.classList.toggle('scrolled', scrollY > 40);
@@ -137,104 +174,219 @@ const person = {
 		</script>
 
 		<style>
+			/* Neatline: fixed 1px survey frame inset from the viewport, inverted against whatever sheet lies below. */
+			.neatline {
+				position: fixed;
+				inset: var(--neat);
+				z-index: 70;
+				pointer-events: none;
+				border: 1px solid var(--firn);
+				mix-blend-mode: difference;
+				color: var(--firn);
+				opacity: 0.55;
+			}
+			.nl-ticks {
+				position: absolute;
+			}
+			.nl-top,
+			.nl-bot {
+				left: 0;
+				right: 0;
+				height: 5px;
+				background: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 96px);
+			}
+			.nl-top {
+				top: 0;
+			}
+			.nl-bot {
+				bottom: 0;
+			}
+			.nl-left,
+			.nl-right {
+				top: 0;
+				bottom: 0;
+				width: 5px;
+				background: repeating-linear-gradient(180deg, currentColor 0 1px, transparent 1px 96px);
+			}
+			.nl-left {
+				left: 0;
+			}
+			.nl-right {
+				right: 0;
+			}
+			.nl-c,
+			.nl-sheet {
+				position: absolute;
+				font-family: var(--mono);
+				font-size: 10px;
+				letter-spacing: 0.08em;
+				font-variant-numeric: tabular-nums;
+				line-height: 1;
+				white-space: nowrap;
+			}
+			.nl-c-lat {
+				left: 10px;
+				bottom: 8px;
+			}
+			.nl-c-lon {
+				right: 10px;
+				bottom: 8px;
+			}
+			.nl-sheet {
+				right: 8px;
+				top: 50%;
+				writing-mode: vertical-rl;
+				translate: 0 -50%;
+			}
+			@media (max-width: 900px) {
+				.nl-sheet {
+					display: none;
+				}
+			}
+			@media (max-width: 600px) {
+				.nl-c,
+				.nl-ticks {
+					display: none;
+				}
+			}
+
 			.site-header {
 				position: fixed;
-				inset: 0 0 auto;
+				top: var(--neat);
+				left: var(--neat);
+				right: var(--neat);
 				z-index: 50;
-				transition:
-					background 0.3s var(--ease),
-					backdrop-filter 0.3s;
+				color: var(--firn);
+				transition: background 0.3s var(--ease);
 			}
 			.site-header.scrolled,
 			.site-header.solid {
-				background: rgb(14 15 13 / 0.82);
-				backdrop-filter: blur(10px);
+				background: var(--basalt);
+				border-bottom: 1px solid var(--rule-basalt);
 			}
 			.bar {
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				height: 64px;
+				gap: 1rem;
+				height: 56px;
+				max-width: var(--max);
+				margin-inline: auto;
+				padding-inline: calc(var(--gutter) - var(--neat));
 			}
 			.brand {
 				text-decoration: none;
-				font-weight: 750;
-				font-stretch: 68%;
-				font-size: var(--step-1);
-				text-transform: uppercase;
-				letter-spacing: 0.02em;
+				font-family: var(--serif);
+				font-size: 21px;
+				font-weight: 400;
+				letter-spacing: -0.01em;
+				white-space: nowrap;
 			}
 			nav ul {
 				display: flex;
-				gap: clamp(0.9rem, 2.5vw, 2rem);
+				gap: clamp(0.7rem, 2.4vw, 2.25rem);
 				list-style: none;
 				margin: 0;
 				padding: 0;
 			}
 			nav a {
+				display: inline-block;
+				padding-block: 0.9rem;
 				text-decoration: none;
-				font-size: var(--step--1);
-				font-weight: 600;
-				font-stretch: 90%;
+				font-family: var(--mono);
+				font-size: 12px;
+				font-weight: 500;
 				text-transform: uppercase;
 				letter-spacing: 0.08em;
 			}
 			nav a:hover {
-				color: var(--signal);
+				text-decoration: underline;
+				text-decoration-color: var(--ochre);
+				text-underline-offset: 0.5em;
 			}
 			.lang {
-				color: var(--lichen);
+				color: var(--muted-basalt);
 			}
 			.site-footer {
-				border-top: 1px solid var(--moraine-2);
-				margin-top: clamp(4rem, 10vw, 8rem);
-				padding-block: clamp(3rem, 6vw, 5rem) 2rem;
+				border-top: 1px solid var(--rule);
+				padding-block: clamp(3.5rem, 7vw, 6rem) 2.5rem;
 			}
 			.foot {
 				display: grid;
-				gap: 3rem;
+				gap: 3.5rem;
 			}
 			.foot-mail {
 				display: inline-block;
 				margin-top: 0.75rem;
-				font-weight: 750;
-				font-stretch: 68%;
-				text-transform: uppercase;
-				font-size: clamp(1.6rem, 6vw, 4.5rem);
+				font-size: clamp(30px, 5.4vw, 84px);
+				font-weight: 250;
+				font-variation-settings: 'opsz' 60;
+				letter-spacing: -0.03em;
 				line-height: 1;
 				text-decoration: none;
 				overflow-wrap: anywhere;
 			}
 			.foot-mail:hover {
-				color: var(--signal);
+				text-decoration: underline;
+				text-decoration-thickness: 1px;
+				text-decoration-color: var(--ochre);
 			}
 			.foot-cols {
-				display: flex;
-				flex-wrap: wrap;
-				justify-content: space-between;
-				gap: 1.5rem 3rem;
+				display: grid;
+				gap: 2rem;
+				border-top: 1px solid var(--rule);
+				padding-top: 1.5rem;
+			}
+			@media (min-width: 900px) {
+				.foot-cols {
+					grid-template-columns: repeat(12, minmax(0, 1fr));
+					column-gap: var(--colgap);
+				}
+				.foot-cols ul:first-child {
+					grid-column: 1 / 5;
+				}
+				.foot-cols ul:nth-child(2) {
+					grid-column: 5 / 8;
+				}
+				.foot-credit {
+					grid-column: 9 / 13;
+				}
 			}
 			.foot-cols ul {
 				list-style: none;
 				margin: 0;
 				padding: 0;
 				display: grid;
-				gap: 0.4rem;
-				font-size: 0.9rem;
+				gap: 0.15rem;
+				font-family: var(--mono);
+				font-size: 13px;
 			}
 			.foot-cols a {
+				display: inline-block;
+				padding-block: 0.35rem;
 				text-decoration: none;
-				color: var(--lichen);
-			}
-			.foot-cols a:hover {
 				color: var(--firn);
 			}
+			.foot-cols a:hover {
+				text-decoration: underline;
+				text-decoration-color: var(--ochre);
+			}
+			.foot-credit {
+				display: grid;
+				gap: 0.6rem;
+				text-transform: none;
+				letter-spacing: 0.02em;
+			}
 			@media (max-width: 560px) {
-				.brand span {
-					font-size: 1.05rem;
+				.brand {
+					font-size: 16px;
 				}
 				nav ul {
-					gap: 0.75rem;
+					gap: 0.65rem;
+				}
+				nav a {
+					font-size: 10.5px;
+					letter-spacing: 0.04em;
 				}
 			}
 		</style>

@@ -25,6 +25,7 @@ export type Project = {
 	youtube?: string;
 	featured?: boolean;
 	peak?: string; // shown at the top of the altitude rail
+	galleryCredit?: string; // photographer of the gallery stills, when documented
 };
 
 // Facts only from micharoessler.com (2024), Notion work pages and Drive briefings.
@@ -175,7 +176,8 @@ export const projects: Project[] = [
 		],
 		facts: [{ label: { en: 'Shooting days', de: 'Drehtage' }, value: { en: '2', de: '2' } }],
 		cover: 'sahara-dunes',
-		gallery: [],
+		gallery: ['sahara-lone-walker', 'sahara-mesa-vertical', 'sahara-dusk-dunes', 'sahara-flag-plain'],
+		galleryCredit: 'Fabian Baggeler',
 	},
 	{
 		slug: 'bleibe-floating-hotel',

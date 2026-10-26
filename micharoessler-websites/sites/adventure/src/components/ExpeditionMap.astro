@@ -53,7 +53,7 @@ const [cx, cy] = projection([6.96, 50.94])!;
 const [ix, iy] = projection([1.43, 38.98])!;
 ---
 
-<div class="map" data-map>
+<div class="map" data-map data-trace>
 	<svg viewBox={`0 0 ${W} ${H}`} aria-hidden="true" class="map-svg">
 		<defs>
 			<pattern id="dotgrid" width={STEP} height={STEP} patternUnits="userSpaceOnUse">
@@ -62,7 +62,7 @@ const [ix, iy] = projection([1.43, 38.98])!;
 			<clipPath id="landclip"><path d={landPath}></path></clipPath>
 		</defs>
 		<rect width={W} height={H} fill="url(#dotgrid)" clip-path="url(#landclip)"></rect>
-		<path d={`M${cx} ${cy} Q ${(cx + ix) / 2 - 40} ${(cy + iy) / 2} ${ix} ${iy}`} class="route"></path>
+		<path d={`M${cx} ${cy} Q ${(cx + ix) / 2 - 40} ${(cy + iy) / 2} ${ix} ${iy}`} class="route trace" pathLength="1"></path>
 	</svg>
 	<ul class="pins">
 		{
@@ -104,14 +104,11 @@ const [ix, iy] = projection([1.43, 38.98])!;
 		display: block;
 	}
 	.land {
-		fill: #4d5149;
+		fill: var(--ink);
+		opacity: 0.32;
 	}
 	.route {
-		fill: none;
-		stroke: var(--signal);
-		stroke-width: 1.5;
-		stroke-dasharray: 4 5;
-		opacity: 0.8;
+		stroke-width: 1.75;
 	}
 	.pins {
 		list-style: none;
@@ -131,57 +128,51 @@ const [ix, iy] = projection([1.43, 38.98])!;
 		left: 0;
 		top: 0;
 		translate: -50% -50%;
-		width: 26px;
-		height: 26px;
+		width: 30px;
+		height: 30px;
 		padding: 0;
 		border: 0;
 		background: none;
 		cursor: pointer;
 		display: grid;
 		place-items: center;
+		color: var(--ochre);
 	}
+	/* Survey pin: ochre disc with a thin crosshair. */
 	.dot::before {
 		content: '';
-		width: 12px;
-		height: 12px;
+		width: 11px;
+		height: 11px;
 		border-radius: 50%;
-		background: var(--signal);
-		box-shadow: 0 0 0 4px rgb(217 84 30 / 0.25);
-		transition: scale 0.25s var(--ease);
+		background: var(--ochre);
+		box-shadow: 0 0 0 3px var(--ground);
+		transition: scale 0.2s var(--ease);
 	}
 	.dot::after {
 		content: '';
 		position: absolute;
-		width: 12px;
-		height: 12px;
-		border-radius: 50%;
-		border: 1px solid var(--signal);
-		animation: ping 2.4s var(--ease) infinite;
+		inset: 3px;
+		background:
+			linear-gradient(currentColor, currentColor) 50% 0 / 1px 7px no-repeat,
+			linear-gradient(currentColor, currentColor) 50% 100% / 1px 7px no-repeat,
+			linear-gradient(currentColor, currentColor) 0 50% / 7px 1px no-repeat,
+			linear-gradient(currentColor, currentColor) 100% 50% / 7px 1px no-repeat;
 	}
 	.minor .dot::before {
-		width: 8px;
-		height: 8px;
-		background: var(--firn);
-		box-shadow: none;
+		width: 7px;
+		height: 7px;
+		background: var(--ink);
 	}
 	.minor .dot::after,
 	.planned .dot::after {
 		display: none;
 	}
 	.planned .dot::before {
-		background: transparent;
-		border: 2px dashed var(--glacier);
+		width: 10px;
+		height: 10px;
+		background: var(--ground);
+		border: 1.5px dashed var(--ink);
 		box-shadow: none;
-	}
-	@keyframes ping {
-		0% {
-			scale: 1;
-			opacity: 0.9;
-		}
-		100% {
-			scale: 3.2;
-			opacity: 0;
-		}
 	}
 	.dot:hover::before,
 	.dot:focus-visible::before {
@@ -190,34 +181,31 @@ const [ix, iy] = projection([1.43, 38.98])!;
 	.tip {
 		position: absolute;
 		left: 0;
-		bottom: 18px;
+		bottom: 20px;
 		translate: -50% 0;
 		display: grid;
-		gap: 0.2rem;
-		min-width: 190px;
+		gap: 0.25rem;
+		min-width: 200px;
 		padding: 0.7rem 0.85rem;
-		background: var(--firn);
-		color: var(--basalt);
-		border-radius: 6px;
+		background: var(--basalt);
+		color: var(--firn);
+		--muted: var(--muted-basalt);
 		pointer-events: none;
 		opacity: 0;
-		transform: translateY(6px);
+		transform: translateY(4px);
 		transition:
 			opacity 0.2s var(--ease),
 			transform 0.2s var(--ease);
 		z-index: 5;
 	}
-	.tip .meta {
-		color: #5d625a;
-	}
 	.tip-name {
-		font-weight: 700;
-		font-stretch: 75%;
-		text-transform: uppercase;
-		line-height: 1.05;
+		font-size: 17px;
+		line-height: 1.15;
 	}
 	.tip-go {
-		color: var(--signal) !important;
+		color: var(--firn) !important;
+		text-decoration: underline;
+		text-decoration-color: var(--ochre);
 	}
 	.pin:hover .tip,
 	.pin:focus-within .tip {
@@ -231,40 +219,42 @@ const [ix, iy] = projection([1.43, 38.98])!;
 	.legend {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem 1.5rem;
-		margin-top: 1rem;
+		gap: 0.5rem 1.75rem;
+		margin-top: 1.25rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--rule);
 	}
 	.lg-dot {
 		display: inline-block;
 		width: 9px;
 		height: 9px;
 		border-radius: 50%;
-		background: var(--signal);
-		margin-right: 0.5rem;
+		background: var(--ochre);
+		margin-right: 0.6rem;
 		vertical-align: 0;
 	}
 	.lg-minor {
-		background: var(--firn);
+		background: var(--ink);
 		width: 7px;
 		height: 7px;
 	}
 	.lg-planned {
 		background: transparent;
-		border: 2px dashed var(--glacier);
+		border: 1.5px dashed var(--ink);
 	}
 	@media (max-width: 700px) {
 		.tip {
 			min-width: 150px;
-			font-size: 0.85rem;
+		}
+		.tip-name {
+			font-size: 15px;
 		}
 		.dot::before {
 			width: 9px;
 			height: 9px;
 		}
-	}
-	@media (prefers-reduced-motion: reduce) {
 		.dot::after {
-			animation: none;
+			display: none;
 		}
 	}
 </style>

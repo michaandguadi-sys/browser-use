@@ -1,36 +1,76 @@
-@import '@fontsource-variable/archivo/standard.css';
-@import '@fontsource-variable/newsreader/opsz.css';
-@import '@fontsource-variable/newsreader/opsz-italic.css';
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 
-/* "Field" design system — palette from basalt, firn and lichen; one signal colour. */
+/* "Höhenprotokoll" — survey sheet meets documentary title card.
+   Firn (paper) and Basalt (ink) sheets; ochre only for contour/route lines and numerals; glacier only for data marks. */
 :root {
-	--basalt: #0e0f0d;
-	--moraine: #1c1d1a;
-	--moraine-2: #2a2c28;
-	--firn: #eceae4;
-	--paper: #f2f0ea;
-	--lichen: #8a8f86;
-	--signal: #d9541e;
-	--glacier: #a9c6d3;
+	--firn: #e8e6df;
+	--basalt: #111315;
+	--ochre: #b86a2c;
+	--glacier: #9db7c2;
+	/* One muted tone cannot reach 4.5:1 on both grounds (the best single grey peaks at ≈3.9:1),
+	   so each sheet sets its own: #5b5d5e on Firn = 5.30:1, #8c8f90 on Basalt = 5.72:1. */
+	--muted-firn: #5b5d5e;
+	--muted-basalt: #8c8f90;
+	--rule-firn: #c9c6bc;
+	--rule-basalt: #2a2d30;
 
-	--sans: 'Archivo Variable', system-ui, sans-serif;
-	--serif: 'Newsreader Variable', Georgia, serif;
+	/* Sheet context (Basalt default, Firn sheets override). */
+	--ground: var(--basalt);
+	--ink: var(--firn);
+	--muted: var(--muted-basalt);
+	--rule: var(--rule-basalt);
+	--num: var(--ochre); /* small numerals: ochre on Basalt only */
+	--contour: rgb(232 230 223 / 0.17);
+	--contour-index: rgb(232 230 223 / 0.42);
 
-	--step--1: 0.8rem;
-	--step-0: 1rem;
-	--step-1: 1.25rem;
-	--step-2: 1.5625rem;
-	--step-3: 1.953rem;
-	--step-4: 2.441rem;
-	--step-5: clamp(2.6rem, 5vw, 3.815rem);
-	--step-6: clamp(3rem, 9vw, 6rem);
-	--step-7: clamp(3.4rem, 13vw, 10rem);
+	--serif: 'Source Serif 4 Variable', 'Source Serif Pro', Georgia, serif;
+	--mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-	--gutter: clamp(1rem, 4vw, 3rem);
+	--t-micro: 11px;
+	--t-caption: 13px;
+	--t-body: clamp(17px, 1.05vw + 12px, 20px);
+	--t-lede: clamp(24px, 2vw + 12px, 34px);
+	--t-h2: clamp(40px, 4.5vw, 72px);
+	--t-h3: clamp(26px, 1.6vw + 12px, 40px);
+	--t-display: clamp(64px, 13vw, 220px);
+
+	--neat: 12px;
+	--gutter: clamp(1.5rem, 4vw, 3.5rem);
+	--colgap: clamp(0.75rem, 1.6vw, 1.5rem);
 	--max: 1440px;
-	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+	--ease: cubic-bezier(0.2, 0, 0, 1);
 
 	color-scheme: dark;
+}
+@media (max-width: 600px) {
+	:root {
+		--neat: 8px;
+	}
+}
+
+.sheet {
+	background: var(--ground);
+	color: var(--ink);
+}
+.sheet--firn {
+	--ground: var(--firn);
+	--ink: var(--basalt);
+	--muted: var(--muted-firn);
+	--rule: var(--rule-firn);
+	--num: var(--basalt);
+	--contour: rgb(17 19 21 / 0.15);
+	--contour-index: rgb(17 19 21 / 0.4);
+	color-scheme: light;
+}
+.sheet--basalt {
+	--ground: var(--basalt);
+	--ink: var(--firn);
+	--muted: var(--muted-basalt);
+	--rule: var(--rule-basalt);
+	--num: var(--ochre);
 }
 
 *,
@@ -42,15 +82,17 @@
 html {
 	-webkit-text-size-adjust: 100%;
 	text-size-adjust: 100%;
+	scroll-padding-top: 5rem;
 }
 
 body {
 	margin: 0;
 	background: var(--basalt);
 	color: var(--firn);
-	font-family: var(--sans);
-	font-size: var(--step-0);
-	line-height: 1.5;
+	font-family: var(--serif);
+	font-size: var(--t-body);
+	font-weight: 380;
+	line-height: 1.55;
 	-webkit-font-smoothing: antialiased;
 	overflow-x: hidden;
 }
@@ -63,12 +105,12 @@ img {
 
 a {
 	color: inherit;
-	text-underline-offset: 0.2em;
+	text-underline-offset: 0.22em;
 	text-decoration-thickness: 1px;
 }
 
 :focus-visible {
-	outline: 2px solid var(--signal);
+	outline: 2px solid var(--ochre);
 	outline-offset: 3px;
 }
 
@@ -76,15 +118,17 @@ h1,
 h2,
 h3 {
 	margin: 0;
-	font-weight: 750;
-	font-stretch: 68%;
-	text-transform: uppercase;
-	line-height: 0.92;
-	letter-spacing: -0.01em;
+	font-family: var(--serif);
+	font-weight: 300;
+	font-variation-settings: 'opsz' 60;
+	letter-spacing: -0.02em;
+	line-height: 0.95;
+	text-wrap: balance;
 }
 
 p {
 	margin: 0;
+	text-wrap: pretty;
 }
 
 .wrap {
@@ -94,58 +138,159 @@ p {
 	padding-inline: var(--gutter);
 }
 
+/* 12-column survey grid. Prose in columns 2–7, margin notes in 10–12. */
+.g12 {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	column-gap: var(--colgap);
+}
+.g12 > * {
+	grid-column: 1 / -1;
+}
+@media (min-width: 960px) {
+	.g12 > .col-prose {
+		grid-column: 2 / 8;
+	}
+	.g12 > .col-note {
+		grid-column: 10 / 13;
+	}
+}
+
+.display {
+	font-size: var(--t-display);
+	font-weight: 250;
+	line-height: 0.86;
+	letter-spacing: -0.035em;
+	font-variation-settings: 'opsz' 60;
+}
+.h2 {
+	font-size: var(--t-h2);
+	font-weight: 300;
+	line-height: 0.95;
+}
+.lede {
+	font-size: var(--t-lede);
+	font-weight: 300;
+	line-height: 1.22;
+	letter-spacing: -0.005em;
+}
+
+/* Mono data voice: micro labels, captions, nav, tables. */
 .meta {
-	font-family: var(--sans);
-	font-stretch: 85%;
-	font-size: var(--step--1);
-	font-weight: 500;
+	font-family: var(--mono);
+	font-size: var(--t-micro);
+	font-weight: 400;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	font-variant-numeric: tabular-nums;
-	color: var(--lichen);
+	line-height: 1.5;
+	color: var(--muted);
+}
+.caption {
+	font-family: var(--mono);
+	font-size: var(--t-caption);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.5;
+	color: var(--muted);
 }
 
 .prose {
-	font-family: var(--serif);
-	font-size: var(--step-1);
-	line-height: 1.55;
-	max-width: 38em;
+	font-size: var(--t-body);
+	line-height: 1.6;
+	max-width: 62ch;
 }
 .prose p + p {
 	margin-top: 1em;
 }
 
+/* Buttons are outlined or underlined, never filled with ochre. */
 .btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.6em;
-	padding: 0.9em 1.4em;
+	gap: 0.7em;
+	min-height: 44px;
+	padding: 0.8em 1.3em;
 	border: 1px solid currentColor;
-	border-radius: 999px;
-	font-weight: 600;
-	font-stretch: 90%;
+	background: transparent;
+	color: inherit;
+	font-family: var(--mono);
+	font-size: 12px;
+	font-weight: 500;
+	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	font-size: var(--step--1);
 	text-decoration: none;
+	cursor: pointer;
 	transition:
-		background 0.3s var(--ease),
-		color 0.3s var(--ease),
-		border-color 0.3s var(--ease);
+		background 0.25s var(--ease),
+		color 0.25s var(--ease);
 }
 .btn:hover {
-	background: var(--firn);
-	color: var(--basalt);
-	border-color: var(--firn);
+	background: var(--ink);
+	color: var(--ground);
 }
-.btn--signal {
-	background: var(--signal);
-	border-color: var(--signal);
-	color: #fff;
+.btn--primary {
+	box-shadow: inset 0 -3px 0 var(--ochre);
 }
-.btn--signal:hover {
-	background: var(--firn);
-	border-color: var(--firn);
+.ulink {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	font-family: var(--mono);
+	font-size: 12px;
+	font-weight: 500;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	text-decoration: underline;
+	text-decoration-color: var(--ochre);
+	text-underline-offset: 0.55em;
+}
+.ulink:hover {
+	text-decoration-thickness: 2px;
+}
+
+/* Plate numbering: "PLATE 03 / 12". */
+.plate {
+	font-family: var(--mono);
+	font-size: var(--t-micro);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	font-variant-numeric: tabular-nums;
+	color: var(--muted);
+}
+.plate b {
+	font-weight: 500;
+	color: var(--num);
+}
+
+/* Photo grain, ~5.5 %, static (no Ken Burns, no parallax). */
+.grain {
+	position: relative;
+	overflow: hidden;
+	background: #0b0c0d;
+}
+.grain::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	opacity: 0.055;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.6 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Measured lines draw in with linear timing (pathLength="1" on the path). */
+.trace {
+	fill: none;
+	stroke: var(--ochre);
+	stroke-width: 1.5;
+}
+.js .trace {
+	stroke-dasharray: 1;
+	stroke-dashoffset: 1;
+	transition: stroke-dashoffset 2.4s linear;
+}
+.js .in .trace,
+.js .trace.in {
+	stroke-dashoffset: 0;
 }
 
 .sr-only {
@@ -159,27 +304,28 @@ p {
 
 .skip {
 	position: absolute;
-	left: 1rem;
+	left: 1.5rem;
 	top: -4rem;
 	z-index: 100;
-	background: var(--signal);
-	color: #fff;
+	background: var(--firn);
+	color: var(--basalt);
 	padding: 0.6rem 1rem;
+	font-family: var(--mono);
+	font-size: 13px;
 }
 .skip:focus {
-	top: 1rem;
+	top: 1.5rem;
 }
 
-.reveal {
+/* Reveal: visible by default; only hidden once JS has marked the document (never on body copy or CTAs). */
+.js .reveal:not(.in) {
 	opacity: 0;
-	translate: 0 16px;
-	transition:
-		opacity 0.6s var(--ease),
-		translate 0.6s var(--ease);
+	translate: 0 12px;
 }
-.reveal.in {
-	opacity: 1;
-	translate: 0 0;
+.reveal {
+	transition:
+		opacity 0.7s var(--ease),
+		translate 0.7s var(--ease);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -189,9 +335,12 @@ p {
 		animation: none !important;
 		transition: none !important;
 	}
-	.reveal {
+	.js .reveal:not(.in) {
 		opacity: 1;
 		translate: none;
+	}
+	.js .trace {
+		stroke-dashoffset: 0;
 	}
 }
 
@@ -202,6 +351,6 @@ p {
 	}
 	::view-transition-old(root),
 	::view-transition-new(root) {
-		animation-duration: 0.35s;
+		animation-duration: 0.28s;
 	}
 }

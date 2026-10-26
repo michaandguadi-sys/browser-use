@@ -1,0 +1,238 @@
+---
+// Real-terrain contour sheet (build-time SVG, no JS). Data: src/data/terrain/*.json via scripts/build-contours.mjs.
+import { terrain, dms, type TerrainId } from '../data/terrain';
+import type { Lang } from '../i18n';
+
+interface Props {
+	id: TerrainId;
+	lang: Lang;
+	section?: boolean; // east–west profile A–A′ through the anchor
+	side?: boolean; // caption as a margin note (columns 10–12) on wide screens
+	name?: string; // label shown at the anchor (defaults to the terrain label)
+	class?: string;
+}
+const { id, lang, section = false, side = false, name, class: cls } = Astro.props;
+const en = lang === 'en';
+const t = terrain[id];
+const [W, H] = t.viewBox;
+const minor = t.paths.filter((p) => !p.i).map((p) => p.d).join('');
+const index = t.paths.filter((p) => p.i).map((p) => p.d).join('');
+const c = dms({ lat: t.anchor.lat, lon: t.anchor.lon, fine: true }, lang);
+const fmt = (n: number) => n.toLocaleString(en ? 'en-US' : 'de-DE');
+
+// Profile along the section line (same DEM grid as the contours).
+const s = t.profile.samples;
+const N = s.length - 1;
+const lo = Math.floor(Math.min(...s) / 1000) * 1000;
+const hi = Math.ceil(Math.max(...s) / 1000) * 1000;
+const PH = 200;
+const py = (e: number) => PH - ((e - lo) / (hi - lo)) * PH;
+const profile = s.map((e, i) => `${i ? 'L' : 'M'}${((i / N) * W).toFixed(1)} ${py(e).toFixed(1)}`).join('');
+const ticks: number[] = [];
+for (let e = lo; e <= hi; e += 1000) ticks.push(e);
+
+// Index-contour labels where the section line crosses them, east of the anchor (read off the real profile).
+const ai = Math.round((t.anchor.x / W) * N);
+const labels: { x: number; e: number }[] = [];
+for (let i = ai; i < N; i++) {
+	for (let e = Math.ceil(lo / t.index) * t.index; e <= hi; e += t.index) {
+		const x = ((i + 0.5) / N) * W;
+		if ((s[i] - e) * (s[i + 1] - e) < 0 && !labels.some((l) => l.e === e || Math.abs(l.x - x) < 60)) labels.push({ x, e });
+	}
+}
+---
+
+<figure class:list={['terrain', { side }, cls]}>
+	<div class="t-map" style={`aspect-ratio:${W} / ${H}`}>
+		<svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${name ?? t.label}: ${en ? 'contour lines' : 'Höhenlinien'}, ${t.interval} m`}>
+			<path class="c-minor" d={minor}></path>
+			<path class="c-index" d={index}></path>
+			{
+				section && (
+					<g class="sec">
+						<line x1="0" y1={t.anchor.y} x2={W} y2={t.anchor.y}></line>
+						<text x="10" y={t.anchor.y - 8}>A</text>
+						<text x={W - 10} y={t.anchor.y - 8} text-anchor="end">A′</text>
+						{labels.map((l) => (
+							<text class="lab" x={l.x} y={t.anchor.y + 20} text-anchor="middle">
+								{l.e}
+							</text>
+						))}
+					</g>
+				)
+			}
+			<g class="mark" transform={`translate(${t.anchor.x} ${t.anchor.y})`}>
+				<circle r="7"></circle>
+				<path d="M-16 0h9M7 0h9M0 -16v9M0 7v9"></path>
+			</g>
+		</svg>
+		<p class="t-anchor meta" style={`left:${(t.anchor.x / W) * 100}%;top:${(t.anchor.y / H) * 100}%`}>
+			<span>{name ?? t.label}</span>
+		</p>
+	</div>
+	{
+		section && (
+			<div class="t-prof" aria-hidden="true">
+				<svg viewBox={`0 0 ${W} ${PH}`} preserveAspectRatio="none">
+					{ticks.map((e) => (
+						<line class="tick" x1="0" x2={W} y1={py(e)} y2={py(e)} />
+					))}
+					<path class="prof" d={profile} />
+				</svg>
+				{ticks.map((e) => (
+					<span class="t-tick meta" style={`top:${(py(e) / PH) * 100}%`}>
+						{fmt(e)}
+					</span>
+				))}
+				<span class="t-ends meta">
+					<span>A</span>
+					<span>{fmt(t.profile.widthKm)} km</span>
+					<span>A′</span>
+				</span>
+			</div>
+		)
+	}
+	<figcaption class="caption">
+		<span>{c.lat} {c.lon}</span>
+		<span>{en ? 'Contour interval' : 'Äquidistanz'} {t.interval} m</span>
+		{section && <span>{en ? 'Section A–A′, west–east' : 'Schnitt A–A′, West–Ost'}</span>}
+	</figcaption>
+</figure>
+
+<style>
+	.terrain {
+		margin: 0;
+		display: grid;
+		gap: 0.9rem;
+	}
+	.t-map {
+		position: relative;
+		border: 1px solid var(--rule);
+		overflow: hidden;
+	}
+	.t-map svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.c-minor,
+	.c-index {
+		fill: none;
+		stroke-linejoin: round;
+		vector-effect: non-scaling-stroke;
+	}
+	.c-minor {
+		stroke: var(--contour);
+		stroke-width: 0.75;
+	}
+	.c-index {
+		stroke: var(--contour-index);
+		stroke-width: 1.25;
+	}
+	.sec line {
+		stroke: var(--glacier);
+		stroke-width: 1;
+		stroke-dasharray: 6 6;
+		vector-effect: non-scaling-stroke;
+	}
+	.sec text {
+		font-family: var(--mono);
+		font-size: 15px;
+		fill: var(--glacier);
+	}
+	.sec .lab {
+		font-size: 13px;
+		fill: var(--ink);
+		opacity: 0.75;
+	}
+	.mark circle,
+	.mark path {
+		fill: none;
+		stroke: var(--ink);
+		stroke-width: 1.4;
+		vector-effect: non-scaling-stroke;
+	}
+	.t-anchor {
+		position: absolute;
+		margin: 0;
+		translate: 18px -150%;
+		color: var(--ink);
+		white-space: nowrap;
+		pointer-events: none;
+	}
+	.t-prof {
+		position: relative;
+		height: clamp(70px, 9vw, 120px);
+		padding-left: 3.4rem;
+	}
+	.t-prof svg {
+		width: 100%;
+		height: 100%;
+		display: block;
+		overflow: visible;
+	}
+	.tick {
+		stroke: var(--rule);
+		stroke-width: 1;
+		vector-effect: non-scaling-stroke;
+	}
+	.prof {
+		fill: none;
+		stroke: var(--glacier);
+		stroke-width: 1.5;
+		stroke-linejoin: round;
+		vector-effect: non-scaling-stroke;
+	}
+	.t-tick {
+		position: absolute;
+		left: 0;
+		translate: 0 -50%;
+		font-size: 10px;
+	}
+	.t-ends {
+		position: absolute;
+		left: 3.4rem;
+		right: 0;
+		bottom: -1.5rem;
+		display: flex;
+		justify-content: space-between;
+		font-size: 10px;
+	}
+	.terrain:has(.t-prof) figcaption {
+		margin-top: 1.4rem;
+	}
+	figcaption {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.2rem 1.5rem;
+	}
+	@media (min-width: 1000px) {
+		.side {
+			grid-template-columns: repeat(12, minmax(0, 1fr));
+			column-gap: var(--colgap);
+			align-items: start;
+		}
+		.side > .t-map,
+		.side > .t-prof {
+			grid-column: 1 / 10;
+		}
+		.side > figcaption {
+			grid-column: 10 / 13;
+			grid-row: 1;
+			flex-direction: column;
+			gap: 0.6rem;
+			margin-top: 0 !important;
+			padding-top: 0.6rem;
+			border-top: 1px solid var(--ink);
+		}
+	}
+	@media (max-width: 600px) {
+		.sec .lab {
+			display: none;
+		}
+		.t-anchor {
+			translate: 12px -150%;
+		}
+	}
+</style>

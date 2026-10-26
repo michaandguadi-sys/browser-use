@@ -36,13 +36,14 @@ const timeline = en
 		: 'Expeditions- und Outdoor-Filmemacher, Kameramann und Dokumentarfilm-Cutter. Aufgewachsen in einem kleinen Dorf in Bayern, heute dauerhaft unterwegs.'}
 	alt={{ en: '/about/', de: '/de/ueber-mich/' }}
 	ogImage="kilimanjaro-ridge"
+	sheet="A/03"
 	solidHeader
 >
-	<div class="wrap a">
-		<div class="a-grid">
-			<div>
+	<div class="sheet sheet--basalt a">
+		<div class="wrap g12 a-grid">
+			<div class="a-main">
 				<p class="meta">{en ? 'About' : 'Über mich'}</p>
-				<h1>{en ? 'Still looking for the next hard, honest story' : 'Immer auf der Suche nach der nächsten harten, ehrlichen Geschichte'}</h1>
+				<h1 class="h2">{en ? 'Still looking for the next hard, honest story' : 'Immer auf der Suche nach der nächsten harten, ehrlichen Geschichte'}</h1>
 				<div class="prose a-prose">
 					{
 						en ? (
@@ -64,99 +65,139 @@ const timeline = en
 				</div>
 			</div>
 			<figure class="a-fig">
-				<Image src={portrait} alt="Micha Rössler" widths={[480, 720, 960, 1280]} sizes="(min-width: 960px) 40vw, 100vw" loading="eager" fetchpriority="high" />
+				<div class="grain"><Image src={portrait} alt="Micha Rössler" widths={[480, 720, 960, 1280]} sizes="(min-width: 960px) 30vw, 100vw" loading="eager" fetchpriority="high" /></div>
 				<figcaption class="meta">Micha Rössler · {en ? 'filmmaker & editor' : 'Filmemacher & Cutter'}</figcaption>
 			</figure>
 		</div>
 
-		<section class="tl" aria-labelledby="tl-h">
-			<h2 id="tl-h">{en ? 'Timeline' : 'Stationen'}</h2>
-			<ol>
-				{
-					timeline.map(([y, txt]) => (
-						<li class="reveal">
-							<span class="tl-y">{y}</span>
-							<p>{txt}</p>
-						</li>
-					))
-				}
-			</ol>
-		</section>
-
-		<section class="also">
-			<p class="meta">{en ? 'Also' : 'Außerdem'}</p>
-			<p class="prose">
-				{en ? 'I build edit systems for recurring video formats – templates, data-driven graphics and shorts pipelines – at ' : 'Für wiederkehrende Videoformate baue ich Schnitt-Systeme – Templates, datengetriebene Grafiken und Shorts-Pipelines – bei '}
-				<a href={en ? 'https://formatschnitt.de/en/' : 'https://formatschnitt.de/'}>formatschnitt.de</a>.
-			</p>
-			<a class="btn btn--signal" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}</a>
-		</section>
 	</div>
+
+	<section class="tl sheet sheet--firn" aria-labelledby="tl-h">
+		<div class="wrap g12">
+			<h2 id="tl-h" class="h2 tl-h">{en ? 'Timeline' : 'Stationen'}</h2>
+			<div class="tl-body" data-trace>
+				<svg class="tl-line" viewBox="0 0 2 100" preserveAspectRatio="none" aria-hidden="true">
+					<path class="trace" pathLength="1" d="M1 0V100"></path>
+				</svg>
+				<ol>
+					{
+						timeline.map(([y, txt]) => (
+							<li>
+								<span class="tl-y">{y}</span>
+								<p>{txt}</p>
+							</li>
+						))
+					}
+				</ol>
+			</div>
+		</div>
+	</section>
+
+	<section class="also sheet sheet--basalt">
+		<div class="wrap g12">
+			<div class="col-prose also-in">
+				<p class="meta">{en ? 'Also' : 'Außerdem'}</p>
+				<p class="prose">
+					{en ? 'I build edit systems for recurring video formats – templates, data-driven graphics and shorts pipelines – at ' : 'Für wiederkehrende Videoformate baue ich Schnitt-Systeme – Templates, datengetriebene Grafiken und Shorts-Pipelines – bei '}
+					<a href={en ? 'https://formatschnitt.de/en/' : 'https://formatschnitt.de/'}>formatschnitt.de</a>.
+				</p>
+				<a class="btn btn--primary" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}</a>
+			</div>
+		</div>
+	</section>
 </Base>
 
 <style>
 	.a {
-		padding-top: 8rem;
+		padding-top: calc(var(--neat) + 56px + clamp(3rem, 7vw, 6rem));
+		padding-bottom: clamp(4rem, 9vw, 7rem);
 	}
 	.a-grid {
-		display: grid;
-		gap: 3rem;
+		row-gap: 3rem;
 	}
 	@media (min-width: 960px) {
-		.a-grid {
-			grid-template-columns: 1.3fr 1fr;
-			gap: 5rem;
-			align-items: start;
+		.a-main {
+			grid-column: 1 / 8 !important;
 		}
 		.a-fig {
+			grid-column: 9 / 13 !important;
 			position: sticky;
 			top: 6rem;
+			align-self: start;
+		}
+		.a-prose {
+			margin-left: calc((100% + var(--colgap)) / 7);
 		}
 	}
 	h1 {
-		font-size: var(--step-6);
-		margin: 0.75rem 0 2rem;
+		margin: 0.75rem 0 2.5rem;
+		max-width: 18ch;
 	}
 	.a-fig {
 		margin: 0;
 	}
+	.a-fig :global(img) {
+		width: 100%;
+	}
 	.a-fig figcaption {
 		margin-top: 0.6rem;
+		padding-top: 0.5rem;
+		border-top: 1px solid var(--rule);
 	}
 	.tl {
-		margin-top: clamp(4rem, 9vw, 7rem);
+		padding-block: clamp(4rem, 9vw, 7rem);
 	}
-	.tl h2 {
-		font-size: var(--step-5);
-		margin-bottom: 2rem;
+	.tl-h {
+		margin-bottom: 2.5rem;
+	}
+	@media (min-width: 960px) {
+		.tl-h {
+			grid-column: 1 / 4 !important;
+		}
+		.tl-body {
+			grid-column: 4 / 12 !important;
+		}
+	}
+	.tl-body {
+		position: relative;
+		padding-left: clamp(1.25rem, 3vw, 2.5rem);
+	}
+	.tl-line {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 2px;
+		height: 100%;
+		overflow: visible;
 	}
 	.tl ol {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		border-top: 1px solid var(--moraine-2);
+		border-top: 1px solid var(--ink);
 	}
 	.tl li {
 		display: grid;
-		grid-template-columns: 7rem 1fr;
+		grid-template-columns: 8.5rem 1fr;
 		gap: 1rem;
-		padding: 1.25rem 0;
-		border-bottom: 1px solid var(--moraine-2);
+		padding: 1.4rem 0;
+		border-bottom: 1px solid var(--rule);
+		align-items: baseline;
 	}
 	.tl-y {
-		font-weight: 750;
-		font-stretch: 65%;
-		font-size: var(--step-2);
-		color: var(--signal);
-		font-variant-numeric: tabular-nums;
+		font-size: 32px;
+		font-weight: 300;
+		line-height: 1;
+		color: var(--ochre);
+		font-variant-numeric: tabular-nums lining-nums;
 	}
 	.tl p {
-		font-family: var(--serif);
-		font-size: 1.15rem;
-		max-width: 42em;
+		max-width: 62ch;
 	}
 	.also {
-		margin-top: clamp(4rem, 9vw, 6rem);
+		padding-block: clamp(4rem, 9vw, 7rem);
+	}
+	.also-in {
 		display: grid;
 		gap: 1.25rem;
 		justify-items: start;
@@ -164,7 +205,7 @@ const timeline = en
 	@media (max-width: 560px) {
 		.tl li {
 			grid-template-columns: 1fr;
-			gap: 0.25rem;
+			gap: 0.4rem;
 		}
 	}
 </style>
