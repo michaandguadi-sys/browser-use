@@ -25,7 +25,7 @@ cd lifeos-src/lifeos
 ./install.sh
 ```
 
-The installer asks for your name, both domains, a login passphrase, your Anthropic API key, and an optional healthchecks.io ping URL. It writes `.env` (chmod 600), starts the stack with automatic HTTPS (Caddy), creates the ntfy user, topic access and publish token, and prints:
+The installer asks for your name, both domains, a login passphrase, your Anthropic API key, and an optional healthchecks.io ping URL. It writes `.env` and a private `seed_profile.json` (starter memory: north star, projects, context; edit it before first start, it is never committed), starts the stack with automatic HTTPS (Caddy), creates the ntfy user, topic access and publish token, and prints:
 
 1. the app URL. On your phone, open it and choose **Add to Home Screen** (iOS) or **Install app** (Android). On your laptop, click **Install** in the address bar.
 2. the ntfy server, username, password (shown once) and topic. Enter these in the ntfy app (iOS/Android/desktop).

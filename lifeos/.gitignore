@@ -4,4 +4,6 @@
 .pytest_cache/
 !mentor/requirements.txt
 !mentor/requirements-dev.txt
-!mentor/seed_profile.json
+!mentor/seed_profile.example.json
+# your real starter memory stays on the server, never in git
+seed_profile.json

@@ -59,6 +59,12 @@ else
 	say "Using existing .env"
 fi
 
+if [[ ! -f seed_profile.json ]]; then
+	cp mentor/seed_profile.example.json seed_profile.json
+	chmod 644 seed_profile.json  # container user must read it; it never leaves this server
+	echo "Created seed_profile.json (private starter memory). Edit it now or later; it is loaded once on first start."
+fi
+
 PROFILE_ARGS=()
 if [[ "${USE_OWN_PROXY:-}" != "1" ]]; then
 	if command -v ss >/dev/null && ss -ltnH '( sport = :80 or sport = :443 )' | grep -q .; then

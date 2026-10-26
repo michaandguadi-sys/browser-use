@@ -62,7 +62,7 @@ class FocusIn(BaseModel):
 
 def load_seed(db: DB, seed_path: str) -> None:
 	"""Load starter memory once, on an empty database."""
-	if not seed_path or db.memory_count() > 0 or not Path(seed_path).exists():
+	if not seed_path or db.memory_count() > 0 or not Path(seed_path).is_file():
 		return
 	for item in json.loads(Path(seed_path).read_text()):
 		db.add_memory(item['kind'], item['text'], source='seed')

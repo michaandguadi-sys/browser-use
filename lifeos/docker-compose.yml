@@ -10,6 +10,7 @@ services:
       NTFY_URL: http://ntfy:80
     volumes:
       - mentor-data:/data
+      - ./seed_profile.json:/srv/seed/seed_profile.json:ro  # private starter memory, created by install.sh
     ports:
       - "127.0.0.1:${MENTOR_PORT:-8787}:8000"
     depends_on:
