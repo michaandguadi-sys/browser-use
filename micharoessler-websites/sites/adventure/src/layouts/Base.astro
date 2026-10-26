@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { getImage } from 'astro:assets';
 import { href, other, ui, type Lang } from '../i18n';
 import { pic } from '../data/projects';
+import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
 	lang: Lang;
@@ -21,6 +22,7 @@ const site = Astro.site!;
 const canonical = new URL(alt[lang], site).href;
 const og = await getImage({ src: pic(ogImage), width: 1200, height: 630, fit: 'cover', format: 'jpg' });
 const ogUrl = new URL(og.src, site).href;
+const face = await getImage({ src: portrait, width: 800, format: 'jpg' });
 
 const person = {
 	'@context': 'https://schema.org',
@@ -32,6 +34,7 @@ const person = {
 	url: 'https://micharoessler.com/',
 	email: 'mailto:hello@micharoessler.com',
 	knowsLanguage: ['de', 'en'],
+	image: new URL(face.src, site).href,
 	worksFor: { '@type': 'Organization', name: 'Micha Roessler LLC' },
 	sameAs: ['https://www.instagram.com/michaaroessler/', 'https://www.youtube.com/@GuadiandMicha', 'https://formatschnitt.de/'],
 };

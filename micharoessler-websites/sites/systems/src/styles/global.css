@@ -58,6 +58,9 @@ svg {
 	display: block;
 	max-width: 100%;
 }
+img {
+	height: auto;
+}
 a {
 	color: inherit;
 	text-underline-offset: 0.2em;

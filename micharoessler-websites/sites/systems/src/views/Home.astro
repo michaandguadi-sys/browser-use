@@ -4,6 +4,8 @@ import { type Lang } from '../i18n';
 import { packages, systemParts, proof, tools, faq } from '../data/content';
 import SpecDemo from '../components/SpecDemo.astro';
 import Calculator from '../components/Calculator.astro';
+import { Image } from 'astro:assets';
+import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
 	lang: Lang;
@@ -327,6 +329,10 @@ const offerLd = {
 			<h2>{de ? 'Eine Person. Schnitt und System.' : 'One person. Edit and system.'}</h2>
 		</div>
 		<div class="about-grid">
+			<figure class="about-img">
+				<Image src={portrait} alt="Micha Rössler" widths={[300, 600, 900]} sizes="300px" />
+				<figcaption class="mono">Micha Rössler · Editor & {de ? 'Filmemacher' : 'filmmaker'}</figcaption>
+			</figure>
 			<p class="about-p">
 				{
 					de
@@ -359,6 +365,10 @@ const offerLd = {
 		<div class="wrap c-in">
 			<div class="c-txt">
 				<p class="mono label">{de ? 'Kontakt' : 'Contact'}</p>
+				<div class="c-who">
+					<Image src={portrait} alt="Micha Rössler" width={128} height={128} widths={[64, 128]} sizes="64px" class="c-avatar" />
+					<p><b>Micha Rössler</b><br /><span class="mono">{de ? 'antwortet persönlich' : 'replies personally'}</span></p>
+				</div>
 				<h2>{de ? 'Erzählt mir von eurem Format.' : 'Tell me about your format.'}</h2>
 				<p>
 					{de ? 'Antwort innerhalb von zwei Werktagen. Oder direkt: ' : 'Reply within two working days. Or directly: '}
@@ -906,8 +916,24 @@ const offerLd = {
 	}
 	@media (min-width: 900px) {
 		.about-grid {
-			grid-template-columns: 1fr auto;
+			grid-template-columns: 300px 1fr auto;
+			gap: 3.5rem;
 		}
+	}
+	.about-img {
+		margin: 0;
+		max-width: 300px;
+	}
+	.about-img img {
+		width: 100%;
+		aspect-ratio: 4 / 5;
+		object-fit: cover;
+		object-position: 50% 18%;
+		border-radius: 10px;
+	}
+	.about-img figcaption {
+		margin-top: 0.6rem;
+		text-transform: none;
 	}
 	.about-p {
 		font-size: var(--s3);
@@ -968,6 +994,24 @@ const offerLd = {
 		.c-in {
 			grid-template-columns: 0.9fr 1.1fr;
 		}
+	}
+	.c-who {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		margin-top: 1.25rem;
+	}
+	.c-who p {
+		color: #f2f2ee !important;
+		line-height: 1.35;
+	}
+	.c-avatar {
+		width: 64px;
+		height: 64px;
+		border-radius: 50%;
+		object-fit: cover;
+		object-position: 50% 18%;
+		border: 1px solid #3a3b42;
 	}
 	.c-txt h2 {
 		font-size: var(--s5);

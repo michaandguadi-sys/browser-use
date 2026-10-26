@@ -1,6 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
 import { type Lang } from '../i18n';
+import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
 	lang: Lang;
@@ -48,7 +50,10 @@ const L = en
 	<div class="wrap c">
 		<p class="meta">{en ? 'Contact' : 'Kontakt'}</p>
 		<h1>{L.h}</h1>
-		<p class="prose c-p">{L.p}</p>
+		<div class="who">
+			<Image src={portrait} alt="Micha Rössler" width={160} height={160} widths={[96, 160]} sizes="80px" class="avatar" />
+			<p class="prose c-p">{L.p} {en ? 'You are writing to me directly – Micha.' : 'Du schreibst direkt mir – Micha.'}</p>
+		</div>
 
 		<form class="f" id="brief" data-subject={en ? 'Shoot request' : 'Drehanfrage'}>
 			<label><span class="meta">{L.name}</span><input name={L.name} required autocomplete="name" /></label>
@@ -90,6 +95,20 @@ const L = en
 	h1 {
 		font-size: var(--step-6);
 		margin: 0.75rem 0 1.25rem;
+	}
+	.who {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+	}
+	.avatar {
+		width: 80px;
+		height: 80px;
+		flex: none;
+		border-radius: 50%;
+		object-fit: cover;
+		object-position: 50% 18%;
+		border: 1px solid var(--moraine-2);
 	}
 	.f {
 		margin-top: 3rem;

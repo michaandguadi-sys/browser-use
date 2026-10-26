@@ -4,6 +4,7 @@ import Base from '../layouts/Base.astro';
 import { href, ui, type Lang } from '../i18n';
 import { projects, brands, creators, pic } from '../data/projects';
 import ExpeditionMap from '../components/ExpeditionMap.astro';
+import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
 	lang: Lang;
@@ -230,6 +231,27 @@ const description = en
 		<p class="names-list names-list--c reveal">
 			{creators.join(' · ')}
 		</p>
+	</section>
+
+	<section class="me wrap" aria-labelledby="me-h">
+		<div class="me-img reveal">
+			<Image src={portrait} alt="Micha Rössler" widths={[400, 640, 900]} sizes="(min-width: 900px) 34vw, 80vw" />
+		</div>
+		<div class="me-txt">
+			<p class="meta">{en ? 'Who you will work with' : 'Mit wem du arbeitest'}</p>
+			<h2 id="me-h">{en ? 'Hi, I am Micha.' : 'Hi, ich bin Micha.'}</h2>
+			<p class="prose">
+				{
+					en
+						? 'No agency, no account manager. When you write, I answer – and I am the one carrying the camera up the mountain and sitting in the edit afterwards.'
+						: 'Keine Agentur, kein Account-Manager. Wenn du schreibst, antworte ich – und ich bin derjenige, der die Kamera auf den Berg trägt und danach im Schnitt sitzt.'
+				}
+			</p>
+			<div class="me-actions">
+				<a class="btn btn--signal" href={href(lang, 'contact')}>{t.cta}</a>
+				<a class="btn" href={href(lang, 'about')}>{en ? 'My story' : 'Meine Geschichte'}</a>
+			</div>
+		</div>
 	</section>
 
 	<section class="next wrap" aria-labelledby="next-h">
@@ -588,6 +610,37 @@ const description = en
 		color: var(--lichen);
 	}
 
+	.me {
+		padding-top: clamp(5rem, 10vw, 8rem);
+		display: grid;
+		gap: 2.5rem;
+		align-items: center;
+	}
+	@media (min-width: 900px) {
+		.me {
+			grid-template-columns: 0.75fr 1fr;
+			gap: 5rem;
+		}
+	}
+	.me-img {
+		max-width: 460px;
+	}
+	.me-img img {
+		width: 100%;
+		aspect-ratio: 4 / 5;
+		object-fit: cover;
+		object-position: 50% 20%;
+	}
+	.me h2 {
+		font-size: var(--step-6);
+		margin: 0.75rem 0 1.5rem;
+	}
+	.me-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-top: 2rem;
+	}
 	.next {
 		padding-top: clamp(5rem, 10vw, 8rem);
 	}

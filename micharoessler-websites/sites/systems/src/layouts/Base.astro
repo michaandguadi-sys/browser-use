@@ -1,6 +1,8 @@
 ---
 import '../styles/global.css';
+import { getImage } from 'astro:assets';
 import { href, other, type Lang } from '../i18n';
+import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
 	lang: Lang;
@@ -14,6 +16,7 @@ const de = lang === 'de';
 const site = Astro.site!;
 const canonical = new URL(alt[lang], site).href;
 const home = href(lang, 'home');
+const face = await getImage({ src: portrait, width: 800, format: 'jpg' });
 
 const org = {
 	'@context': 'https://schema.org',
@@ -31,6 +34,7 @@ const org = {
 		'@id': 'https://micharoessler.com/#person',
 		name: 'Micha Rössler',
 		url: 'https://micharoessler.com/',
+		image: new URL(face.src, site).href,
 	},
 	parentOrganization: { '@type': 'Organization', name: 'Micha Roessler LLC' },
 	sameAs: ['https://micharoessler.com/'],

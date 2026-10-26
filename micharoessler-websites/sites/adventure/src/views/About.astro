@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import { href, type Lang } from '../i18n';
 import { pic } from '../data/projects';
+import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
 	lang: Lang;
@@ -63,8 +64,8 @@ const timeline = en
 				</div>
 			</div>
 			<figure class="a-fig">
-				<Image src={pic('bolivia-sunrise-hiker')} alt={en ? 'Hiker at sunrise in the Andes' : 'Wanderer bei Sonnenaufgang in den Anden'} widths={[480, 720, 960]} sizes="(min-width: 960px) 40vw, 100vw" loading="eager" />
-				<figcaption class="meta">Bolivia · 2024</figcaption>
+				<Image src={portrait} alt="Micha Rössler" widths={[480, 720, 960, 1280]} sizes="(min-width: 960px) 40vw, 100vw" loading="eager" fetchpriority="high" />
+				<figcaption class="meta">Micha Rössler · {en ? 'filmmaker & editor' : 'Filmemacher & Cutter'}</figcaption>
 			</figure>
 		</div>
 
