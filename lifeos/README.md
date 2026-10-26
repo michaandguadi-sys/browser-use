@@ -13,7 +13,11 @@ ntfy app (push)                    ◄──HTTPS── Caddy ◄── ntfy    
 - **Timing comes from fixed rules first.** Proactive messages are blocked during quiet hours (21:30–08:00 by default, in your *current* timezone, which follows your device), focus mode, or pause. They're also capped at 3 per day with at least 3 hours between them, and never sent while you're mid-conversation. Only after these rules pass does Claude decide whether a check-in is actually worth it, and staying silent is a valid answer.
 - **Rituals:** an evening reflection (20:30) and a weekly review (Sunday 18:00), each sent at most once per day or week.
 - **Every check-in tells you why now.** "Good timing" / "Not now" feedback tunes timing only. It never teaches the mentor to agree with you.
-- **Memory** is visible and editable in the Memory tab. The first check-ins ask about your values (onboarding).
+- **Memory** is visible and editable in the Memory tab.
+- **Profile interview** (Memory tab): about 15 minutes, one question at a time. It covers 7 topics (north star, values, anti-goals, 90-day goals, strengths, blind spots, how you want to be coached) and shows how many are known.
+- **Coaching with evidence** (Progress tab): you set leading indicators with weekly targets. The defaults are 5 h/week on your own documentary project and 1 doc-industry contact per week. Log progress with one tap, or just say it in chat ("spent 2 hours on the film") and it's logged automatically. A deterministic weekly scorecard tracks indicators vs pace, commitments kept, energy and check-in usefulness. The mentor sees it, names gaps with the numbers, and the Sunday review is built on it.
+- **Today strip:** a one-tap energy rating (1–5), plus commitments that are due, with Done / Not yet buttons. Low energy shifts the mentor toward care, or toward staying quiet.
+- **Voice input:** the mic button uses the browser's speech recognition where available. Keyboard dictation works everywhere.
 
 ## Install on your VPS (about 10 minutes)
 

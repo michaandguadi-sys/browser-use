@@ -24,8 +24,9 @@ from app.llm import LLM, ClaudeLLM
 from app.mentor import Mentor
 from app.notify import Notifier
 from app.scheduler import Scheduler
-from app.timing import parse_iso
-from app.views import MemoryKind, Settings
+from app.scorecard import build_scorecard
+from app.timing import local_now, parse_iso
+from app.views import DEFAULT_INDICATORS, INTERVIEW_TOPICS, MemoryKind, Settings
 
 logger = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).parent / 'static'
@@ -60,6 +61,28 @@ class FocusIn(BaseModel):
 	minutes: int = Field(ge=0, le=60 * 24 * 14)  # 0 ends focus mode
 
 
+class IndicatorIn(BaseModel):
+	name: str = Field(min_length=1, max_length=200)
+	unit: str = Field(min_length=1, max_length=30)
+	weekly_target: float = Field(ge=0, le=1000)
+
+
+class IndicatorPatch(BaseModel):
+	name: str | None = Field(default=None, min_length=1, max_length=200)
+	unit: str | None = Field(default=None, min_length=1, max_length=30)
+	weekly_target: float | None = Field(default=None, ge=0, le=1000)
+	active: bool | None = None
+
+
+class IndicatorLogBody(BaseModel):
+	value: float = Field(ge=-1000, le=1000)  # negative corrects a mis-tap
+	note: str = Field(default='', max_length=500)
+
+
+class TodayIn(BaseModel):
+	energy: int = Field(ge=1, le=5)
+
+
 def load_seed(db: DB, seed_path: str) -> None:
 	"""Load starter memory once, on an empty database."""
 	if not seed_path or db.memory_count() > 0 or not Path(seed_path).is_file():
@@ -69,9 +92,19 @@ def load_seed(db: DB, seed_path: str) -> None:
 	logger.info('loaded seed memory from %s', seed_path)
 
 
+def seed_indicators(db: DB) -> None:
+	"""Create the default leading indicators once; afterwards the user owns the list."""
+	if db.last_run('indicators_seeded') or db.list_indicators(include_inactive=True):
+		return
+	for item in DEFAULT_INDICATORS:
+		db.add_indicator(item['name'], item['unit'], item['weekly_target'])
+	db.mark_run('indicators_seeded')
+
+
 def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = True) -> FastAPI:
 	db = DB(config.db_path)
 	load_seed(db, config.seed_path)
+	seed_indicators(db)
 	mentor = Mentor(db, llm or ClaudeLLM(config.anthropic_api_key, config.model), config.owner_name)
 	notifier = Notifier(config)
 	scheduler = Scheduler(db, mentor, notifier, config.tick_seconds, config.healthcheck_ping_url)
@@ -94,6 +127,11 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 		https_only=config.cookie_secure,
 	)
 	app.state.db, app.state.mentor, app.state.scheduler = db, mentor, scheduler
+
+	@app.exception_handler(AssertionError)
+	async def invalid_input(request: Request, exc: AssertionError):
+		# store-level assertions guard ids and values; surface them as client errors, not 500s
+		return JSONResponse({'detail': str(exc) or 'invalid request'}, status_code=400)
 
 	def require_auth(request: Request) -> None:
 		if not request.session.get('auth') or request.session.get('epoch') != db.session_epoch():
@@ -125,6 +163,23 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 		request.session.clear()
 		return {'ok': True}
 
+	def today() -> str:
+		return local_now(datetime.now(UTC), db.get_settings()).date().isoformat()
+
+	def progress() -> dict:
+		now = datetime.now(UTC)
+		return {
+			'indicators': [i.model_dump() for i in db.list_indicators()],
+			'scorecard': build_scorecard(db, now).model_dump(),
+			'last_week': build_scorecard(db, now, weeks_ago=1).model_dump(),
+			'today': {'day': today(), 'energy': db.energies(today(), today()).get(today())},
+			'interview': {
+				'active': db.get_settings().interview_active,
+				'missing': mentor.missing_topics(),
+				'total': len(INTERVIEW_TOPICS),
+			},
+		}
+
 	@app.get('/api/state', dependencies=auth)
 	async def state():
 		return {
@@ -133,12 +188,52 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 			'memory': [m.model_dump() for m in db.list_memory(include_done=True)],
 			'settings': db.get_settings().model_dump(),
 			'push': {'enabled': notifier.enabled, 'server': config.ntfy_public_url, 'topic': config.ntfy_topic},
+			**progress(),
 		}
 
 	@app.post('/api/message', dependencies=auth)
 	async def message(body: MessageIn):
-		user_msg, mentor_msg, added = await mentor.reply(body.text)
-		return {'user': user_msg.model_dump(), 'mentor': mentor_msg.model_dump(), 'memory_added': [m.model_dump() for m in added]}
+		user_msg, mentor_msg, added, logged = await mentor.reply(body.text)
+		return {
+			'user': user_msg.model_dump(),
+			'mentor': mentor_msg.model_dump(),
+			'memory_added': [m.model_dump() for m in added],
+			'logged': logged,
+		}
+
+	@app.post('/api/interview', dependencies=auth)
+	async def interview():
+		msg = await mentor.start_interview(datetime.now(UTC))
+		if msg is None:
+			raise HTTPException(status_code=502, detail='mentor unavailable, try again')
+		return msg.model_dump()
+
+	@app.post('/api/interview/pause', dependencies=auth)
+	async def interview_pause():
+		db.update_settings(interview_active=False)
+		return progress()
+
+	@app.post('/api/today', dependencies=auth)
+	async def set_today(body: TodayIn):
+		db.set_energy(today(), body.energy)
+		return progress()
+
+	@app.post('/api/indicators', dependencies=auth)
+	async def add_indicator(body: IndicatorIn):
+		db.add_indicator(body.name, body.unit, body.weekly_target)
+		return progress()
+
+	@app.patch('/api/indicators/{indicator_id}', dependencies=auth)
+	async def patch_indicator(indicator_id: str, body: IndicatorPatch):
+		db.update_indicator(indicator_id, **body.model_dump(exclude_none=True))
+		return progress()
+
+	@app.post('/api/indicators/{indicator_id}/log', dependencies=auth)
+	async def log_indicator(indicator_id: str, body: IndicatorLogBody):
+		if body.value == 0:
+			raise HTTPException(status_code=422, detail='value must not be 0')
+		db.log_indicator(indicator_id, today(), body.value, source='manual', note=body.note)
+		return progress()
 
 	@app.post('/api/messages/{msg_id}/feedback', dependencies=auth)
 	async def feedback(msg_id: str, body: FeedbackIn):

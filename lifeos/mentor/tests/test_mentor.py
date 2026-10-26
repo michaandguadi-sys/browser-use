@@ -11,8 +11,9 @@ from app.main import create_app
 from app.mentor import Mentor
 from app.notify import Notifier
 from app.scheduler import Scheduler
+from app.scorecard import build_scorecard, format_scorecard
 from app.timing import base_gate, in_quiet_hours, local_now, spontaneous_gate
-from app.views import CHECKIN_SCHEMA, MEMORY_UPDATE_SCHEMA, Settings
+from app.views import CHECKIN_SCHEMA, INTERVIEW_TOPICS, MEMORY_UPDATE_SCHEMA, Settings
 from fastapi.testclient import TestClient
 from pytest_httpserver import HTTPServer
 
@@ -29,7 +30,7 @@ class ScriptedLLM:
 			'reason': 'commitment due today',
 			'message': 'Did you call the producer?',
 		}
-		self.memory_update: dict = {'add': [], 'complete_ids': []}
+		self.memory_update: dict = {'add': [], 'complete_ids': [], 'log': []}
 
 	async def complete(self, *, system, messages, effort='medium', schema=None, max_tokens=16000) -> str:
 		self.calls.append({'system': system, 'messages': messages, 'effort': effort, 'schema': schema})
@@ -92,23 +93,87 @@ def test_gate_blocks_pause_focus_budget_spacing_and_live_chat():
 # --- mentor + scheduler -----------------------------------------------------------
 
 
-async def test_reply_stores_conversation_and_learns_memory(db, llm):
+async def test_reply_stores_conversation_learns_memory_and_logs_progress(db, llm):
 	mentor = Mentor(db, llm, 'Micha')
+	hours = db.add_indicator('Hours on own film', 'h', 5)
 	db.add_message('mentor', 'An earlier check-in that came first.', kind='checkin')
 	commitment = db.add_memory('commitment', 'Email the IDFA contact', source='manual', due_at='2026-10-27')
 	llm.memory_update = {
 		'add': [{'kind': 'value', 'text': 'Honest stories over pretty ones', 'due_date': ''}],
 		'complete_ids': [commitment.id, 'not-a-real-id'],
+		'log': [{'indicator_id': hours.id, 'value': 2}, {'indicator_id': 'bogus', 'value': 3}],
 	}
-	user_msg, mentor_msg, added = await mentor.reply('I sent the IDFA email. I care about honest stories over pretty ones.')
+	now = utc('2026-10-28T15:00:00')  # Wednesday
+	user_msg, mentor_msg, added, logged = await mentor.reply('Sent the IDFA email and cut 2 hours on the film.', now)
 
 	assert mentor_msg.content == llm.reply
 	assert [m.text for m in added] == ['Honest stories over pretty ones']
+	assert logged == [{'indicator_id': hours.id, 'name': 'Hours on own film', 'unit': 'h', 'value': 2}]
+	assert build_scorecard(db, now).indicators[0].actual == 2
 	assert db.get_memory(commitment.id).status == 'done'
 	assert [m.id for m in db.recent_messages()][-2:] == [user_msg.id, mentor_msg.id]
 	chat_call = llm.calls[0]
 	assert chat_call['system'][0]['cache_control'] == {'type': 'ephemeral'}  # stable prefix is cached
 	assert 'Email the IDFA contact' in chat_call['system'][1]['text']  # memory is in context
+	assert 'Hours on own film: 0 / 5 h' in chat_call['system'][1]['text']  # evidence is in context
+
+
+def test_scorecard_counts_local_week_commitments_energy_and_ratings(db):
+	db.update_settings(timezone='America/La_Paz')  # UTC-4
+	now = utc('2026-10-29T12:00:00')  # Thursday 08:00 local -> week Mon 26 .. Sun Nov 1, day 4
+	film = db.add_indicator('Film hours', 'h', 7)
+	db.log_indicator(film.id, '2026-10-25', 9, source='manual')  # previous Sunday: last week
+	db.log_indicator(film.id, '2026-10-26', 1.5, source='manual')
+	db.log_indicator(film.id, '2026-10-28', 0.5, source='manual')
+	done = db.add_memory('commitment', 'Send teaser to Hot Docs', source='manual', due_at='2026-10-27')
+	db.update_memory(done.id, status='done')
+	db.add_memory('commitment', 'Book interview', source='manual', due_at='2026-10-28')  # still open -> overdue
+	db.add_memory('commitment', 'Next week thing', source='manual', due_at='2026-11-04')
+	db.set_energy('2026-10-27', 4)
+	db.set_energy('2026-10-28', 2)
+	useful = db.add_message('mentor', 'q', kind='checkin', at=utc('2026-10-27T15:00:00'))
+	assert useful
+	db.set_feedback(useful.id, 1)
+
+	card = build_scorecard(db, now)
+	assert (card.week_start, card.week_end, card.days_elapsed) == ('2026-10-26', '2026-11-01', 4)
+	assert card.indicators[0].actual == 2
+	assert (card.commitments_due, card.commitments_done, card.kept_rate) == (2, 1, 0.5)
+	assert card.commitments_overdue == ['Book interview']
+	assert (card.energy_avg, card.energy_days) == (3.0, 2)
+	assert (card.checkins_rated, card.checkins_useful) == (1, 1)
+	assert 'behind pace' in format_scorecard(card)  # 2 of expected 4 by day 4
+	assert build_scorecard(db, now, weeks_ago=1).indicators[0].actual == 9
+
+
+async def test_interview_steers_until_all_topics_known_then_stops(db, llm):
+	mentor = Mentor(db, llm, 'Micha')
+	msg = await mentor.start_interview(utc('2026-10-28T15:00:00'))
+	assert msg and msg.kind == 'interview' and db.get_settings().interview_active
+	assert '- north_star:' in llm.calls[-1]['messages'][-1]['content']
+
+	_, reply, _, _ = await mentor.reply('I want to make films about water and the people fighting for it.')
+	assert reply.kind == 'interview'
+	assert '[system: interview]' in llm.calls[-2]['messages'][-1]['content']  # steer was appended to the reply call
+
+	llm.memory_update = {
+		'add': [{'kind': k, 'text': f'known {k}', 'due_date': ''} for k in INTERVIEW_TOPICS],
+		'complete_ids': [],
+		'log': [],
+	}
+	await mentor.reply('That covers everything, I think.')
+	assert mentor.missing_topics() == []
+	assert not db.get_settings().interview_active
+
+
+async def test_checkin_signal_flags_behind_pace_and_low_energy(db, llm):
+	db.add_memory('value', 'Craft over speed', source='manual')
+	db.add_indicator('Doc contacts', 'contacts', 2)
+	db.set_energy('2026-10-29', 2)
+	await Mentor(db, llm, 'Micha').decide_checkin(utc('2026-10-29T12:00:00'))  # Thursday in Berlin
+	signal = llm.calls[-1]['messages'][-1]['content']
+	assert 'Behind on "Doc contacts": 0 of 2 contacts' in signal
+	assert 'Energy logged low today' in signal
 
 
 async def test_tick_sends_evening_reflection_once_and_pushes(db, llm, httpserver: HTTPServer, tmp_path):
@@ -186,6 +251,21 @@ def test_api_auth_chat_memory_settings_and_timezone_follow(tmp_path, llm):
 		assert client.patch('/api/settings', json={'quiet_start': '25:00'}).status_code == 422
 		assert client.patch('/api/settings', json={'max_checkins_per_day': 2}).json()['max_checkins_per_day'] == 2
 		assert client.post('/api/focus', json={'minutes': 60}).json()['focus_until']
+
+		progress = client.get('/api/state').json()
+		assert [i['name'] for i in progress['indicators']][0].startswith('Hours on own documentary')  # defaults seeded
+		first = progress['indicators'][0]['id']
+		after_log = client.post(f'/api/indicators/{first}/log', json={'value': 1.5}).json()
+		assert after_log['scorecard']['indicators'][0]['actual'] == 1.5
+		assert client.post(f'/api/indicators/{first}/log', json={'value': 0}).status_code == 422
+		assert client.post('/api/indicators/nope/log', json={'value': 1}).status_code == 400
+		assert client.post('/api/today', json={'energy': 4}).json()['today']['energy'] == 4
+		added = client.post('/api/indicators', json={'name': 'No-AI edit reps', 'unit': 'reps', 'weekly_target': 2}).json()
+		assert len(added['indicators']) == 3
+		new_id = added['indicators'][-1]['id']
+		assert len(client.patch(f'/api/indicators/{new_id}', json={'active': False}).json()['indicators']) == 2
+		assert client.post('/api/interview').json()['kind'] == 'interview'
+		assert client.post('/api/interview/pause').json()['interview']['active'] is False
 
 		assert client.get('/').status_code == 200 and client.get('/sw.js').status_code == 200
 		assert client.get('/healthz').json()['ok']

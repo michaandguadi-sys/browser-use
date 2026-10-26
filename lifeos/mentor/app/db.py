@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from app.views import MEMORY_KINDS, MemoryItem, Message, Settings
+from app.views import MEMORY_KINDS, Indicator, MemoryItem, Message, Settings
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -35,6 +35,25 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 CREATE INDEX IF NOT EXISTS messages_created ON messages(created_at);
 CREATE TABLE IF NOT EXISTS runs (name TEXT PRIMARY KEY, at TEXT NOT NULL, detail TEXT);
+CREATE TABLE IF NOT EXISTS indicators (
+	id TEXT PRIMARY KEY,
+	name TEXT NOT NULL,
+	unit TEXT NOT NULL,
+	weekly_target REAL NOT NULL,
+	active INTEGER NOT NULL DEFAULT 1,
+	created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS indicator_logs (
+	id TEXT PRIMARY KEY,
+	indicator_id TEXT NOT NULL REFERENCES indicators(id),
+	day TEXT NOT NULL,
+	value REAL NOT NULL,
+	source TEXT NOT NULL,
+	note TEXT,
+	created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS indicator_logs_day ON indicator_logs(indicator_id, day);
+CREATE TABLE IF NOT EXISTS daily_state (day TEXT PRIMARY KEY, energy INTEGER, note TEXT, updated_at TEXT NOT NULL);
 """
 
 
@@ -182,6 +201,71 @@ class DB:
 			params.extend(kinds)
 		rows = self._exec(sql + ' ORDER BY created_at DESC, rowid DESC LIMIT 1', tuple(params))
 		return Message.model_validate(dict(rows[0])) if rows else None
+
+	def messages_between(self, start_iso: str, end_iso: str) -> list[Message]:
+		rows = self._exec(
+			'SELECT * FROM messages WHERE created_at>=? AND created_at<? ORDER BY created_at, rowid', (start_iso, end_iso)
+		)
+		return [Message.model_validate(dict(r)) for r in rows]
+
+	# --- leading indicators ---------------------------------------------
+
+	def add_indicator(self, name: str, unit: str, weekly_target: float) -> Indicator:
+		assert name.strip() and unit.strip(), 'indicator needs a name and a unit'
+		assert weekly_target >= 0
+		item_id = new_id()
+		self._exec(
+			'INSERT INTO indicators(id, name, unit, weekly_target, active, created_at) VALUES(?,?,?,?,1,?)',
+			(item_id, name.strip(), unit.strip(), weekly_target, now_iso()),
+		)
+		return self.get_indicator(item_id)
+
+	def get_indicator(self, item_id: str) -> Indicator:
+		rows = self._exec('SELECT * FROM indicators WHERE id=?', (item_id,))
+		assert rows, f'indicator {item_id} not found'
+		return Indicator.model_validate({**dict(rows[0]), 'active': bool(rows[0]['active'])})
+
+	def list_indicators(self, include_inactive: bool = False) -> list[Indicator]:
+		sql = 'SELECT id FROM indicators' + ('' if include_inactive else ' WHERE active=1') + ' ORDER BY created_at, rowid'
+		return [self.get_indicator(r['id']) for r in self._exec(sql)]
+
+	def update_indicator(self, item_id: str, **changes: Any) -> Indicator:
+		allowed = {'name', 'unit', 'weekly_target', 'active'}
+		assert set(changes) <= allowed, f'cannot update {set(changes) - allowed}'
+		for key, value in changes.items():
+			self._exec(f'UPDATE indicators SET {key}=? WHERE id=?', (int(value) if key == 'active' else value, item_id))
+		return self.get_indicator(item_id)
+
+	def log_indicator(self, indicator_id: str, day: str, value: float, source: str, note: str = '') -> None:
+		self.get_indicator(indicator_id)  # asserts it exists
+		self._exec(
+			'INSERT INTO indicator_logs(id, indicator_id, day, value, source, note, created_at) VALUES(?,?,?,?,?,?,?)',
+			(new_id(), indicator_id, day, value, source, note, now_iso()),
+		)
+
+	def indicator_total(self, indicator_id: str, start_day: str, end_day: str) -> float:
+		"""Sum of logged values for local days in [start_day, end_day]."""
+		rows = self._exec(
+			'SELECT coalesce(sum(value), 0) AS total FROM indicator_logs WHERE indicator_id=? AND day>=? AND day<=?',
+			(indicator_id, start_day, end_day),
+		)
+		return float(rows[0]['total'])
+
+	# --- daily state ----------------------------------------------------
+
+	def set_energy(self, day: str, energy: int, note: str = '') -> None:
+		assert 1 <= energy <= 5, 'energy is 1..5'
+		self._exec(
+			'INSERT INTO daily_state(day, energy, note, updated_at) VALUES(?,?,?,?) '
+			'ON CONFLICT(day) DO UPDATE SET energy=excluded.energy, note=excluded.note, updated_at=excluded.updated_at',
+			(day, energy, note, now_iso()),
+		)
+
+	def energies(self, start_day: str, end_day: str) -> dict[str, int]:
+		rows = self._exec(
+			'SELECT day, energy FROM daily_state WHERE day>=? AND day<=? AND energy IS NOT NULL', (start_day, end_day)
+		)
+		return {r['day']: r['energy'] for r in rows}
 
 	# --- scheduler runs -------------------------------------------------
 

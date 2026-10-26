@@ -6,10 +6,54 @@ from zoneinfo import ZoneInfo, available_timezones
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
-MEMORY_KINDS = ('north_star', 'value', 'goal', 'project', 'idea', 'context', 'person', 'lesson', 'commitment')
+MEMORY_KINDS = (
+	'north_star',
+	'value',
+	'anti_goal',
+	'goal',
+	'strength',
+	'blind_spot',
+	'coaching_pref',
+	'project',
+	'idea',
+	'context',
+	'person',
+	'lesson',
+	'commitment',
+)
 LENSES = ('socrates', 'story_editor', 'producer', 'career_strategist', 'red_team', 'craft_coach', 'wellbeing')
 
-MemoryKind = Literal['north_star', 'value', 'goal', 'project', 'idea', 'context', 'person', 'lesson', 'commitment']
+MemoryKind = Literal[
+	'north_star',
+	'value',
+	'anti_goal',
+	'goal',
+	'strength',
+	'blind_spot',
+	'coaching_pref',
+	'project',
+	'idea',
+	'context',
+	'person',
+	'lesson',
+	'commitment',
+]
+
+# The profile interview is done when each of these kinds has at least one entry.
+INTERVIEW_TOPICS: dict[str, str] = {
+	'north_star': 'the long-term direction: what they are ultimately working toward and why it matters to them',
+	'value': 'their core values / principles, ideally ranked, with a real example of each',
+	'anti_goal': 'anti-goals: what they refuse to become or trade away on the way',
+	'goal': 'the 1-3 concrete outcomes for the next 90 days',
+	'strength': "their strengths: what they are reliably good at, by their own and others' account",
+	'blind_spot': 'blind spots and recurring patterns that derail them (procrastination triggers, overcommitting, travel days...)',
+	'coaching_pref': 'how they want to be coached: directness, when to push, when to back off, what they hate in advice',
+}
+
+DEFAULT_INDICATORS = (
+	{'name': 'Hours on own documentary project', 'unit': 'h', 'weekly_target': 5.0},
+	{'name': 'Doc-industry contacts (pitches, labs, commissioners, peers)', 'unit': 'contacts', 'weekly_target': 1.0},
+)
 Lens = Literal['socrates', 'story_editor', 'producer', 'career_strategist', 'red_team', 'craft_coach', 'wellbeing']
 
 
@@ -44,6 +88,7 @@ class Settings(BaseModel):
 	weekly_review_time: TimeOfDay | Literal[''] = '18:00'
 	focus_until: str = ''  # ISO timestamp (UTC); no proactive messages before it
 	paused: bool = False
+	interview_active: bool = False  # profile interview in progress: replies steer toward missing topics
 
 
 class MemoryItem(BaseModel):
@@ -61,12 +106,51 @@ class Message(BaseModel):
 	id: str
 	role: Literal['user', 'mentor']
 	content: str
-	kind: Literal['chat', 'checkin', 'evening', 'weekly', 'ondemand']
+	kind: Literal['chat', 'checkin', 'evening', 'weekly', 'ondemand', 'interview']
 	lens: str | None = None
 	reason: str | None = None
 	checkin_key: str | None = None
 	feedback: int | None = None
 	created_at: str
+
+
+class Indicator(BaseModel):
+	"""A leading indicator for the current goals, measured per week (e.g. hours on own film)."""
+
+	id: str
+	name: str
+	unit: str
+	weekly_target: float
+	active: bool
+	created_at: str
+
+
+class IndicatorProgress(BaseModel):
+	id: str
+	name: str
+	unit: str
+	target: float
+	actual: float
+
+
+class Scorecard(BaseModel):
+	"""Deterministic weekly numbers; the LLM interprets them but never computes them."""
+
+	week_start: str  # local Monday, YYYY-MM-DD
+	week_end: str  # local Sunday
+	days_elapsed: int  # 1..7 (7 for past weeks)
+	indicators: list[IndicatorProgress]
+	commitments_due: int
+	commitments_done: int
+	commitments_overdue: list[str]
+	energy_avg: float | None
+	energy_days: int
+	checkins_rated: int
+	checkins_useful: int
+
+	@property
+	def kept_rate(self) -> float | None:
+		return self.commitments_done / self.commitments_due if self.commitments_due else None
 
 
 # --- structured LLM outputs -----------------------------------------------
@@ -89,11 +173,19 @@ class NewMemory(BaseModel):
 	due_date: str  # YYYY-MM-DD for commitments, '' otherwise
 
 
+class IndicatorLogIn(BaseModel):
+	model_config = ConfigDict(extra='forbid')
+
+	indicator_id: str
+	value: float
+
+
 class MemoryUpdate(BaseModel):
 	model_config = ConfigDict(extra='forbid')
 
 	add: list[NewMemory]
 	complete_ids: list[str]
+	log: list[IndicatorLogIn]
 
 
 CHECKIN_SCHEMA = {
@@ -125,7 +217,16 @@ MEMORY_UPDATE_SCHEMA = {
 			},
 		},
 		'complete_ids': {'type': 'array', 'items': {'type': 'string'}},
+		'log': {
+			'type': 'array',
+			'items': {
+				'type': 'object',
+				'properties': {'indicator_id': {'type': 'string'}, 'value': {'type': 'number'}},
+				'required': ['indicator_id', 'value'],
+				'additionalProperties': False,
+			},
+		},
 	},
-	'required': ['add', 'complete_ids'],
+	'required': ['add', 'complete_ids', 'log'],
 	'additionalProperties': False,
 }

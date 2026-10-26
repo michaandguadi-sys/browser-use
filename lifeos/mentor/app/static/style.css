@@ -232,7 +232,7 @@ code { background: var(--chip); border-radius: 6px; padding: 1px 5px; word-break
 
 .tabs {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(4, 1fr);
 	border-top: 1px solid var(--line);
 	padding-bottom: env(safe-area-inset-bottom);
 	background: var(--bg);
@@ -247,7 +247,24 @@ code { background: var(--chip); border-radius: 6px; padding: 1px 5px; word-break
 
 .tabs button.active { color: var(--accent); font-weight: 600; }
 
+.grow { flex: 1; }
+.pill { padding: 4px 10px; font-size: 13px; border-radius: 999px; }
+.today { display: grid; gap: 6px; }
+.today-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.mic { border-radius: 50%; width: 44px; height: 44px; padding: 0; flex: none; }
+.mic.on { background: var(--accent); color: var(--accent-text); }
+
+.indicator { display: grid; gap: 6px; margin: 12px 0 16px; }
+.indicator-head { display: flex; gap: 8px; align-items: baseline; }
+.indicator-head .behind { color: var(--error); }
+.indicator-head .ok { color: var(--accent); }
+.bar { position: relative; height: 8px; border-radius: 999px; background: var(--chip); overflow: visible; }
+.bar .fill { height: 100%; border-radius: 999px; background: var(--accent); }
+.bar .pace { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--muted); }
+.indicator-form { display: grid; gap: 8px; margin-top: 10px; grid-template-columns: 1fr; }
+
 @media (min-width: 900px) {
+	.indicator-form { grid-template-columns: 1fr 120px 110px auto; }
 	#app { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 	.memory-form { grid-template-columns: 160px 1fr auto auto; }
 }

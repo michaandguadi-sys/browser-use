@@ -3,7 +3,11 @@
 const KIND_LABELS = {
 	north_star: 'North star',
 	value: 'Values',
+	anti_goal: 'Anti-goals',
 	goal: 'Goals',
+	strength: 'Strengths',
+	blind_spot: 'Blind spots',
+	coaching_pref: 'How to coach me',
 	project: 'Projects',
 	commitment: 'Commitments',
 	idea: 'Ideas',
@@ -20,11 +24,13 @@ const LENS_LABELS = {
 	craft_coach: 'Craft coach',
 	wellbeing: 'Wellbeing',
 };
-const KIND_TITLES = { checkin: 'Check-in', evening: 'Evening reflection', weekly: 'Weekly review', ondemand: 'You asked' };
+const KIND_TITLES = { checkin: 'Check-in', evening: 'Evening reflection', weekly: 'Weekly review', ondemand: 'You asked', interview: 'Profile interview' };
+const TABS = ['talk', 'progress', 'memory', 'settings'];
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const $ = (sel) => document.querySelector(sel);
-const state = { messages: [], memory: [], settings: {}, push: {}, owner: '' };
+const state = { messages: [], memory: [], settings: {}, push: {}, owner: '', indicators: [], scorecard: null, last_week: null, today: {}, interview: {} };
+const dismissedToday = new Set();
 let sending = false;
 
 async function api(path, options = {}) {
@@ -83,7 +89,7 @@ function showApp() {
 
 function switchTab(name) {
 	for (const btn of document.querySelectorAll('.tabs button')) btn.classList.toggle('active', btn.dataset.tab === name);
-	for (const tab of ['talk', 'memory', 'settings']) $(`#tab-${tab}`).classList.toggle('hidden', tab !== name);
+	for (const tab of TABS) $(`#tab-${tab}`).classList.toggle('hidden', tab !== name);
 	if (name === 'talk') scrollToBottom();
 }
 
@@ -101,7 +107,7 @@ function renderMessage(m) {
 	}
 	bubble.append(document.createTextNode(m.content));
 	if (proactive && m.reason) bubble.append(el('div', { class: 'meta', style: 'margin:6px 0 0' }, `Why now: ${m.reason}`));
-	if (proactive && m.kind !== 'ondemand') {
+	if (proactive && m.kind !== 'ondemand' && m.kind !== 'interview') {
 		const fb = el('div', { class: 'feedback' });
 		const mk = (value, label) => el('button', {
 			class: `ghost${m.feedback === value ? ' on' : ''}`,
@@ -162,18 +168,165 @@ async function send(text) {
 		state.messages.push(res.user, res.mentor);
 		for (const item of res.memory_added) state.memory.push(item);
 		renderMessages();
-		if (res.memory_added.length) {
-			$('#messages').append(el('div', { class: 'remembered' },
-				'Remembered: ' + res.memory_added.map((i) => `${KIND_LABELS[i.kind] || i.kind}: ${i.text}`).join(' · ')));
+		const notes = [
+			...res.memory_added.map((i) => `Remembered ${KIND_LABELS[i.kind] || i.kind}: ${i.text}`),
+			...res.logged.map((l) => `Logged +${l.value} ${l.unit}: ${l.name}`),
+		];
+		if (notes.length) {
+			$('#messages').append(el('div', { class: 'remembered' }, notes.join(' · ')));
 			scrollToBottom();
 		}
 		renderMemory();
+		refreshProgress();
 	} catch (e) {
 		typing.textContent = `Not sent: ${e.message}`;
 		$('#input').value = text;
 	} finally {
 		sending = false;
 		$('#send').disabled = false;
+	}
+}
+
+// --- today strip (energy + due commitments) ----------------------------------
+
+function renderToday() {
+	const strip = $('#today');
+	strip.replaceChildren();
+	if (state.today && !state.today.energy && !dismissedToday.has('energy')) {
+		const row = el('div', { class: 'today-row' }, el('span', { class: 'muted small' }, 'Energy today?'));
+		for (let n = 1; n <= 5; n += 1) {
+			row.append(el('button', { class: 'ghost pill', type: 'button', onclick: () => setEnergy(n) }, String(n)));
+		}
+		strip.append(row);
+	}
+	const today = state.today?.day;
+	const due = state.memory.filter((m) => m.kind === 'commitment' && m.status === 'active' && m.due_at && today && m.due_at.slice(0, 10) <= today && !dismissedToday.has(m.id));
+	for (const item of due.slice(0, 2)) {
+		strip.append(el('div', { class: 'today-row' },
+			el('span', { class: 'small grow' }, `Due: ${item.text}`),
+			el('button', { class: 'ghost pill', type: 'button', onclick: async () => { await patchMemory(item, { status: 'done' }); refreshProgress(); } }, 'Done'),
+			el('button', { class: 'ghost pill', type: 'button', onclick: () => { dismissedToday.add(item.id); renderToday(); } }, 'Not yet'),
+		));
+	}
+	strip.classList.toggle('hidden', !strip.children.length);
+}
+
+async function setEnergy(n) {
+	applyProgress(await api('/api/today', { method: 'POST', body: JSON.stringify({ energy: n }) }));
+}
+
+// --- progress ----------------------------------------------------------------
+
+function applyProgress(data) {
+	for (const key of ['indicators', 'scorecard', 'last_week', 'today', 'interview']) if (key in data) state[key] = data[key];
+	renderProgress();
+	renderToday();
+	renderInterview();
+}
+
+async function refreshProgress() {
+	try { applyProgress(await api('/api/state')); } catch (_) { /* offline: keep last view */ }
+}
+
+function stepFor(unit) {
+	return ['h', 'hours', 'hrs'].includes(unit.toLowerCase()) ? 0.5 : 1;
+}
+
+function renderProgress() {
+	const card = state.scorecard;
+	const box = $('#progress-week');
+	box.replaceChildren();
+	if (!card) return;
+	box.append(el('h2', {}, `This week · day ${card.days_elapsed} of 7`));
+	for (const ind of card.indicators) {
+		const pct = ind.target ? Math.min(100, (ind.actual / ind.target) * 100) : 0;
+		const pace = ind.target ? Math.min(100, (card.days_elapsed / 7) * 100) : 0;
+		const behind = ind.actual < (ind.target * card.days_elapsed) / 7;
+		const step = stepFor(ind.unit);
+		box.append(el('div', { class: 'indicator' },
+			el('div', { class: 'indicator-head' },
+				el('span', { class: 'grow' }, ind.name),
+				el('strong', { class: behind ? 'behind' : 'ok' }, `${ind.actual} / ${ind.target} ${ind.unit}`),
+			),
+			el('div', { class: 'bar', title: 'Marker = where you would be on an even pace' },
+				el('div', { class: 'fill', style: `width:${pct}%` }),
+				el('div', { class: 'pace', style: `left:${pace}%` }),
+			),
+			el('div', { class: 'row' },
+				el('button', { class: 'ghost pill', type: 'button', onclick: () => logIndicator(ind.id, -step) }, `−${step}`),
+				el('button', { class: 'pill', type: 'button', onclick: () => logIndicator(ind.id, step) }, `+${step} ${ind.unit}`),
+			),
+		));
+	}
+	const facts = [];
+	if (card.commitments_due) facts.push(`Commitments kept: ${card.commitments_done} of ${card.commitments_due}`);
+	if (card.commitments_overdue.length) facts.push(`Overdue: ${card.commitments_overdue.join('; ')}`);
+	if (card.energy_avg != null) facts.push(`Energy: ${card.energy_avg}/5 avg (${card.energy_days} days)`);
+	if (card.checkins_rated) facts.push(`Check-ins with good timing: ${card.checkins_useful} of ${card.checkins_rated}`);
+	for (const f of facts) box.append(el('p', { class: 'small' }, f));
+
+	const last = state.last_week;
+	const lastBox = $('#progress-last');
+	lastBox.replaceChildren(el('h2', {}, 'Last week'));
+	if (last) {
+		for (const ind of last.indicators) lastBox.append(el('p', { class: 'small' }, `${ind.name}: ${ind.actual} / ${ind.target} ${ind.unit}`));
+		if (last.commitments_due) lastBox.append(el('p', { class: 'small' }, `Commitments kept: ${last.commitments_done} of ${last.commitments_due}`));
+	}
+
+	const list = $('#indicator-list');
+	list.replaceChildren();
+	for (const ind of state.indicators) {
+		list.append(el('div', { class: 'memory-item' },
+			el('div', { class: 'text' }, ind.name, el('span', { class: 'muted small' }, ` · ${ind.weekly_target} ${ind.unit}/week`)),
+			el('div', { class: 'actions' },
+				el('button', { class: 'ghost', type: 'button', onclick: async () => {
+					const v = prompt(`Weekly target (${ind.unit})`, ind.weekly_target);
+					if (v !== null && v !== '' && !Number.isNaN(Number(v))) {
+						applyProgress(await api(`/api/indicators/${ind.id}`, { method: 'PATCH', body: JSON.stringify({ weekly_target: Number(v) }) }));
+					}
+				} }, 'Target'),
+				el('button', { class: 'ghost', type: 'button', onclick: async () => {
+					if (!confirm('Stop tracking this indicator? History is kept.')) return;
+					applyProgress(await api(`/api/indicators/${ind.id}`, { method: 'PATCH', body: JSON.stringify({ active: false }) }));
+				} }, '✕'),
+			),
+		));
+	}
+}
+
+async function logIndicator(id, value) {
+	applyProgress(await api(`/api/indicators/${id}/log`, { method: 'POST', body: JSON.stringify({ value }) }));
+}
+
+// --- profile interview -------------------------------------------------------
+
+function renderInterview() {
+	const box = $('#interview-card');
+	const info = state.interview || {};
+	if (!info.total) return box.classList.add('hidden');
+	box.classList.remove('hidden');
+	const known = info.total - info.missing.length;
+	box.replaceChildren(
+		el('h2', {}, `Profile · ${known} of ${info.total} topics known`),
+		el('p', { class: 'muted small' }, info.missing.length
+			? `Still unknown: ${info.missing.map((k) => KIND_LABELS[k] || k).join(', ')}. A real coach needs these. About 15 minutes, one question at a time.`
+			: 'Complete. Review it below and correct anything that is off; re-run it whenever your direction changes.'),
+		el('div', { class: 'row wrap' },
+			el('button', { type: 'button', onclick: startInterview }, info.missing.length ? (info.active ? 'Continue interview' : 'Start interview') : 'Review profile with mentor'),
+			info.active ? el('button', { class: 'ghost', type: 'button', onclick: async () => applyProgress(await api('/api/interview/pause', { method: 'POST' })) }, 'Pause') : null,
+		),
+	);
+}
+
+async function startInterview() {
+	try {
+		const msg = await api('/api/interview', { method: 'POST' });
+		state.messages.push(msg);
+		renderMessages();
+		switchTab('talk');
+		refreshProgress();
+	} catch (e) {
+		alert(e.message);
 	}
 }
 
@@ -262,6 +415,9 @@ async function loadState({ full = true } = {}) {
 	if (full || newMessages) renderMessages();
 	renderMemory();
 	if (full) renderSettings();
+	renderProgress();
+	renderToday();
+	renderInterview();
 	highlightFromHash();
 }
 
@@ -297,6 +453,35 @@ function wire() {
 		input.value = '';
 		input.style.height = 'auto';
 		send(text);
+	});
+
+	const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+	const mic = $('#mic');
+	if (Recognition) {
+		let rec = null;
+		mic.addEventListener('click', () => {
+			if (rec) { rec.stop(); return; }
+			rec = new Recognition();
+			rec.lang = navigator.language || 'en-US';
+			rec.interimResults = false;
+			rec.onresult = (ev) => {
+				const said = Array.from(ev.results).map((r) => r[0].transcript).join(' ');
+				input.value = (input.value ? `${input.value} ` : '') + said;
+				input.dispatchEvent(new Event('input'));
+			};
+			rec.onend = () => { rec = null; mic.classList.remove('on'); };
+			mic.classList.add('on');
+			rec.start();
+		});
+	} else {
+		mic.classList.add('hidden');  // keyboards' own dictation still works
+	}
+
+	$('#indicator-form').addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const f = e.target;
+		applyProgress(await api('/api/indicators', { method: 'POST', body: JSON.stringify({ name: f.ind_name.value.trim(), unit: f.ind_unit.value.trim(), weekly_target: Number(f.ind_target.value) }) }));
+		f.reset();
 	});
 
 	$('#ask-now').addEventListener('click', async () => {
