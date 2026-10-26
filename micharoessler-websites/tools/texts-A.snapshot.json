@@ -1,0 +1,1046 @@
+[
+ {
+  "id": "A-HOME-01",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Expeditions- & Bergfilm",
+  "en": "Expedition & mountain film"
+ },
+ {
+  "id": "A-HOME-02",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Ich begleite eure Expedition, Skidurchquerung oder Klettertour als Kamera: leichtes Kit, autark und fit genug, um auch in der Höhe weiterzudrehen, wenn es darauf ankommt.",
+  "en": "I join your expedition, ski traverse or climb as the camera: light kit, self-sufficient, fit enough to keep filming at altitude when it matters."
+ },
+ {
+  "id": "A-HOME-03",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Kameramann",
+  "en": "Camera operator"
+ },
+ {
+  "id": "A-HOME-04",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Second Unit oder Solo-Kamera für Creators, Outdoor-Marken und Produktionen. Cinema-Kamera, Drohne und FPV – weltweit vor Ort.",
+  "en": "Second unit or solo camera for creators, outdoor brands and productions. Cinema camera, drone and FPV, on location worldwide."
+ },
+ {
+  "id": "A-HOME-05",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Dokumentarfilm-Schnitt",
+  "en": "Documentary editing"
+ },
+ {
+  "id": "A-HOME-06",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Story-first-Schnitt für Dokumentarfilme mit Wirkung: Struktur, Rhythmus und die Momente, die berühren. Langform und Cut-downs.",
+  "en": "Story-first edits for documentaries with impact: structure, pacing and the moments that make people care. Long-form and cut-downs."
+ },
+ {
+  "id": "A-HOME-07",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Destinations- & Hotelfilme",
+  "en": "Destination & hospitality films"
+ },
+ {
+  "id": "A-HOME-08",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Für Tourismusverbände, Lodges und Hotels: Imagefilme, die einen Ort über seine Menschen und Landschaften verkaufen – in 16:9 und 9:16.",
+  "en": "For tourism boards, lodges and hotels: films that sell a place through the people and landscapes around it, in 16:9 and 9:16."
+ },
+ {
+  "id": "A-HOME-09",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Höchster Dreh",
+  "en": "Highest shoot"
+ },
+ {
+  "id": "A-HOME-10",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Kilimandscharo-Gipfel, 5.895 m",
+  "en": "Kilimanjaro summit, 5,895 m"
+ },
+ {
+  "id": "A-HOME-11",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Längster Dreh",
+  "en": "Longest shoot"
+ },
+ {
+  "id": "A-HOME-12",
+  "file": "adventure/src/views/Home.astro",
+  "de": "4 Wochen, bolivianische Anden",
+  "en": "4 weeks, Bolivian Andes"
+ },
+ {
+  "id": "A-HOME-13",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Kit",
+  "en": "Kit"
+ },
+ {
+  "id": "A-HOME-14",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Sony A7S III · A7 IV, Drohne, FPV",
+  "en": "Sony A7S III · A7 IV, drone, FPV"
+ },
+ {
+  "id": "A-HOME-15",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Sprachen",
+  "en": "Languages"
+ },
+ {
+  "id": "A-HOME-16",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Deutsch · Englisch",
+  "en": "German · English"
+ },
+ {
+  "id": "A-HOME-17",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Basis",
+  "en": "Base"
+ },
+ {
+  "id": "A-HOME-18",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Seit 2024 dauerhaft unterwegs",
+  "en": "On the road full-time since 2024"
+ },
+ {
+  "id": "A-HOME-19",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Größte Doku-Reichweite",
+  "en": "Biggest doc audience"
+ },
+ {
+  "id": "A-HOME-20",
+  "file": "adventure/src/views/Home.astro",
+  "de": "1,4 Mio. Aufrufe (Drivers Eye)",
+  "en": "1.4M views (Drivers Eye)"
+ },
+ {
+  "id": "A-HOME-21",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Feb. 2027",
+  "en": "Feb 2027"
+ },
+ {
+  "id": "A-HOME-22",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Laponia-Skidurchquerung im Hochwinter, Schwedisch-Lappland",
+  "en": "Laponia midwinter ski traverse, Swedish Lapland"
+ },
+ {
+  "id": "A-HOME-23",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Geplant",
+  "en": "Planned"
+ },
+ {
+  "id": "A-HOME-24",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Skitouren in den Lyngen-Alpen, Norwegen",
+  "en": "Lyngen Alps ski touring, Norway"
+ },
+ {
+  "id": "A-HOME-25",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Jul. 2027",
+  "en": "Jul 2027"
+ },
+ {
+  "id": "A-HOME-26",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Arctic Circle Trail, Grönland",
+  "en": "Arctic Circle Trail, Greenland"
+ },
+ {
+  "id": "A-HOME-27",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Micha Rössler – Expeditionsfilmer, Outdoor-Filmemacher & Kameramann",
+  "en": "Micha Rössler – Expedition & Adventure Filmmaker, Camera Operator"
+ },
+ {
+  "id": "A-HOME-28",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Expeditions- & Outdoor-Filmemacher für Outdoor-Marken, Expeditionsteams und Tourismus: Bergfilm, Kameramann, Dokumentarfilm-Schnitt.",
+  "en": "Expedition & adventure filmmaker for outdoor brands, expedition teams and tourism boards: mountain film, camera operator, documentary editing."
+ },
+ {
+  "id": "A-HOME-29",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Zwei Bergsteiger auf einem verschneiten Grat in den bolivianischen Anden in der Dämmerung",
+  "en": "Two climbers on a snowy ridge in the Bolivian Andes at dusk"
+ },
+ {
+  "id": "A-HOME-30",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Sajama-Region, Bolivien",
+  "en": "Sajama region, Bolivia"
+ },
+ {
+  "id": "A-HOME-31",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Filme ansehen",
+  "en": "See the films"
+ },
+ {
+  "id": "A-HOME-32",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Was ich mache",
+  "en": "What I do"
+ },
+ {
+  "id": "A-HOME-33",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Ich filme Menschen an der Grenze ihrer Möglichkeiten – am Berg, im Schnee, auf mehrtägigen Touren – und schneide daraus Geschichten, die ehrlich zeigen, was es gekostet hat.",
+  "en": "I film people at the edge of what they can do – on mountains, in snow, on multi-day journeys – and edit it into stories that are honest about what it took."
+ },
+ {
+  "id": "A-HOME-34",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Ausgewählte Projekte",
+  "en": "Selected work"
+ },
+ {
+  "id": "A-HOME-35",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Wo ich gedreht habe",
+  "en": "Where I have filmed"
+ },
+ {
+  "id": "A-HOME-36",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Pin antippen oder überfahren",
+  "en": "Hover or tap a pin"
+ },
+ {
+  "id": "A-HOME-37",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Für Expeditionsteams",
+  "en": "For expedition teams"
+ },
+ {
+  "id": "A-HOME-38",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Im Gelände",
+  "en": "In the field"
+ },
+ {
+  "id": "A-HOME-39",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Eine Expeditionskamera muss ihr eigenes Gewicht tragen. Ich reise dauerhaft, bin lange Tage in Kälte und dünner Luft gewohnt und plane den Dreh um das Ziel herum – nie umgekehrt.",
+  "en": "An expedition camera has to carry its own weight. I travel full-time, I am used to long days in cold and thin air, and I plan the shoot around the objective – never the other way round."
+ },
+ {
+  "id": "A-HOME-40",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Marken & Creators, mit denen ich gearbeitet habe",
+  "en": "Brands & creators I have worked with"
+ },
+ {
+  "id": "A-HOME-41",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Mit wem du arbeitest",
+  "en": "Who you will work with"
+ },
+ {
+  "id": "A-HOME-42",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Hi, ich bin Micha.",
+  "en": "Hi, I am Micha."
+ },
+ {
+  "id": "A-HOME-43",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Keine Agentur, kein Account-Manager. Wenn du schreibst, antworte ich – und ich bin derjenige, der die Kamera auf den Berg trägt und danach im Schnitt sitzt.",
+  "en": "No agency, no account manager. When you write, I answer – and I am the one carrying the camera up the mountain and sitting in the edit afterwards."
+ },
+ {
+  "id": "A-HOME-44",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Meine Geschichte",
+  "en": "My story"
+ },
+ {
+  "id": "A-HOME-45",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Nächste Expeditionen",
+  "en": "Next expeditions"
+ },
+ {
+  "id": "A-HOME-46",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Offen für Partner & Sponsoren",
+  "en": "Open for partners & sponsors"
+ },
+ {
+  "id": "A-HOME-47",
+  "file": "adventure/src/views/Home.astro",
+  "de": "Film unterstützen",
+  "en": "Partner on a film"
+ },
+ {
+  "id": "A-PROJECTS-01",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Anden-Expedition, Bolivien",
+  "en": "Andes Expedition, Bolivia"
+ },
+ {
+  "id": "A-PROJECTS-02",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Expeditionsfilm",
+  "en": "Expedition film"
+ },
+ {
+  "id": "A-PROJECTS-03",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Kamera, Drohne, Regie",
+  "en": "Camera, drone, direction"
+ },
+ {
+  "id": "A-PROJECTS-04",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Vier Wochen in den Hochanden: dünne Luft, andere Kulturen und der Versuch, den ersten 6.000er zu besteigen – gedreht für eine kommende Dokumentation.",
+  "en": "Four weeks in the high Andes: thin air, different cultures and the attempt at a first 6,000 m peak, filmed for an upcoming documentary."
+ },
+ {
+  "id": "A-PROJECTS-05",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Im August 2024 bin ich mit einem kleinen Team in die Sajama-Region Boliviens gereist. Ziel war es, die Kultur des Altiplano zu verstehen und meinen ersten 6.000er zu versuchen. Die Regeln hat der Berg gemacht: Wetter, Höhe und Körper entscheiden, nicht der Plan.",
+  "en": "In August 2024 I travelled to the Sajama region of Bolivia with a small team. The goal was to understand the culture of the Altiplano and to attempt my first 6,000 m peak. The mountain set the rules: weather, altitude and the body decide, not the plan."
+ },
+ {
+  "id": "A-PROJECTS-06",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Markenpartner Hydraid hat einen cineastischen Bergfilm plus Hochkant-Reels und Fotos gebrieft – jede Einstellung musste also für zwei Formate funktionieren. Die Bilder unten sind eine Auswahl für die Dokumentation, die sich noch im Schnitt befindet.",
+  "en": "Brand partner Hydraid briefed a cinematic mountaineering piece plus vertical reels and stills, so every shot had to work for two formats at once. The footage below is a selection for the documentary, which is still in the edit."
+ },
+ {
+  "id": "A-PROJECTS-07",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Dauer",
+  "en": "Duration"
+ },
+ {
+  "id": "A-PROJECTS-08",
+  "file": "adventure/src/data/projects.ts",
+  "de": "4 Wochen, Aug. 2024",
+  "en": "4 weeks, Aug 2024"
+ },
+ {
+  "id": "A-PROJECTS-09",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Höhe",
+  "en": "Altitude"
+ },
+ {
+  "id": "A-PROJECTS-10",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Hochanden, 4.000 m+",
+  "en": "High Andes, 4,000 m+"
+ },
+ {
+  "id": "A-PROJECTS-11",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Lieferumfang",
+  "en": "Deliverables"
+ },
+ {
+  "id": "A-PROJECTS-12",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Doku-Material, Reels, Fotos",
+  "en": "Doc footage, reels, stills"
+ },
+ {
+  "id": "A-PROJECTS-13",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Drivers Eye – 24h Nürburgring",
+  "en": "Drivers Eye – 24h Nürburgring"
+ },
+ {
+  "id": "A-PROJECTS-14",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Dokumentation",
+  "en": "Documentary"
+ },
+ {
+  "id": "A-PROJECTS-15",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Nürburgring Nordschleife",
+  "en": "Nürburgring Nordschleife, Germany"
+ },
+ {
+  "id": "A-PROJECTS-16",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Kamera, Schnitt, Regie",
+  "en": "Camera, edit, direction"
+ },
+ {
+  "id": "A-PROJECTS-17",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Eine 4K-Doku hinter den Kulissen eines der härtesten Langstreckenrennen der Welt.",
+  "en": "A 4K behind-the-scenes documentary from inside one of the hardest endurance races in the world."
+ },
+ {
+  "id": "A-PROJECTS-18",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Für Felix von der Laden habe ich „Drivers Eye | 4K Doku | 24h Rennen Nürburgring Nordschleife“ gedreht und geschnitten. Der Film begleitet das Team durch 24 Stunden Adrenalin, Präzision und Erschöpfung – vom Start bis zu den Momenten, in denen etwas schiefgeht.",
+  "en": "For Felix von der Laden I filmed and edited “Drivers Eye | 4K Doku | 24h Rennen Nürburgring Nordschleife”. The film follows the team through 24 hours of adrenaline, precision and fatigue, from the grid to the moments when things go wrong."
+ },
+ {
+  "id": "A-PROJECTS-19",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Ausdauer-Storytelling funktioniert auf der Rennstrecke wie am Berg: Man bleibt bei den Menschen, wenn es hart wird, und baut den Schnitt um das, was es sie gekostet hat.",
+  "en": "Endurance storytelling works the same on a racetrack and on a mountain: you stay with the people when it gets hard, and you build the edit around what it cost them."
+ },
+ {
+  "id": "A-PROJECTS-20",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Aufrufe",
+  "en": "Views"
+ },
+ {
+  "id": "A-PROJECTS-21",
+  "file": "adventure/src/data/projects.ts",
+  "de": "1,4 Mio. auf YouTube",
+  "en": "1.4 million on YouTube"
+ },
+ {
+  "id": "A-PROJECTS-22",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Format",
+  "en": "Format"
+ },
+ {
+  "id": "A-PROJECTS-23",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Langform-Doku, 4K",
+  "en": "Long-form documentary, 4K"
+ },
+ {
+  "id": "A-PROJECTS-24",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Hotrodtour – Köln bis Ibiza",
+  "en": "Hotrodtour – Cologne to Ibiza"
+ },
+ {
+  "id": "A-PROJECTS-25",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Roadtrip-Doku",
+  "en": "Road-trip documentary"
+ },
+ {
+  "id": "A-PROJECTS-26",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Deutschland → Frankreich → Spanien",
+  "en": "Germany → France → Spain"
+ },
+ {
+  "id": "A-PROJECTS-27",
+  "file": "adventure/src/data/projects.ts",
+  "de": "13 Tage, ein Konvoi aus Mini-Hotrods und eine Crew aus Creators auf dem Weg von Köln nach Ibiza.",
+  "en": "13 days, a convoy of mini hot rods and a crew of creators driving from Cologne to Ibiza."
+ },
+ {
+  "id": "A-PROJECTS-28",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Felix von der Laden und eine Gruppe Creators sind mit Mini-Hotrods von Köln nach Ibiza gefahren. Ich habe die Doku inszeniert, gedreht und geschnitten: die Landschaften, die Gruppendynamik und die ständigen Reparaturen, die den Trip ausgemacht haben.",
+  "en": "Felix von der Laden and a group of creators drove mini hot rods from Cologne to Ibiza. I directed, filmed and edited the documentary: the landscapes, the group dynamics and the constant repairs that made the trip what it was."
+ },
+ {
+  "id": "A-PROJECTS-29",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Drehtage",
+  "en": "Shooting days"
+ },
+ {
+  "id": "A-PROJECTS-30",
+  "file": "adventure/src/data/projects.ts",
+  "de": "13",
+  "en": "13"
+ },
+ {
+  "id": "A-PROJECTS-31",
+  "file": "adventure/src/data/projects.ts",
+  "de": "1,2 Mio. auf YouTube",
+  "en": "1.2 million on YouTube"
+ },
+ {
+  "id": "A-PROJECTS-32",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Kilimandscharo",
+  "en": "Kilimanjaro"
+ },
+ {
+  "id": "A-PROJECTS-33",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Kurzdokus",
+  "en": "Short documentaries"
+ },
+ {
+  "id": "A-PROJECTS-34",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Rongai-Route, Tansania",
+  "en": "Rongai route, Tanzania"
+ },
+ {
+  "id": "A-PROJECTS-35",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Sechs Tage aufs Dach Afrikas, gefilmt aus der Gruppe heraus: die rohen Momente, nicht die Postkarte.",
+  "en": "Six days to the roof of Africa, filmed from inside the group: the raw moments, not the postcard."
+ },
+ {
+  "id": "A-PROJECTS-36",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Im Februar 2023 habe ich den Kilimandscharo über die Rongai-Route mit einer Fünfergruppe bestiegen und den Aufstieg als Serie kurzer Dokus gefilmt. Sieben Drehtage, ein Kamerarucksack und die Disziplin, weiterzufilmen, wenn alle anderen nur noch schlafen wollen.",
+  "en": "In February 2023 I climbed Kilimanjaro via the Rongai route with a group of five and filmed the ascent as a series of short documentaries. Seven shooting days, one camera bag and the discipline to keep filming when everyone else just wants to sleep."
+ },
+ {
+  "id": "A-PROJECTS-37",
+  "file": "adventure/src/data/projects.ts",
+  "de": "7",
+  "en": "7"
+ },
+ {
+  "id": "A-PROJECTS-38",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Gipfel",
+  "en": "Summit"
+ },
+ {
+  "id": "A-PROJECTS-39",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Uhuru Peak, 5.895 m",
+  "en": "Uhuru Peak, 5,895 m"
+ },
+ {
+  "id": "A-PROJECTS-40",
+  "file": "adventure/src/data/projects.ts",
+  "de": "24 Stunden in der Sahara",
+  "en": "24 Hours in the Sahara"
+ },
+ {
+  "id": "A-PROJECTS-41",
+  "file": "adventure/src/data/projects.ts",
+  "de": "YouTube-Produktion",
+  "en": "YouTube production"
+ },
+ {
+  "id": "A-PROJECTS-42",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Marokkanische Sahara",
+  "en": "Moroccan Sahara"
+ },
+ {
+  "id": "A-PROJECTS-43",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Kamera für „24 Stunden überleben in der Sahara“ mit Creator Fabian Baggeler.",
+  "en": "Camera for “24 hours surviving in the Sahara Desert” with creator Fabian Baggeler."
+ },
+ {
+  "id": "A-PROJECTS-44",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Zwei Drehtage in der marokkanischen Sahara als Kameramann für Fabian Baggelers Survival-Format: Hitze, Sand in jeder Dichtung und Licht, das sich alle zehn Minuten ändert.",
+  "en": "Two shooting days in the Moroccan Sahara as camera operator for Fabian Baggeler’s survival format: heat, sand in every seal and light that changes every ten minutes."
+ },
+ {
+  "id": "A-PROJECTS-45",
+  "file": "adventure/src/data/projects.ts",
+  "de": "2",
+  "en": "2"
+ },
+ {
+  "id": "A-PROJECTS-46",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Bleibe",
+  "en": "Bleibe"
+ },
+ {
+  "id": "A-PROJECTS-47",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Hotel- & Destinationsfilm",
+  "en": "Hospitality film"
+ },
+ {
+  "id": "A-PROJECTS-48",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Am See, Luft & Boden",
+  "en": "Lakeside, aerial & ground"
+ },
+ {
+  "id": "A-PROJECTS-49",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Kamera, Drohne, Schnitt",
+  "en": "Camera, drone, edit"
+ },
+ {
+  "id": "A-PROJECTS-50",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Eine schwimmende Unterkunft, gefilmt vom Wasser, vom Ufer und aus der Luft – geschnitten für Web und Hochkant-Social.",
+  "en": "A floating stay, filmed from the water, the shore and the air, cut for web and vertical social."
+ },
+ {
+  "id": "A-PROJECTS-51",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Dein Ort und seine Umgebung sind deine stärkste Geschichte. Für Bleibe habe ich von Sonnenaufgang bis Dämmerung gedreht, Drohne und Boden, und Querformat-Filme plus Hochkant-Schnitte für Social geliefert.",
+  "en": "Your place and its surroundings are your strongest story. For Bleibe I filmed sunrise to dusk, drone and ground, and delivered landscape films plus vertical cuts for social."
+ },
+ {
+  "id": "A-PROJECTS-52",
+  "file": "adventure/src/data/projects.ts",
+  "de": "Formate",
+  "en": "Formats"
+ },
+ {
+  "id": "A-PROJECTS-53",
+  "file": "adventure/src/data/projects.ts",
+  "de": "16:9 + 9:16",
+  "en": "16:9 + 9:16"
+ },
+ {
+  "id": "A-WORK-01",
+  "file": "adventure/src/views/Work.astro",
+  "de": "Projekte – Expeditions-, Doku- & Destinationsfilme | Micha Rössler",
+  "en": "Work – Expedition, Documentary & Destination Films | Micha Rössler"
+ },
+ {
+  "id": "A-WORK-02",
+  "file": "adventure/src/views/Work.astro",
+  "de": "Expeditionsfilme aus den bolivianischen Anden und vom Kilimandscharo, Dokus mit 1,2 und 1,4 Mio. Aufrufen, Destinations- und Hotelfilme.",
+  "en": "Expedition films from the Bolivian Andes and Kilimanjaro, documentaries with 1.2M and 1.4M views, destination and hospitality films."
+ },
+ {
+  "id": "A-WORK-03",
+  "file": "adventure/src/views/Work.astro",
+  "de": "Übersicht",
+  "en": "Index"
+ },
+ {
+  "id": "A-WORK-04",
+  "file": "adventure/src/views/Work.astro",
+  "de": "Projekte",
+  "en": "Work"
+ },
+ {
+  "id": "A-ABOUT-01",
+  "file": "adventure/src/views/About.astro",
+  "de": "Drivers Eye – 24h-Nürburgring-Doku für Felix von der Laden: Kamera, Schnitt, Regie. 1,4 Mio. Aufrufe.",
+  "en": "Drivers Eye – 24h Nürburgring documentary for Felix von der Laden: camera, edit, direction. 1.4M views."
+ },
+ {
+  "id": "A-ABOUT-02",
+  "file": "adventure/src/views/About.astro",
+  "de": "Winterwanderung zur Trolltunga, Norwegen. Kilimandscharo über die Rongai-Route. Gletschertour am Großvenediger (3.660 m). Sahara-Dreh mit Fabian Baggeler.",
+  "en": "Winter hike to Trolltunga, Norway. Kilimanjaro via the Rongai route. Glacier tour on the Großvenediger (3,660 m). Sahara shoot with Fabian Baggeler."
+ },
+ {
+  "id": "A-ABOUT-03",
+  "file": "adventure/src/views/About.astro",
+  "de": "Vier Wochen in den bolivianischen Anden für eine kommende Doku, mit Markenpartner Hydraid. Beginn des Lebens auf Reisen.",
+  "en": "Four weeks in the Bolivian Andes for an upcoming documentary, with brand partner Hydraid. Start of full-time life on the road."
+ },
+ {
+  "id": "A-ABOUT-04",
+  "file": "adventure/src/views/About.astro",
+  "de": "Reisefilme mit Guada als Guadi & Micha in Asien und Amerika. Format-Schnitt für Marken wie Carwow.",
+  "en": "Travel films with Guada as Guadi & Micha across Asia and the Americas. Format editing for brands like Carwow."
+ },
+ {
+  "id": "A-ABOUT-05",
+  "file": "adventure/src/views/About.astro",
+  "de": "Geplant: Laponia-Skidurchquerung im Hochwinter, Lyngen-Alpen, Arctic Circle Trail.",
+  "en": "Planned: Laponia midwinter ski traverse, Lyngen Alps, Arctic Circle Trail."
+ },
+ {
+  "id": "A-ABOUT-06",
+  "file": "adventure/src/views/About.astro",
+  "de": "Über mich – Micha Rössler, Outdoor-Filmemacher aus Bayern",
+  "en": "About – Micha Rössler, Expedition Filmmaker from Germany"
+ },
+ {
+  "id": "A-ABOUT-07",
+  "file": "adventure/src/views/About.astro",
+  "de": "Expeditions- und Outdoor-Filmemacher, Kameramann und Dokumentarfilm-Cutter. Aufgewachsen in einem kleinen Dorf in Bayern, heute dauerhaft unterwegs.",
+  "en": "German expedition and adventure filmmaker, camera operator and documentary editor. Raised in a small Bavarian village, now filming on the road full-time."
+ },
+ {
+  "id": "A-ABOUT-08",
+  "file": "adventure/src/views/About.astro",
+  "de": "Über mich",
+  "en": "About"
+ },
+ {
+  "id": "A-ABOUT-09",
+  "file": "adventure/src/views/About.astro",
+  "de": "Immer auf der Suche nach der nächsten harten, ehrlichen Geschichte",
+  "en": "Still looking for the next hard, honest story"
+ },
+ {
+  "id": "A-ABOUT-10",
+  "file": "adventure/src/views/About.astro",
+  "de": "Ich bin in einem kleinen Dorf in Bayern aufgewachsen, die Berge waren mein erster Spielplatz. Eine Zeit lang hätte ich das fast verloren – bis ich angefangen habe zu reisen und verstanden habe, dass die wichtigste Fähigkeit ist, eine Geschichte zu erzählen: den richtigen Menschen, auf die richtige Weise.",
+  "en": "I grew up in a small village in Bavaria, and the mountains were my first playground. For a while I almost lost that – until I started travelling and understood that the most important skill is being able to tell a story, to the right people, the right way."
+ },
+ {
+  "id": "A-ABOUT-11",
+  "file": "adventure/src/views/About.astro",
+  "de": "Das Handwerk habe ich bei langen YouTube-Dokumentationen gelernt: Regie, Kamera und Schnitt für Felix von der Laden, dessen Dokus über das 24h-Rennen am Nürburgring und die Hotrodtour 1,4 und 1,2 Millionen Aufrufe erreicht haben. Seitdem habe ich am Kilimandscharo, in der Sahara und in den bolivianischen Anden gedreht.",
+  "en": "I learned the craft on long-form YouTube documentaries: directing, filming and editing for Felix von der Laden, whose 24h Nürburgring and Hotrodtour docs reached 1.4 and 1.2 million views. Since then I have filmed on Kilimanjaro, in the Sahara and in the Bolivian Andes."
+ },
+ {
+  "id": "A-ABOUT-12",
+  "file": "adventure/src/views/About.astro",
+  "de": "Heute lebe ich mit meiner Partnerin Guada unterwegs. Mein Terrain sind Berge, Schnee und mehrtägige Touren. Mir sind faire Arbeit, Menschen statt Spektakel und Geschichten wichtig, die man nicht übertreiben muss.",
+  "en": "Today I live on the road with my partner Guada. My main terrain is mountains, snow and multi-day journeys. I care about fair work, people over spectacle and stories that do not need to be exaggerated."
+ },
+ {
+  "id": "A-ABOUT-13",
+  "file": "adventure/src/views/About.astro",
+  "de": "Ganz praktisch, weil die Frage sowieso kommt: Ich bin Deutscher, arbeite auf Deutsch und Englisch und rechne über meine eigene US-Firma Micha Roessler LLC ab, weil ich dauerhaft unterwegs arbeite. Ihr habt immer direkt mit mir zu tun.",
+  "en": "Practical bits, because you will wonder: I am German, I work in German and English, and I invoice through my own US company, Micha Roessler LLC, because I work on the road full-time. You always deal with me directly."
+ },
+ {
+  "id": "A-ABOUT-14",
+  "file": "adventure/src/views/About.astro",
+  "de": "Filmemacher & Cutter",
+  "en": "filmmaker & editor"
+ },
+ {
+  "id": "A-ABOUT-15",
+  "file": "adventure/src/views/About.astro",
+  "de": "Stationen",
+  "en": "Timeline"
+ },
+ {
+  "id": "A-ABOUT-16",
+  "file": "adventure/src/views/About.astro",
+  "de": "Außerdem",
+  "en": "Also"
+ },
+ {
+  "id": "A-ABOUT-17",
+  "file": "adventure/src/views/About.astro",
+  "de": "Für wiederkehrende Videoformate baue ich Schnitt-Systeme – Templates, datengetriebene Grafiken und Shorts-Pipelines – bei ",
+  "en": "I build edit systems for recurring video formats – templates, data-driven graphics and shorts pipelines – at "
+ },
+ {
+  "id": "A-ABOUT-18",
+  "file": "adventure/src/views/About.astro",
+  "de": "Zusammenarbeiten",
+  "en": "Work with me"
+ },
+ {
+  "id": "A-CONTACT-01",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Expedition oder Kampagne geplant?",
+  "en": "Planning an expedition or campaign?"
+ },
+ {
+  "id": "A-CONTACT-02",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Schreib mir wo, wann und was du brauchst. Ich antworte innerhalb von zwei Werktagen.",
+  "en": "Tell me where, when and what you need. I answer within two working days."
+ },
+ {
+  "id": "A-CONTACT-03",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Dein Name",
+  "en": "Your name"
+ },
+ {
+  "id": "A-CONTACT-04",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Organisation / Marke (optional)",
+  "en": "Organisation / brand (optional)"
+ },
+ {
+  "id": "A-CONTACT-05",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Worum geht es?",
+  "en": "What is it?"
+ },
+ {
+  "id": "A-CONTACT-06",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Expeditions- / Bergfilm",
+  "en": "Expedition / mountain film"
+ },
+ {
+  "id": "A-CONTACT-07",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Doku-Schnitt",
+  "en": "Documentary edit"
+ },
+ {
+  "id": "A-CONTACT-08",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Destinations- / Hotelfilm",
+  "en": "Destination / hotel film"
+ },
+ {
+  "id": "A-CONTACT-09",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Partnerschaft bei geplanter Expedition",
+  "en": "Partnership on a planned expedition"
+ },
+ {
+  "id": "A-CONTACT-10",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Etwas anderes",
+  "en": "Something else"
+ },
+ {
+  "id": "A-CONTACT-11",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Termin oder Zeitraum",
+  "en": "Dates or time window"
+ },
+ {
+  "id": "A-CONTACT-12",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Region / Ort",
+  "en": "Region / location"
+ },
+ {
+  "id": "A-CONTACT-13",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Was soll am Ende rauskommen?",
+  "en": "What should come out of it?"
+ },
+ {
+  "id": "A-CONTACT-14",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "E-Mail schreiben",
+  "en": "Write email"
+ },
+ {
+  "id": "A-CONTACT-15",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Öffnet dein E-Mail-Programm mit den ausgefüllten Angaben. Auf dieser Website wird nichts gespeichert.",
+  "en": "This opens your email app with the details filled in. Nothing is stored on this website."
+ },
+ {
+  "id": "A-CONTACT-16",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Oder direkt schreiben:",
+  "en": "Or write directly:"
+ },
+ {
+  "id": "A-CONTACT-17",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Kontakt – Outdoor-Filmemacher buchen | Micha Rössler",
+  "en": "Contact – Book an Expedition Filmmaker | Micha Rössler"
+ },
+ {
+  "id": "A-CONTACT-18",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Micha Rössler als Expeditionsfilmer, Kameramann oder Doku-Cutter anfragen. Antwort innerhalb von zwei Werktagen.",
+  "en": "Book Micha Rössler as expedition filmmaker, camera operator or documentary editor. Reply within two working days."
+ },
+ {
+  "id": "A-CONTACT-19",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Kontakt",
+  "en": "Contact"
+ },
+ {
+  "id": "A-CONTACT-20",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Du schreibst direkt mir – Micha.",
+  "en": "You are writing to me directly – Micha."
+ },
+ {
+  "id": "A-CONTACT-21",
+  "file": "adventure/src/views/Contact.astro",
+  "de": "Drehanfrage",
+  "en": "Shoot request"
+ },
+ {
+  "id": "A-PROJECT-01",
+  "file": "adventure/src/views/Project.astro",
+  "de": "Auf YouTube ansehen – Aufrufe selbst prüfen ↗",
+  "en": "Watch on YouTube – check the views yourself ↗"
+ },
+ {
+  "id": "A-PROJECT-02",
+  "file": "adventure/src/views/Project.astro",
+  "de": "Drehprotokoll",
+  "en": "Field log"
+ },
+ {
+  "id": "A-PROJECT-03",
+  "file": "adventure/src/views/Project.astro",
+  "de": "Standbilder",
+  "en": "Stills"
+ },
+ {
+  "id": "A-PROJECT-04",
+  "file": "adventure/src/views/Project.astro",
+  "de": "Standbild",
+  "en": "still"
+ },
+ {
+  "id": "A-PROJECT-05",
+  "file": "adventure/src/views/Project.astro",
+  "de": "Ein ähnliches Projekt geplant?",
+  "en": "Have a project like this?"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-01",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Kilimandscharo, 5.895 m",
+  "en": "Kilimanjaro, 5,895 m"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-02",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Drivers Eye – Nürburgring",
+  "en": "Drivers Eye – Nürburgring"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-03",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Großvenediger-Gletschertour, 3.660 m",
+  "en": "Großvenediger glacier tour, 3,660 m"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-04",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Trolltunga im Winter",
+  "en": "Trolltunga winter hike"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-05",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Laponia-Skidurchquerung + Lyngen-Alpen",
+  "en": "Laponia ski traverse + Lyngen Alps"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-06",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Gedreht",
+  "en": "Filmed"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-07",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Projekt öffnen →",
+  "en": "Open project →"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-08",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Bergerfahrung",
+  "en": "Field experience"
+ },
+ {
+  "id": "A-EXPEDITIONMAP-09",
+  "file": "adventure/src/components/ExpeditionMap.astro",
+  "de": "Geplant 2027",
+  "en": "Planned 2027"
+ },
+ {
+  "id": "A-BASE-01",
+  "file": "adventure/src/layouts/Base.astro",
+  "de": "Expeditions- & Outdoor-Filmemacher",
+  "en": "Expedition & adventure filmmaker"
+ },
+ {
+  "id": "A-BASE-02",
+  "file": "adventure/src/layouts/Base.astro",
+  "de": "Hauptnavigation",
+  "en": "Main"
+ },
+ {
+  "id": "A-BASE-03",
+  "file": "adventure/src/layouts/Base.astro",
+  "de": "Weltweit verfügbar · zuhause unterwegs",
+  "en": "Available worldwide · based on the road"
+ },
+ {
+  "id": "A-BASE-04",
+  "file": "adventure/src/layouts/Base.astro",
+  "de": "Format-Schnitt & Workflow → formatschnitt.de",
+  "en": "Format editing & workflow → formatschnitt.de"
+ },
+ {
+  "id": "A-I18N-01",
+  "file": "adventure/src/i18n.ts",
+  "de": "Dreh anfragen",
+  "en": "Plan a shoot"
+ },
+ {
+  "id": "A-I18N-02",
+  "file": "adventure/src/i18n.ts",
+  "de": "Ansehen",
+  "en": "Watch"
+ },
+ {
+  "id": "A-I18N-03",
+  "file": "adventure/src/i18n.ts",
+  "de": "Projekt ansehen",
+  "en": "View project"
+ },
+ {
+  "id": "A-I18N-04",
+  "file": "adventure/src/i18n.ts",
+  "de": "Alle Projekte",
+  "en": "All work"
+ },
+ {
+  "id": "A-I18N-05",
+  "file": "adventure/src/i18n.ts",
+  "de": "Nächstes Projekt",
+  "en": "Next project"
+ },
+ {
+  "id": "A-I18N-06",
+  "file": "adventure/src/i18n.ts",
+  "de": "Rolle",
+  "en": "Role"
+ },
+ {
+  "id": "A-I18N-07",
+  "file": "adventure/src/i18n.ts",
+  "de": "Kunde",
+  "en": "Client"
+ },
+ {
+  "id": "A-I18N-08",
+  "file": "adventure/src/i18n.ts",
+  "de": "Ort",
+  "en": "Location"
+ },
+ {
+  "id": "A-I18N-09",
+  "file": "adventure/src/i18n.ts",
+  "de": "Jahr",
+  "en": "Year"
+ },
+ {
+  "id": "A-I18N-10",
+  "file": "adventure/src/i18n.ts",
+  "de": "Impressum",
+  "en": "Imprint"
+ },
+ {
+  "id": "A-I18N-11",
+  "file": "adventure/src/i18n.ts",
+  "de": "Datenschutz",
+  "en": "Privacy"
+ },
+ {
+  "id": "A-I18N-12",
+  "file": "adventure/src/i18n.ts",
+  "de": "English",
+  "en": "Deutsch"
+ },
+ {
+  "id": "A-I18N-13",
+  "file": "adventure/src/i18n.ts",
+  "de": "Zum Inhalt springen",
+  "en": "Skip to content"
+ }
+]
