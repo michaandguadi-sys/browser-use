@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<title>Mentor</title>
+	<meta name="theme-color" content="#14161a">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-title" content="Mentor">
+	<link rel="manifest" href="/static/manifest.webmanifest">
+	<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="/static/icon-180.png">
+	<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+	<section id="login" class="screen hidden">
+		<form id="login-form" class="card login-card">
+			<h1>Mentor</h1>
+			<p class="muted">Your Life OS mentor. Enter your passphrase.</p>
+			<input id="passphrase" type="password" autocomplete="current-password" placeholder="Passphrase" required>
+			<button type="submit">Enter</button>
+			<p id="login-error" class="error"></p>
+		</form>
+	</section>
+
+	<section id="app" class="hidden">
+		<header class="topbar">
+			<span class="title">Mentor</span>
+			<span id="status" class="muted small"></span>
+		</header>
+
+		<main>
+			<div id="tab-talk" class="tab">
+				<div id="messages" class="messages" aria-live="polite"></div>
+				<div class="composer-wrap">
+					<button id="ask-now" class="ghost small-btn" type="button">Ask me something</button>
+					<form id="composer" class="composer">
+						<textarea id="input" rows="1" placeholder="Think out loud…" autocomplete="off"></textarea>
+						<button id="send" type="submit" aria-label="Send">↑</button>
+					</form>
+				</div>
+			</div>
+
+			<div id="tab-memory" class="tab hidden">
+				<p class="muted pad">What the mentor knows about you. It learns from your conversations; you can correct anything here.</p>
+				<form id="memory-form" class="card memory-form">
+					<select id="memory-kind"></select>
+					<input id="memory-text" placeholder="Add something it should know" required>
+					<input id="memory-due" type="date" class="hidden" aria-label="Due date">
+					<button type="submit">Add</button>
+				</form>
+				<div id="memory-list"></div>
+			</div>
+
+			<div id="tab-settings" class="tab hidden">
+				<div class="card">
+					<h2>Focus</h2>
+					<p class="muted small">No proactive messages while focused.</p>
+					<div class="row wrap">
+						<button class="ghost" data-focus="60">1 h</button>
+						<button class="ghost" data-focus="180">3 h</button>
+						<button class="ghost" data-focus="480">8 h</button>
+						<button class="ghost" data-focus="0">End focus</button>
+					</div>
+					<p id="focus-state" class="muted small"></p>
+				</div>
+				<form id="settings-form" class="card settings">
+					<h2>Rhythm</h2>
+					<label>Timezone <input name="timezone" readonly title="Follows your device automatically"></label>
+					<label>Quiet from <input name="quiet_start" type="time"></label>
+					<label>Quiet until <input name="quiet_end" type="time"></label>
+					<label>Max check-ins / day <input name="max_checkins_per_day" type="number" min="0" max="12"></label>
+					<label>Min hours between <input name="min_gap_hours" type="number" step="0.5" min="0.5" max="24"></label>
+					<label>Evening reflection <input name="evening_reflection" type="time"></label>
+					<label>Weekly review day
+						<select name="weekly_review_day">
+							<option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option>
+							<option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option>
+							<option value="6">Sunday</option>
+						</select>
+					</label>
+					<label>Weekly review time <input name="weekly_review_time" type="time"></label>
+					<label class="check"><input name="paused" type="checkbox"> Pause all proactive messages</label>
+					<button type="submit">Save</button>
+					<p id="settings-saved" class="muted small"></p>
+				</form>
+				<div class="card">
+					<h2>Push notifications</h2>
+					<div id="push-info" class="small"></div>
+				</div>
+				<div class="card">
+					<button id="logout" class="ghost" type="button">Log out</button>
+				</div>
+			</div>
+		</main>
+
+		<nav class="tabs">
+			<button data-tab="talk" class="active">Talk</button>
+			<button data-tab="memory">Memory</button>
+			<button data-tab="settings">Settings</button>
+		</nav>
+	</section>
+
+	<script src="/static/app.js"></script>
+</body>
+</html>

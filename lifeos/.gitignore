@@ -1,0 +1,7 @@
+*.db
+*.db-wal
+*.db-shm
+.pytest_cache/
+!mentor/requirements.txt
+!mentor/requirements-dev.txt
+!mentor/seed_profile.json

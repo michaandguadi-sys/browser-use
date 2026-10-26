@@ -37,6 +37,7 @@ repos:
     rev: v1.1.404
     hooks:
     - id: pyright
+      exclude: ^lifeos/  # standalone app with its own deps; type-checked from lifeos/mentor
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
