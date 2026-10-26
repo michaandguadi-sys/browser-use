@@ -1,0 +1,167 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import { href, type Lang } from '../i18n';
+import { pic } from '../data/projects';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const en = lang === 'en';
+
+const timeline = en
+	? [
+			['2021', 'Drivers Eye – 24h Nürburgring documentary for Felix von der Laden: camera, edit, direction. 1.4M views.'],
+			['2023', 'Winter hike to Trolltunga, Norway. Kilimanjaro via the Rongai route. Glacier tour on the Großvenediger (3,660 m). Sahara shoot with Fabian Baggeler.'],
+			['2024', 'Four weeks in the Bolivian Andes for an upcoming documentary, with brand partner Hydraid. Start of full-time life on the road.'],
+			['2025–26', 'Travel films with Guada as Guadi & Micha across Asia and the Americas. Format editing for brands like Carwow.'],
+			['2027', 'Planned: Laponia midwinter ski traverse, Lyngen Alps, Arctic Circle Trail.'],
+		]
+	: [
+			['2021', 'Drivers Eye – 24h-Nürburgring-Doku für Felix von der Laden: Kamera, Schnitt, Regie. 1,4 Mio. Aufrufe.'],
+			['2023', 'Winterwanderung zur Trolltunga, Norwegen. Kilimandscharo über die Rongai-Route. Gletschertour am Großvenediger (3.660 m). Sahara-Dreh mit Fabian Baggeler.'],
+			['2024', 'Vier Wochen in den bolivianischen Anden für eine kommende Doku, mit Markenpartner Hydraid. Beginn des Lebens auf Reisen.'],
+			['2025–26', 'Reisefilme mit Guada als Guadi & Micha in Asien und Amerika. Format-Schnitt für Marken wie Carwow.'],
+			['2027', 'Geplant: Laponia-Skidurchquerung im Hochwinter, Lyngen-Alpen, Arctic Circle Trail.'],
+		];
+---
+
+<Base
+	lang={lang}
+	title={en ? 'About – Micha Rössler, Expedition Filmmaker from Germany' : 'Über mich – Micha Rössler, Outdoor-Filmemacher aus Bayern'}
+	description={en
+		? 'German expedition and adventure filmmaker, camera operator and documentary editor. Raised in a small Bavarian village, now filming on the road full-time.'
+		: 'Expeditions- und Outdoor-Filmemacher, Kameramann und Dokumentarfilm-Cutter. Aufgewachsen in einem kleinen Dorf in Bayern, heute dauerhaft unterwegs.'}
+	alt={{ en: '/about/', de: '/de/ueber-mich/' }}
+	ogImage="kilimanjaro-ridge"
+	solidHeader
+>
+	<div class="wrap a">
+		<div class="a-grid">
+			<div>
+				<p class="meta">{en ? 'About' : 'Über mich'}</p>
+				<h1>{en ? 'Still looking for the next hard, honest story' : 'Immer auf der Suche nach der nächsten harten, ehrlichen Geschichte'}</h1>
+				<div class="prose a-prose">
+					{
+						en ? (
+							<>
+								<p>I grew up in a small village in Bavaria, and the mountains were my first playground. For a while I almost lost that – until I started travelling and understood that the most important skill is being able to tell a story, to the right people, the right way.</p>
+								<p>I learned the craft on long-form YouTube documentaries: directing, filming and editing for Felix von der Laden, whose 24h Nürburgring and Hotrodtour docs reached 1.4 and 1.2 million views. Since then I have filmed on Kilimanjaro, in the Sahara and in the Bolivian Andes.</p>
+								<p>Today I live on the road with my partner Guada. My main terrain is mountains, snow and multi-day journeys. I care about fair work, people over spectacle and stories that do not need to be exaggerated.</p>
+							</>
+						) : (
+							<>
+								<p>Ich bin in einem kleinen Dorf in Bayern aufgewachsen, die Berge waren mein erster Spielplatz. Eine Zeit lang hätte ich das fast verloren – bis ich angefangen habe zu reisen und verstanden habe, dass die wichtigste Fähigkeit ist, eine Geschichte zu erzählen: den richtigen Menschen, auf die richtige Weise.</p>
+								<p>Das Handwerk habe ich bei langen YouTube-Dokumentationen gelernt: Regie, Kamera und Schnitt für Felix von der Laden, dessen Dokus über das 24h-Rennen am Nürburgring und die Hotrodtour 1,4 und 1,2 Millionen Aufrufe erreicht haben. Seitdem habe ich am Kilimandscharo, in der Sahara und in den bolivianischen Anden gedreht.</p>
+								<p>Heute lebe ich mit meiner Partnerin Guada unterwegs. Mein Terrain sind Berge, Schnee und mehrtägige Touren. Mir sind faire Arbeit, Menschen statt Spektakel und Geschichten wichtig, die man nicht übertreiben muss.</p>
+							</>
+						)
+					}
+				</div>
+			</div>
+			<figure class="a-fig">
+				<Image src={pic('bolivia-sunrise-hiker')} alt={en ? 'Hiker at sunrise in the Andes' : 'Wanderer bei Sonnenaufgang in den Anden'} widths={[480, 720, 960]} sizes="(min-width: 960px) 40vw, 100vw" loading="eager" />
+				<figcaption class="meta">Bolivia · 2024</figcaption>
+			</figure>
+		</div>
+
+		<section class="tl" aria-labelledby="tl-h">
+			<h2 id="tl-h">{en ? 'Timeline' : 'Stationen'}</h2>
+			<ol>
+				{
+					timeline.map(([y, txt]) => (
+						<li class="reveal">
+							<span class="tl-y">{y}</span>
+							<p>{txt}</p>
+						</li>
+					))
+				}
+			</ol>
+		</section>
+
+		<section class="also">
+			<p class="meta">{en ? 'Also' : 'Außerdem'}</p>
+			<p class="prose">
+				{en ? 'I build edit systems for recurring video formats – templates, data-driven graphics and shorts pipelines – at ' : 'Für wiederkehrende Videoformate baue ich Schnitt-Systeme – Templates, datengetriebene Grafiken und Shorts-Pipelines – bei '}
+				<a href={en ? 'https://formatschnitt.de/en/' : 'https://formatschnitt.de/'}>formatschnitt.de</a>.
+			</p>
+			<a class="btn btn--signal" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}</a>
+		</section>
+	</div>
+</Base>
+
+<style>
+	.a {
+		padding-top: 8rem;
+	}
+	.a-grid {
+		display: grid;
+		gap: 3rem;
+	}
+	@media (min-width: 960px) {
+		.a-grid {
+			grid-template-columns: 1.3fr 1fr;
+			gap: 5rem;
+			align-items: start;
+		}
+		.a-fig {
+			position: sticky;
+			top: 6rem;
+		}
+	}
+	h1 {
+		font-size: var(--step-6);
+		margin: 0.75rem 0 2rem;
+	}
+	.a-fig {
+		margin: 0;
+	}
+	.a-fig figcaption {
+		margin-top: 0.6rem;
+	}
+	.tl {
+		margin-top: clamp(4rem, 9vw, 7rem);
+	}
+	.tl h2 {
+		font-size: var(--step-5);
+		margin-bottom: 2rem;
+	}
+	.tl ol {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		border-top: 1px solid var(--moraine-2);
+	}
+	.tl li {
+		display: grid;
+		grid-template-columns: 7rem 1fr;
+		gap: 1rem;
+		padding: 1.25rem 0;
+		border-bottom: 1px solid var(--moraine-2);
+	}
+	.tl-y {
+		font-weight: 750;
+		font-stretch: 65%;
+		font-size: var(--step-2);
+		color: var(--signal);
+		font-variant-numeric: tabular-nums;
+	}
+	.tl p {
+		font-family: var(--serif);
+		font-size: 1.15rem;
+		max-width: 42em;
+	}
+	.also {
+		margin-top: clamp(4rem, 9vw, 6rem);
+		display: grid;
+		gap: 1.25rem;
+		justify-items: start;
+	}
+	@media (max-width: 560px) {
+		.tl li {
+			grid-template-columns: 1fr;
+			gap: 0.25rem;
+		}
+	}
+</style>

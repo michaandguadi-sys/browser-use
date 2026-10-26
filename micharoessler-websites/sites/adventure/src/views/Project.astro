@@ -1,0 +1,312 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import YouTube from '../components/YouTube.astro';
+import { href, ui, type Lang } from '../i18n';
+import { projects, pic, type Project } from '../data/projects';
+
+interface Props {
+	lang: Lang;
+	project: Project;
+}
+const { lang, project: p } = Astro.props;
+const t = ui[lang];
+const en = lang === 'en';
+const idx = projects.findIndex((x) => x.slug === p.slug);
+const nxt = projects[(idx + 1) % projects.length];
+
+const credits: [string, string][] = [
+	[t.role_l, p.roles[lang]],
+	...(p.client ? [[t.client_l, p.client] as [string, string]] : []),
+	[t.location_l, p.location[lang]],
+	...(p.year ? [[t.year_l, p.year] as [string, string]] : []),
+];
+
+const jsonLd: Record<string, unknown>[] = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'CreativeWork',
+		name: p.title[lang],
+		abstract: p.summary[lang],
+		creator: { '@id': 'https://micharoessler.com/#person' },
+		...(p.year ? { dateCreated: p.year.slice(0, 4) } : {}),
+		locationCreated: { '@type': 'Place', name: p.location[lang] },
+	},
+	...(p.youtube
+		? [
+				{
+					'@context': 'https://schema.org',
+					'@type': 'VideoObject',
+					name: p.title[lang],
+					description: p.summary[lang],
+					thumbnailUrl: `https://i.ytimg.com/vi/${p.youtube}/maxresdefault.jpg`,
+					embedUrl: `https://www.youtube-nocookie.com/embed/${p.youtube}`,
+					contentUrl: `https://www.youtube.com/watch?v=${p.youtube}`,
+					...(p.year ? { uploadDate: `${p.year.slice(0, 4)}-01-01` } : {}),
+				},
+			]
+		: []),
+];
+---
+
+<Base
+	lang={lang}
+	title={`${p.title[lang]} – ${p.kicker[lang]} | Micha Rössler`}
+	description={p.summary[lang]}
+	alt={{ en: href('en', p.slug), de: href('de', p.slug) }}
+	ogImage={p.cover}
+	jsonLd={jsonLd}
+>
+	<article>
+		<header class="p-hero">
+			<Image
+				src={pic(p.cover)}
+				alt=""
+				widths={[640, 960, 1280, 1920, 2560]}
+				sizes="100vw"
+				loading="eager"
+				fetchpriority="high"
+				class="p-hero-img"
+			/>
+			<div class="p-shade"></div>
+			<div class="wrap p-hero-in">
+				<p class="meta">{p.kicker[lang]}</p>
+				<h1>{p.title[lang]}</h1>
+				<p class="p-sum">{p.summary[lang]}</p>
+			</div>
+		</header>
+
+		<div class="wrap p-body">
+			<dl class="credits">
+				{
+					credits.map(([k, v]) => (
+						<div>
+							<dt class="meta">{k}</dt>
+							<dd>{v}</dd>
+						</div>
+					))
+				}
+			</dl>
+
+			{
+				p.youtube && (
+					<div class="p-video">
+						<YouTube id={p.youtube} title={p.title[lang]} lang={lang} />
+					</div>
+				)
+			}
+
+			<div class="p-text">
+				<div class="prose">
+					{p.body.map((b) => <p>{b[lang]}</p>)}
+				</div>
+				<aside class="log" aria-label={en ? 'Field log' : 'Drehprotokoll'}>
+					<p class="meta log-h">{en ? 'Field log' : 'Drehprotokoll'}</p>
+					<dl>
+						{
+							p.facts.map((f) => (
+								<div>
+									<dt class="meta">{f.label[lang]}</dt>
+									<dd>{f.value[lang]}</dd>
+								</div>
+							))
+						}
+					</dl>
+				</aside>
+			</div>
+		</div>
+
+		{
+			p.gallery.length > 0 && (
+				<section class="gallery wrap" aria-label={en ? 'Stills' : 'Standbilder'}>
+					{p.gallery.map((g) => {
+						const im = pic(g);
+						const tall = im.height > im.width;
+						return (
+							<figure class:list={['reveal', { tall }]}>
+								<Image
+									src={im}
+									alt={`${p.title[lang]} – ${en ? 'still' : 'Standbild'}`}
+									widths={tall ? [480, 720, 960] : [640, 960, 1440, 1920]}
+									sizes={tall ? '(min-width: 900px) 45vw, 100vw' : '(min-width: 900px) 92vw, 100vw'}
+								/>
+								<figcaption class="meta">
+									{p.location[lang]}
+									{p.year && <> · {p.year}</>}
+								</figcaption>
+							</figure>
+						);
+					})}
+				</section>
+			)
+		}
+
+		<nav class="wrap p-next" aria-label={t.next}>
+			<a href={href(lang, 'work')} class="meta">← {t.allWork}</a>
+			<a href={href(lang, nxt.slug)} class="p-next-link">
+				<span class="meta">{t.next}</span>
+				<span class="p-next-title">{nxt.title[lang]} →</span>
+			</a>
+		</nav>
+
+		<section class="wrap p-cta">
+			<h2>{en ? 'Have a project like this?' : 'Ein ähnliches Projekt geplant?'}</h2>
+			<a class="btn btn--signal" href={href(lang, 'contact')}>{t.cta}</a>
+		</section>
+	</article>
+</Base>
+
+<style>
+	.p-hero {
+		position: relative;
+		min-height: 88svh;
+		display: grid;
+		align-items: end;
+		overflow: hidden;
+	}
+	.p-hero-img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.p-shade {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(to top, rgb(14 15 13 / 0.95), rgb(14 15 13 / 0.2) 55%, rgb(14 15 13 / 0.45));
+	}
+	.p-hero-in {
+		position: relative;
+		padding-bottom: clamp(2rem, 5vw, 4rem);
+	}
+	h1 {
+		font-size: var(--step-7);
+		font-stretch: 62%;
+		font-weight: 800;
+		margin: 0.75rem 0 1.25rem;
+		max-width: 12ch;
+	}
+	.p-sum {
+		font-family: var(--serif);
+		font-size: var(--step-2);
+		line-height: 1.3;
+		max-width: 28em;
+	}
+	.p-body {
+		padding-top: clamp(2.5rem, 6vw, 4rem);
+	}
+	.credits {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		margin: 0;
+		border-top: 1px solid var(--moraine-2);
+		border-bottom: 1px solid var(--moraine-2);
+	}
+	.credits div {
+		padding: 1.1rem 1rem 1.1rem 0;
+	}
+	.credits dd {
+		margin: 0.35rem 0 0;
+		font-weight: 600;
+	}
+	.p-video {
+		margin-top: clamp(2.5rem, 6vw, 4rem);
+	}
+	.p-text {
+		display: grid;
+		gap: 3rem;
+		margin-top: clamp(3rem, 7vw, 5rem);
+	}
+	@media (min-width: 960px) {
+		.p-text {
+			grid-template-columns: 1fr 320px;
+			gap: 5rem;
+		}
+	}
+	.log {
+		border: 1px solid var(--moraine-2);
+		padding: 1.5rem;
+		align-self: start;
+	}
+	.log-h {
+		color: var(--signal);
+	}
+	.log dl {
+		margin: 1rem 0 0;
+		display: grid;
+		gap: 1rem;
+	}
+	.log dd {
+		margin: 0.25rem 0 0;
+		font-weight: 650;
+		font-stretch: 80%;
+		font-size: var(--step-1);
+	}
+	.gallery {
+		margin-top: clamp(4rem, 9vw, 7rem);
+		display: grid;
+		gap: clamp(1rem, 2.5vw, 2rem);
+	}
+	@media (min-width: 900px) {
+		.gallery {
+			grid-template-columns: 1fr 1fr;
+		}
+		.gallery figure:not(.tall) {
+			grid-column: 1 / -1;
+		}
+	}
+	figure {
+		margin: 0;
+	}
+	figure img {
+		width: 100%;
+	}
+	figure.tall img {
+		aspect-ratio: 4 / 5;
+		object-fit: cover;
+		height: 100%;
+	}
+	figcaption {
+		margin-top: 0.6rem;
+	}
+	.p-next {
+		display: flex;
+		justify-content: space-between;
+		align-items: end;
+		flex-wrap: wrap;
+		gap: 1.5rem;
+		margin-top: clamp(4rem, 9vw, 7rem);
+		padding-top: 2rem;
+		border-top: 1px solid var(--moraine-2);
+	}
+	.p-next a {
+		text-decoration: none;
+	}
+	.p-next-link {
+		display: grid;
+		text-align: right;
+		gap: 0.4rem;
+	}
+	.p-next-title {
+		font-weight: 750;
+		font-stretch: 65%;
+		text-transform: uppercase;
+		font-size: var(--step-5);
+		line-height: 0.95;
+	}
+	.p-next-link:hover .p-next-title {
+		color: var(--signal);
+	}
+	.p-cta {
+		margin-top: clamp(4rem, 9vw, 6rem);
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1.5rem;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.p-cta h2 {
+		font-size: var(--step-5);
+	}
+</style>

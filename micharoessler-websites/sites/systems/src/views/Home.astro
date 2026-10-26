@@ -1,0 +1,886 @@
+---
+import Base from '../layouts/Base.astro';
+import { type Lang } from '../i18n';
+import { packages, systemParts, proof, tools, faq } from '../data/content';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const de = lang === 'de';
+
+const title = de
+	? 'Formatschnitt – Cutter Freelancer für YouTube-Formate & Schnitt-Systeme'
+	: 'Formatschnitt – Format Video Editor & Edit Systems for YouTube Teams';
+const description = de
+	? 'Freelance-Cutter für wiederkehrende YouTube-Formate: Schnitt-Templates, datengetriebene Grafiken, Shorts-Pipeline und Retainer. Festpreise ab 1.950 €, Tagessatz 750 €.'
+	: 'Freelance editor for recurring YouTube formats: edit templates, data-driven graphics, shorts pipeline and retainers. Fixed prices from €1,950, day rate €750.';
+
+// Timeline clips for the hero diagram: [track, start%, width%, colour, label]
+const clips: [number, number, number, string, string][] = [
+	[0, 0, 9, 'var(--clip-red)', 'Hook'],
+	[0, 9, 11, 'var(--clip-blue)', 'Intro'],
+	[0, 20, 24, 'var(--clip-blue)', de ? 'Test A' : 'Segment A'],
+	[0, 44, 24, 'var(--clip-blue)', de ? 'Test B' : 'Segment B'],
+	[0, 68, 20, 'var(--clip-blue)', 'Verdict'],
+	[0, 88, 12, 'var(--clip-green)', 'End'],
+	[1, 3, 10, 'var(--clip-yellow)', 'Title'],
+	[1, 22, 9, 'var(--clip-yellow)', 'Spec'],
+	[1, 46, 9, 'var(--clip-yellow)', 'Spec'],
+	[1, 70, 13, 'var(--clip-yellow)', 'Score'],
+	[2, 0, 100, 'var(--clip-green)', ''],
+];
+const tracks = ['V1', 'GFX', 'A1'];
+
+const steps = de
+	? [
+			['01', 'Erstgespräch', '15 Minuten, kostenlos. Ihr zeigt mir euer Format, ich sage ehrlich, ob ein System sich lohnt.', 'Kostenlos'],
+			['02', 'Pilot', 'Eine Folge plus drei Shorts aus eurem Material – zum Festpreis.', '1.950 € · ≈ 1 Woche'],
+			['03', 'Setup', 'Audit, Templates, Grafik-Kit, Shorts-Pipeline, SOP.', '3.500 € · 3–4 Wochen'],
+			['04', 'Retainer', 'Ich schneide auf dem System, monatlich planbar.', 'ab 4.200 € / Monat'],
+		]
+	: [
+			['01', 'Intro call', '15 minutes, free. Show me your format; I will tell you honestly whether a system is worth it.', 'Free'],
+			['02', 'Pilot', 'One episode plus three shorts from your footage, at a fixed price.', '€1,950 · ≈ 1 week'],
+			['03', 'Setup', 'Audit, templates, graphics kit, shorts pipeline, SOP.', '€3,500 · 3–4 weeks'],
+			['04', 'Retainer', 'I edit on the system, plannable month to month.', 'from €4,200 / month'],
+		];
+
+const budgets = de
+	? ['Pilot (1.950 €)', 'bis 5.000 €', '5.000–10.000 € / Monat', 'über 10.000 € / Monat', 'Weiß ich noch nicht']
+	: ['Pilot (€1,950)', 'up to €5k', '€5–10k / month', 'over €10k / month', 'Not sure yet'];
+
+const faqLd = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q[lang], acceptedAnswer: { '@type': 'Answer', text: f.a[lang] } })),
+};
+const offerLd = {
+	'@context': 'https://schema.org',
+	'@type': 'OfferCatalog',
+	name: de ? 'Formatschnitt Pakete' : 'Formatschnitt packages',
+	itemListElement: packages.map((p) => ({
+		'@type': 'Offer',
+		name: p.name[lang],
+		priceCurrency: 'EUR',
+		price: Number(p.price.de.replace(/[^\d]/g, '')),
+		description: p.points.map((x) => x[lang]).join('; '),
+	})),
+};
+---
+
+<Base lang={lang} title={title} description={description} alt={{ de: '/', en: '/en/' }} jsonLd={[faqLd, offerLd]}>
+	<section class="hero wrap">
+		<div class="hero-txt">
+			<p class="mono label">{de ? 'Freelance-Cutter · Workflow · Retainer' : 'Freelance editor · Workflow · Retainer'}</p>
+			<h1>
+				{de ? 'Mehr Folgen und Shorts aus eurem Format – ohne mehr Schnittstunden.' : 'More episodes and shorts from your format – without more edit hours.'}
+			</h1>
+			<p class="hero-sub">
+				{
+					de
+						? 'Ich mache aus eurem wiederkehrenden YouTube-Format ein Schnitt-System: Templates, datengetriebene Grafiken, eine Shorts-Pipeline und eine saubere Review-Schleife. Dann schneide ich es für euch im Retainer – oder übergebe es an euer Team.'
+						: 'I turn your recurring YouTube format into an edit system: templates, data-driven graphics, a shorts pipeline and a clean review loop. Then I edit it for you on retainer – or hand it to your team.'
+				}
+			</p>
+			<div class="hero-cta">
+				<a class="btn btn--ink" href="#kontakt">{de ? 'Erstgespräch buchen' : 'Book an intro call'} <span class="arr">→</span></a>
+				<a class="btn" href="#system">{de ? 'System ansehen' : 'See the system'}</a>
+			</div>
+			<dl class="spec">
+				<div><dt class="mono">{de ? 'Tagessatz' : 'Day rate'}</dt><dd>{de ? '750 €' : '€750'}</dd></div>
+				<div><dt class="mono">{de ? 'Einstieg' : 'Start'}</dt><dd>{de ? 'Pilot, Festpreis' : 'Fixed-price pilot'}</dd></div>
+				<div><dt class="mono">{de ? 'Tools' : 'Tools'}</dt><dd>Premiere · Resolve · Remotion</dd></div>
+				<div><dt class="mono">{de ? 'Sprachen' : 'Languages'}</dt><dd>DE · EN</dd></div>
+			</dl>
+		</div>
+
+		<figure class="tl" aria-label={de ? 'Schema einer Format-Timeline: Hook, Intro, Segmente, Verdict, Endscreen mit Grafik-Spur' : 'Diagram of a format timeline: hook, intro, segments, verdict, end screen with graphics track'}>
+			<div class="tl-head mono">
+				<span>EP_042_{de ? 'Vergleichstest' : 'comparison'}.prproj</span>
+				<span class="tc">00:12:48:16</span>
+			</div>
+			<div class="tl-ruler mono" aria-hidden="true">
+				{['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00'].map((x) => <span>{x}</span>)}
+			</div>
+			<div class="tl-tracks" aria-hidden="true">
+				{
+					tracks.map((name, ti) => (
+						<div class="track">
+							<span class="mono tn">{name}</span>
+							<div class="lane">
+								{clips
+									.filter((c) => c[0] === ti)
+									.map(([, x, w, c, l], i) => (
+										<span class="clip" style={`--x:${x}%;--w:${w}%;--c:${c};--d:${(ti * 6 + i) * 70}ms`}>
+											{l}
+										</span>
+									))}
+								{ti === 2 && (
+									<svg class="wave" viewBox="0 0 400 20" preserveAspectRatio="none">
+										<path d={Array.from({ length: 100 }, (_, i) => `M${i * 4} ${10 - ((i * 7919) % 9)}V${10 + ((i * 104729) % 9)}`).join('')} stroke="#2a6b33" stroke-width="1.6" />
+									</svg>
+								)}
+							</div>
+						</div>
+					))
+				}
+				<span class="playhead"></span>
+			</div>
+			<figcaption class="mono tl-cap">
+				<span>{de ? 'Template' : 'Template'}: 11 Clips · 4 {de ? 'Grafik-Beats aus Tabelle' : 'graphic beats from sheet'}</span>
+				<span>→ 3–6 Shorts</span>
+			</figcaption>
+		</figure>
+	</section>
+
+	<section class="strip">
+		<div class="wrap strip-in">
+			<p class="mono">{de ? 'Gearbeitet mit' : 'Worked with'}</p>
+			<ul>
+				<li>Carwow</li>
+				<li>Autohero</li>
+				<li>Felix von der Laden</li>
+				<li>AEVOR</li>
+				<li>Red Bull Germany</li>
+			</ul>
+			<p class="mono strip-n">{de ? '2,6 Mio.+ Aufrufe auf zwei geschnittenen Langform-Dokus' : '2.6M+ views on two long-form docs I edited'}</p>
+		</div>
+	</section>
+
+	<section id="system" class="sec wrap">
+		<div class="sec-h">
+			<p class="mono label">{de ? 'Das System' : 'The system'}</p>
+			<h2>{de ? 'Euer Format als System' : 'Your format as a system'}</h2>
+			<p>
+				{
+					de
+						? 'Wer jede Woche dieselbe Show produziert, sollte nicht jede Woche dieselben Dinge neu bauen. Sechs Bausteine, die ich für euer Format aufsetze:'
+						: 'If you ship the same show every week, you should not rebuild the same things every week. Six building blocks I set up for your format:'
+				}
+			</p>
+		</div>
+		<ol class="parts">
+			{
+				systemParts.map((s) => (
+					<li class="reveal">
+						<span class="mono n">{s.n}</span>
+						<h3>{s.title[lang]}</h3>
+						<p>{s.text[lang]}</p>
+					</li>
+				))
+			}
+		</ol>
+		<p class="ai mono">
+			{de ? 'KI hilft. Der Schnitt entscheidet. Keine generierten Moderatoren, kein Auto-Slop.' : 'AI assists. The edit decides. No generated presenters, no auto-slop.'}
+		</p>
+	</section>
+
+	<section id="ablauf" class="sec wrap">
+		<div class="sec-h">
+			<p class="mono label">{de ? 'Ablauf' : 'Process'}</p>
+			<h2>{de ? 'Klein anfangen, dann skalieren' : 'Start small, then scale'}</h2>
+		</div>
+		<ol class="steps">
+			{
+				steps.map(([n, h, p, s]) => (
+					<li class="reveal">
+						<span class="mono n">{n}</span>
+						<h3>{h}</h3>
+						<p>{p}</p>
+						<p class="mono s">{s}</p>
+					</li>
+				))
+			}
+		</ol>
+	</section>
+
+	<section id="pakete" class="sec wrap">
+		<div class="sec-h">
+			<p class="mono label">{de ? 'Pakete & Preise' : 'Packages & pricing'}</p>
+			<h2>{de ? 'Festpreise. Schriftlich. Vorab.' : 'Fixed prices. In writing. Upfront.'}</h2>
+			<p>
+				{
+					de
+						? 'Basis ist ein Tagessatz von 750 €. Pakete sind günstiger als Einzeltage, weil das System die Arbeit schneller macht – das ist der Punkt.'
+						: 'Base day rate is €750. Packages cost less than single days because the system makes the work faster – that is the point.'
+				}
+			</p>
+		</div>
+		<div class="pk">
+			{
+				packages.map((p) => (
+					<article class:list={['pk-card', 'reveal', { hl: p.highlight }]}>
+						{p.highlight && <p class="mono pk-tag">{de ? 'Empfohlener Einstieg' : 'Recommended start'}</p>}
+						<h3>{p.name[lang]}</h3>
+						<p class="pk-price">
+							{p.price[lang]} <span class="mono">{p.unit[lang]}</span>
+						</p>
+						<p class="mono pk-days">{p.days[lang]}</p>
+						<ul>
+							{p.points.map((x) => (
+								<li>{x[lang]}</li>
+							))}
+						</ul>
+					</article>
+				))
+			}
+		</div>
+		<p class="mono pk-note">
+			{
+				de
+					? 'Alle Preise netto. Abrechnung über Micha Roessler LLC (USA); B2B-Kunden in der EU: Reverse-Charge, keine deutsche USt. auf der Rechnung. USD-Preise auf Anfrage.'
+					: 'All prices net. Invoiced by Micha Roessler LLC (USA); EU B2B clients: reverse charge. USD pricing on request.'
+			}
+		</p>
+	</section>
+
+	<section id="arbeiten" class="sec wrap">
+		<div class="sec-h">
+			<p class="mono label">{de ? 'Arbeiten' : 'Work'}</p>
+			<h2>{de ? 'Was ich gebaut und geschnitten habe' : 'What I have built and edited'}</h2>
+			<p>
+				{
+					de
+						? 'Ohne erfundene Zahlen. Kunden ohne Freigabe nenne ich nicht beim Namen.'
+						: 'No invented numbers. Clients who have not approved being named stay anonymous.'
+				}
+			</p>
+		</div>
+		<div class="cases">
+			{
+				proof.map((c) => (
+					<article class="case reveal">
+						<p class="mono">{c.tag[lang]}</p>
+						<h3>{c.title[lang]}</h3>
+						<p>{c.text[lang]}</p>
+					</article>
+				))
+			}
+		</div>
+		<div class="tools">
+			<p class="mono label">{de ? 'Werkzeuge, die ich selbst baue und nutze' : 'Tools I build and use'}</p>
+			<dl>
+				{
+					tools.map((t) => (
+						<div class="reveal">
+							<dt>{t.name}</dt>
+							<dd>{t.text[lang]}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</div>
+	</section>
+
+	<section class="sec wrap about">
+		<div class="sec-h">
+			<p class="mono label">{de ? 'Wer dahinter steht' : 'Who is behind it'}</p>
+			<h2>{de ? 'Eine Person. Schnitt und System.' : 'One person. Edit and system.'}</h2>
+		</div>
+		<div class="about-grid">
+			<p class="about-p">
+				{
+					de
+						? 'Ich bin Micha Rössler, Editor und Filmemacher. Gelernt habe ich das Handwerk bei Langform-Dokus für YouTube – 1,2 und 1,4 Mio. Aufrufe für Felix von der Laden. Heute schneide ich Serienformate wie Auto-Reviews und baue die Systeme dahinter: Templates, Remotion-Grafiken und eigene Tools wie eine Offload-App für den Ingest. Wenn ich nicht im Schnitt sitze, drehe ich Expeditionsfilme.'
+						: 'I am Micha Rössler, editor and filmmaker. I learned the craft on long-form YouTube docs – 1.2M and 1.4M views for Felix von der Laden. Today I edit series formats like car reviews and build the systems behind them: templates, Remotion graphics and my own tools such as an offload app for ingest. When I am not editing, I shoot expedition films.'
+				}
+			</p>
+			<a class="btn" href={de ? 'https://micharoessler.com/de/' : 'https://micharoessler.com/'}>micharoessler.com <span class="arr">↗</span></a>
+		</div>
+	</section>
+
+	<section id="faq" class="sec wrap">
+		<div class="sec-h">
+			<p class="mono label">FAQ</p>
+			<h2>{de ? 'Häufige Fragen' : 'Common questions'}</h2>
+		</div>
+		<div class="faq">
+			{
+				faq.map((f) => (
+					<details>
+						<summary>{f.q[lang]}</summary>
+						<p>{f.a[lang]}</p>
+					</details>
+				))
+			}
+		</div>
+	</section>
+
+	<section id="kontakt" class="contact">
+		<div class="wrap c-in">
+			<div class="c-txt">
+				<p class="mono label">{de ? 'Kontakt' : 'Contact'}</p>
+				<h2>{de ? 'Erzählt mir von eurem Format.' : 'Tell me about your format.'}</h2>
+				<p>
+					{de ? 'Antwort innerhalb von zwei Werktagen. Oder direkt: ' : 'Reply within two working days. Or directly: '}
+					<a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
+				</p>
+			</div>
+			<form class="f" id="brief" data-subject={de ? 'Anfrage Formatschnitt' : 'Formatschnitt enquiry'}>
+				<fieldset>
+					<legend class="mono">01 · {de ? 'Ihr' : 'You'}</legend>
+					<label><span class="mono">{de ? 'Name' : 'Name'}</span><input name="Name" required autocomplete="name" /></label>
+					<label><span class="mono">{de ? 'Firma / Kanal' : 'Company / channel'}</span><input name={de ? 'Firma' : 'Company'} autocomplete="organization" /></label>
+				</fieldset>
+				<fieldset>
+					<legend class="mono">02 · {de ? 'Das Format' : 'The format'}</legend>
+					<label><span class="mono">{de ? 'Link zum Format' : 'Link to the format'}</span><input name={de ? 'Format-Link' : 'Format link'} type="url" placeholder="https://youtube.com/…" /></label>
+					<label><span class="mono">{de ? 'Folgen pro Monat' : 'Episodes per month'}</span><input name={de ? 'Folgen/Monat' : 'Episodes/month'} inputmode="numeric" /></label>
+				</fieldset>
+				<fieldset>
+					<legend class="mono">03 · {de ? 'Der Rahmen' : 'The frame'}</legend>
+					<div class="chips" role="radiogroup" aria-label={de ? 'Budget' : 'Budget'}>
+						{
+							budgets.map((b, i) => (
+								<label class="chip">
+									<input type="radio" name="Budget" value={b} checked={i === 0} />
+									<span>{b}</span>
+								</label>
+							))
+						}
+					</div>
+					<label><span class="mono">{de ? 'Start' : 'Start'}</span><input name="Start" placeholder={de ? 'z. B. Januar' : 'e.g. January'} /></label>
+					<label><span class="mono">{de ? 'Was soll besser werden?' : 'What should get better?'}</span><textarea name={de ? 'Ziel' : 'Goal'} rows="4"></textarea></label>
+				</fieldset>
+				<div class="f-send">
+					<button class="btn btn--ink" type="submit">{de ? 'E-Mail vorbereiten' : 'Prepare email'} <span class="arr">→</span></button>
+					<p class="mono f-note">{de ? 'Öffnet euer Mailprogramm. Auf dieser Seite wird nichts gespeichert.' : 'Opens your email app. Nothing is stored on this site.'}</p>
+				</div>
+			</form>
+		</div>
+	</section>
+</Base>
+
+<script>
+	const f = document.getElementById('brief') as HTMLFormElement;
+	f?.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const lines = [...new FormData(f).entries()].filter(([, v]) => String(v).trim()).map(([k, v]) => `${k}: ${v}`);
+		location.href = `mailto:hello@micharoessler.com?subject=${encodeURIComponent(f.dataset.subject ?? '')}&body=${encodeURIComponent(lines.join('\n\n'))}`;
+	});
+</script>
+
+<style>
+	.hero {
+		display: grid;
+		gap: clamp(2.5rem, 5vw, 4rem);
+		padding-block: clamp(3.5rem, 8vw, 6.5rem) clamp(3.5rem, 7vw, 5.5rem);
+	}
+	@media (min-width: 1040px) {
+		.hero {
+			grid-template-columns: 1.05fr 1fr;
+			align-items: center;
+		}
+	}
+	h1 {
+		font-size: var(--s6);
+		margin: 1.25rem 0 1.5rem;
+		letter-spacing: -0.035em;
+		text-wrap: balance;
+	}
+	.hero-sub {
+		font-size: var(--s2);
+		line-height: 1.5;
+		color: var(--graphite);
+		max-width: 36rem;
+	}
+	.hero-cta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-top: 2rem;
+	}
+	.spec {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+		margin: 2.5rem 0 0;
+		border-top: 1px solid var(--rule);
+	}
+	.spec div {
+		padding: 0.9rem 0.75rem 0 0;
+	}
+	.spec dd {
+		margin: 0.3rem 0 0;
+		font-weight: 520;
+		font-size: var(--s0);
+	}
+
+	/* timeline diagram */
+	.tl {
+		margin: 0;
+		background: var(--dark);
+		border-radius: 12px;
+		padding: 1rem 1rem 1.1rem;
+		color: #c9cac6;
+		box-shadow: 0 30px 60px -30px rgb(20 20 22 / 0.45);
+	}
+	.tl .mono {
+		color: #8d8f96;
+	}
+	.tl-head {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-bottom: 0.75rem;
+		border-bottom: 1px solid #26272b;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+	.tl-head .tc {
+		color: var(--clip-blue);
+	}
+	.tl-ruler {
+		display: flex;
+		justify-content: space-between;
+		margin: 0.6rem 0 0.4rem 2.6rem;
+		font-size: 0.625rem;
+	}
+	.tl-tracks {
+		position: relative;
+		display: grid;
+		gap: 6px;
+	}
+	.track {
+		display: grid;
+		grid-template-columns: 2.2rem 1fr;
+		gap: 0.4rem;
+		align-items: center;
+	}
+	.tn {
+		font-size: 0.625rem;
+	}
+	.lane {
+		position: relative;
+		height: 38px;
+		background: #1b1c1f;
+		border-radius: 4px;
+		overflow: hidden;
+	}
+	.clip {
+		position: absolute;
+		top: 3px;
+		bottom: 3px;
+		left: var(--x);
+		width: calc(var(--w) - 2px);
+		background: var(--c);
+		border-radius: 3px;
+		color: #141416;
+		font-family: var(--mono);
+		font-size: 0.625rem;
+		padding: 0.25rem 0.35rem;
+		white-space: nowrap;
+		overflow: hidden;
+		opacity: 0;
+		translate: -8px 0;
+	}
+	.tl.in .clip {
+		animation: clipIn 0.35s var(--ease) forwards;
+		animation-delay: var(--d);
+	}
+	@keyframes clipIn {
+		to {
+			opacity: 1;
+			translate: 0 0;
+		}
+	}
+	.wave {
+		position: absolute;
+		inset: 3px 0;
+		width: 100%;
+		height: calc(100% - 6px);
+		opacity: 0.55;
+	}
+	.playhead {
+		position: absolute;
+		top: -6px;
+		bottom: -6px;
+		left: calc(2.6rem + 0%);
+		width: 2px;
+		background: var(--blue);
+		box-shadow: 0 0 0 1px rgb(47 91 224 / 0.25);
+	}
+	.playhead::before {
+		content: '';
+		position: absolute;
+		top: -4px;
+		left: -5px;
+		border: 6px solid transparent;
+		border-top-color: var(--blue);
+	}
+	.tl.in .playhead {
+		animation: play 3.6s 0.9s var(--ease) forwards;
+	}
+	@keyframes play {
+		to {
+			left: calc(2.6rem + (100% - 2.6rem) * 0.62);
+		}
+	}
+	.tl-cap {
+		display: flex;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.9rem;
+		font-size: 0.68rem;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.clip {
+			opacity: 1;
+			translate: none;
+		}
+	}
+
+	.strip {
+		border-top: 1px solid var(--rule);
+		border-bottom: 1px solid var(--rule);
+		background: var(--surface);
+	}
+	.strip-in {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem 2rem;
+		padding-block: 1.4rem;
+	}
+	.strip ul {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.75rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		font-weight: 560;
+		letter-spacing: -0.02em;
+		font-size: var(--s2);
+	}
+	.strip-n {
+		margin-left: auto;
+	}
+
+	.parts {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1px;
+		background: var(--rule);
+		border: 1px solid var(--rule);
+	}
+	@media (min-width: 640px) {
+		.parts {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+	@media (min-width: 1000px) {
+		.parts {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+	.parts li {
+		background: var(--paper);
+		padding: 1.75rem 1.5rem 2rem;
+	}
+	.parts h3,
+	.steps h3 {
+		font-size: var(--s3);
+		margin: 0.9rem 0 0.6rem;
+	}
+	.parts p,
+	.steps p {
+		color: var(--graphite);
+	}
+	.n {
+		color: var(--blue);
+	}
+	.ai {
+		margin-top: 1.5rem;
+	}
+
+	.steps {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+		gap: 2rem;
+		counter-reset: s;
+	}
+	.steps li {
+		border-top: 2px solid var(--ink);
+		padding-top: 1.1rem;
+	}
+	.steps .s {
+		margin-top: 1rem;
+		color: var(--ink);
+	}
+
+	.pk {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 228px), 1fr));
+		gap: 1rem;
+	}
+	.pk-card {
+		position: relative;
+		border: 1px solid var(--rule);
+		border-radius: 10px;
+		padding: 1.5rem;
+		background: #fbfbf9;
+		display: grid;
+		align-content: start;
+		gap: 0.4rem;
+	}
+	.pk-card.hl {
+		border-color: var(--ink);
+		background: var(--ink);
+		color: var(--paper);
+	}
+	.pk-card.hl .mono {
+		color: #a7a9b0;
+	}
+	.pk-card.hl li::before {
+		color: var(--clip-blue);
+	}
+	.pk-tag {
+		color: var(--clip-blue) !important;
+	}
+	.pk-card h3 {
+		font-size: var(--s2);
+	}
+	.pk-price {
+		font-size: var(--s4);
+		font-weight: 560;
+		letter-spacing: -0.03em;
+		margin-top: 0.4rem;
+	}
+	.pk-price .mono {
+		font-size: var(--s-1);
+		letter-spacing: 0.02em;
+	}
+	.pk-card ul {
+		list-style: none;
+		margin: 1rem 0 0;
+		padding: 0;
+		display: grid;
+		gap: 0.55rem;
+		font-size: var(--s0);
+	}
+	.pk-card li {
+		display: grid;
+		grid-template-columns: 1rem 1fr;
+	}
+	.pk-card li::before {
+		content: '▸';
+		color: var(--blue);
+	}
+	.pk-note {
+		margin-top: 1.5rem;
+		text-transform: none;
+		letter-spacing: 0;
+		max-width: 60rem;
+	}
+
+	.cases {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 1rem;
+	}
+	.case {
+		border: 1px solid var(--rule);
+		border-radius: 10px;
+		padding: 1.5rem;
+		display: grid;
+		align-content: start;
+		gap: 0.75rem;
+	}
+	.case h3 {
+		font-size: var(--s3);
+	}
+	.case p:last-child {
+		color: var(--graphite);
+	}
+	.tools {
+		margin-top: clamp(3rem, 6vw, 4.5rem);
+	}
+	.tools dl {
+		margin: 1.25rem 0 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		border-top: 1px solid var(--rule);
+	}
+	.tools div {
+		padding: 1.1rem 1.25rem 1.1rem 0;
+		border-bottom: 1px solid var(--rule);
+	}
+	.tools dt {
+		font-weight: 560;
+	}
+	.tools dd {
+		margin: 0.35rem 0 0;
+		color: var(--graphite);
+		font-size: var(--s0);
+	}
+
+	.about-grid {
+		display: grid;
+		gap: 2rem;
+		align-items: end;
+	}
+	@media (min-width: 900px) {
+		.about-grid {
+			grid-template-columns: 1fr auto;
+		}
+	}
+	.about-p {
+		font-size: var(--s3);
+		line-height: 1.4;
+		letter-spacing: -0.015em;
+		max-width: 46rem;
+	}
+
+	.faq {
+		border-top: 1px solid var(--rule);
+		max-width: 60rem;
+	}
+	details {
+		border-bottom: 1px solid var(--rule);
+	}
+	summary {
+		cursor: pointer;
+		list-style: none;
+		padding: 1.25rem 2.5rem 1.25rem 0;
+		font-size: var(--s2);
+		font-weight: 520;
+		position: relative;
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	summary::after {
+		content: '+';
+		position: absolute;
+		right: 0.25rem;
+		top: 1.1rem;
+		font-family: var(--mono);
+		color: var(--blue);
+		font-size: 1.25rem;
+	}
+	details[open] summary::after {
+		content: '–';
+	}
+	details p {
+		padding: 0 0 1.4rem;
+		color: var(--graphite);
+		max-width: 46rem;
+	}
+
+	.contact {
+		background: var(--dark);
+		color: #ececE8;
+		padding-block: clamp(4.5rem, 10vw, 7rem);
+	}
+	.contact .mono {
+		color: #9a9ca3;
+	}
+	.c-in {
+		display: grid;
+		gap: 3rem;
+	}
+	@media (min-width: 1000px) {
+		.c-in {
+			grid-template-columns: 0.9fr 1.1fr;
+		}
+	}
+	.c-txt h2 {
+		font-size: var(--s5);
+		margin: 1rem 0 1.25rem;
+	}
+	.c-txt p {
+		color: #b9bab6;
+	}
+	.f {
+		display: grid;
+		gap: 1.5rem;
+	}
+	fieldset {
+		border: 1px solid #2a2b30;
+		border-radius: 10px;
+		padding: 1.25rem;
+		margin: 0;
+		display: grid;
+		gap: 1rem;
+	}
+	legend {
+		padding: 0 0.4rem;
+	}
+	label {
+		display: grid;
+		gap: 0.4rem;
+	}
+	input,
+	textarea {
+		font: inherit;
+		font-size: var(--s0);
+		color: #f2f2ee;
+		background: #1a1b1e;
+		border: 1px solid #2f3036;
+		border-radius: 6px;
+		padding: 0.75rem 0.9rem;
+		width: 100%;
+	}
+	input:focus,
+	textarea:focus {
+		outline: none;
+		border-color: var(--clip-blue);
+	}
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.chip {
+		display: block;
+	}
+	.chip input {
+		position: absolute;
+		opacity: 0;
+		width: 1px;
+	}
+	.chip span {
+		display: inline-block;
+		border: 1px solid #3a3b42;
+		border-radius: 999px;
+		padding: 0.45rem 0.9rem;
+		font-size: var(--s0);
+		cursor: pointer;
+	}
+	.chip input:checked + span {
+		background: var(--clip-blue);
+		border-color: var(--clip-blue);
+		color: #141416;
+	}
+	.chip input:focus-visible + span {
+		outline: 2px solid var(--clip-blue);
+		outline-offset: 2px;
+	}
+	.f-send {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 1rem 1.5rem;
+	}
+	.contact .btn--ink {
+		background: #f2f2ee;
+		color: #141416;
+		border-color: #f2f2ee;
+	}
+	.contact .btn--ink:hover {
+		background: var(--clip-blue);
+		border-color: var(--clip-blue);
+	}
+	.f-note {
+		text-transform: none;
+		letter-spacing: 0;
+	}
+</style>

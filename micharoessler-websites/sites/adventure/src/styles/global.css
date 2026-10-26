@@ -1,0 +1,196 @@
+@import '@fontsource-variable/archivo/standard.css';
+@import '@fontsource-variable/newsreader/opsz.css';
+@import '@fontsource-variable/newsreader/opsz-italic.css';
+
+/* "Field" design system — palette from basalt, firn and lichen; one signal colour. */
+:root {
+	--basalt: #0e0f0d;
+	--moraine: #1c1d1a;
+	--moraine-2: #2a2c28;
+	--firn: #eceae4;
+	--paper: #f2f0ea;
+	--lichen: #8a8f86;
+	--signal: #d9541e;
+	--glacier: #a9c6d3;
+
+	--sans: 'Archivo Variable', system-ui, sans-serif;
+	--serif: 'Newsreader Variable', Georgia, serif;
+
+	--step--1: 0.8rem;
+	--step-0: 1rem;
+	--step-1: 1.25rem;
+	--step-2: 1.5625rem;
+	--step-3: 1.953rem;
+	--step-4: 2.441rem;
+	--step-5: clamp(2.6rem, 5vw, 3.815rem);
+	--step-6: clamp(3rem, 9vw, 6rem);
+	--step-7: clamp(3.4rem, 13vw, 10rem);
+
+	--gutter: clamp(1rem, 4vw, 3rem);
+	--max: 1440px;
+	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+	color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--basalt);
+	color: var(--firn);
+	font-family: var(--sans);
+	font-size: var(--step-0);
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	overflow-x: hidden;
+}
+
+img {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+a {
+	color: inherit;
+	text-underline-offset: 0.2em;
+	text-decoration-thickness: 1px;
+}
+
+:focus-visible {
+	outline: 2px solid var(--signal);
+	outline-offset: 3px;
+}
+
+h1,
+h2,
+h3 {
+	margin: 0;
+	font-weight: 750;
+	font-stretch: 68%;
+	text-transform: uppercase;
+	line-height: 0.92;
+	letter-spacing: -0.01em;
+}
+
+p {
+	margin: 0;
+}
+
+.wrap {
+	width: 100%;
+	max-width: var(--max);
+	margin-inline: auto;
+	padding-inline: var(--gutter);
+}
+
+.meta {
+	font-family: var(--sans);
+	font-stretch: 85%;
+	font-size: var(--step--1);
+	font-weight: 500;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	font-variant-numeric: tabular-nums;
+	color: var(--lichen);
+}
+
+.prose {
+	font-family: var(--serif);
+	font-size: var(--step-1);
+	line-height: 1.55;
+	max-width: 38em;
+}
+.prose p + p {
+	margin-top: 1em;
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6em;
+	padding: 0.9em 1.4em;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+	font-weight: 600;
+	font-stretch: 90%;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	font-size: var(--step--1);
+	text-decoration: none;
+	transition:
+		background 0.3s var(--ease),
+		color 0.3s var(--ease),
+		border-color 0.3s var(--ease);
+}
+.btn:hover {
+	background: var(--firn);
+	color: var(--basalt);
+	border-color: var(--firn);
+}
+.btn--signal {
+	background: var(--signal);
+	border-color: var(--signal);
+	color: #fff;
+}
+.btn--signal:hover {
+	background: var(--firn);
+	border-color: var(--firn);
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.skip {
+	position: absolute;
+	left: 1rem;
+	top: -4rem;
+	z-index: 100;
+	background: var(--signal);
+	color: #fff;
+	padding: 0.6rem 1rem;
+}
+.skip:focus {
+	top: 1rem;
+}
+
+.reveal {
+	opacity: 0;
+	translate: 0 16px;
+	transition:
+		opacity 0.6s var(--ease),
+		translate 0.6s var(--ease);
+}
+.reveal.in {
+	opacity: 1;
+	translate: 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+	}
+	.reveal {
+		opacity: 1;
+		translate: none;
+	}
+}

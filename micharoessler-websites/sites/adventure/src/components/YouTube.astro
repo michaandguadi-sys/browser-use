@@ -1,0 +1,104 @@
+---
+// Click-to-load YouTube facade: no request to Google until the visitor presses play (GDPR + LCP).
+interface Props {
+	id: string;
+	title: string;
+	lang: 'en' | 'de';
+}
+const { id, title, lang } = Astro.props;
+const label = lang === 'de' ? `Video abspielen: ${title}` : `Play video: ${title}`;
+const note =
+	lang === 'de'
+		? 'Beim Abspielen wird YouTube (Google) geladen.'
+		: 'Playing loads YouTube (Google).';
+---
+
+<div class="yt" data-yt={id} data-title={title}>
+	<button type="button" class="yt-btn" aria-label={label}>
+		<img
+			src={`https://i.ytimg.com/vi/${id}/maxresdefault.jpg`}
+			alt=""
+			loading="lazy"
+			decoding="async"
+			width="1280"
+			height="720"
+		/>
+		<span class="yt-play" aria-hidden="true">
+			<svg viewBox="0 0 24 24" width="28" height="28"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg>
+		</span>
+	</button>
+	<p class="yt-note">{note}</p>
+</div>
+
+<script>
+	for (const el of document.querySelectorAll<HTMLElement>('.yt')) {
+		el.querySelector('button')?.addEventListener(
+			'click',
+			() => {
+				const f = document.createElement('iframe');
+				f.src = `https://www.youtube-nocookie.com/embed/${el.dataset.yt}?autoplay=1&rel=0`;
+				f.title = el.dataset.title ?? '';
+				f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+				f.allowFullscreen = true;
+				el.replaceChildren(f);
+			},
+			{ once: true },
+		);
+	}
+</script>
+
+<style>
+	.yt {
+		position: relative;
+		aspect-ratio: 16 / 9;
+		background: #000;
+	}
+	.yt :global(iframe),
+	.yt-btn,
+	.yt-btn img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+	.yt-btn {
+		padding: 0;
+		cursor: pointer;
+		background: none;
+	}
+	.yt-btn img {
+		object-fit: cover;
+		transition: opacity 0.3s;
+	}
+	.yt-btn:hover img,
+	.yt-btn:focus-visible img {
+		opacity: 0.8;
+	}
+	.yt-play {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		translate: -50% -50%;
+		display: grid;
+		place-items: center;
+		width: 72px;
+		height: 72px;
+		border-radius: 50%;
+		background: var(--yt-btn-bg, rgb(255 255 255 / 0.92));
+		color: var(--yt-btn-fg, #111);
+		transition: scale 0.25s;
+	}
+	.yt-btn:hover .yt-play {
+		scale: 1.08;
+	}
+	.yt-note {
+		position: absolute;
+		bottom: 0.5rem;
+		right: 0.75rem;
+		margin: 0;
+		font-size: 0.7rem;
+		color: rgb(255 255 255 / 0.75);
+		pointer-events: none;
+	}
+</style>

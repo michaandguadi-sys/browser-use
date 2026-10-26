@@ -1,0 +1,204 @@
+---
+import '../styles/global.css';
+import { href, other, type Lang } from '../i18n';
+
+interface Props {
+	lang: Lang;
+	title: string;
+	description: string;
+	alt: Record<Lang, string>;
+	jsonLd?: Record<string, unknown>[];
+}
+const { lang, title, description, alt, jsonLd = [] } = Astro.props;
+const de = lang === 'de';
+const site = Astro.site!;
+const canonical = new URL(alt[lang], site).href;
+const home = href(lang, 'home');
+
+const org = {
+	'@context': 'https://schema.org',
+	'@type': 'ProfessionalService',
+	'@id': 'https://formatschnitt.de/#service',
+	name: 'Formatschnitt',
+	url: 'https://formatschnitt.de/',
+	description,
+	email: 'hello@micharoessler.com',
+	areaServed: ['DE', 'AT', 'CH', 'GB', 'EU'],
+	knowsLanguage: ['de', 'en'],
+	priceRange: '€€€',
+	founder: {
+		'@type': 'Person',
+		'@id': 'https://micharoessler.com/#person',
+		name: 'Micha Rössler',
+		url: 'https://micharoessler.com/',
+	},
+	parentOrganization: { '@type': 'Organization', name: 'Micha Roessler LLC' },
+	sameAs: ['https://micharoessler.com/'],
+};
+---
+
+<!doctype html>
+<html lang={de ? 'de-DE' : 'en'}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<link rel="alternate" hreflang="de-DE" href={new URL(alt.de, site).href} />
+		<link rel="alternate" hreflang="en" href={new URL(alt.en, site).href} />
+		<link rel="alternate" hreflang="x-default" href={new URL(alt.de, site).href} />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta name="theme-color" content="#f5f5f2" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Formatschnitt" />
+		<meta property="og:locale" content={de ? 'de_DE' : 'en_GB'} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={new URL('/og.png', site).href} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<script type="application/ld+json" set:html={JSON.stringify([org, ...jsonLd])} />
+	</head>
+	<body>
+		<a class="skip" href="#main">{de ? 'Zum Inhalt springen' : 'Skip to content'}</a>
+		<header class="hd">
+			<div class="wrap bar">
+				<a class="brand" href={href(lang, 'home')} aria-label="Formatschnitt">
+					<svg viewBox="0 0 64 64" width="22" height="22" aria-hidden="true"
+						><rect x="6" y="18" width="20" height="10" rx="2" fill="#7fb2f0"></rect><rect x="30" y="18" width="28" height="10" rx="2" fill="#f2c14e"></rect><rect x="6" y="36" width="32" height="10" rx="2" fill="#7bc47f"></rect><rect x="42" y="36" width="16" height="10" rx="2" fill="#e58a8a"></rect><rect x="33" y="8" width="3" height="48" fill="#2f5be0"></rect></svg
+					>
+					<span>Formatschnitt</span>
+				</a>
+				<nav aria-label={de ? 'Hauptnavigation' : 'Main'}>
+					<a href={`${home}#system`}>{de ? 'System' : 'System'}</a>
+					<a href={`${home}#pakete`}>{de ? 'Pakete' : 'Packages'}</a>
+					<a href={`${home}#arbeiten`}>{de ? 'Arbeiten' : 'Work'}</a>
+					<a href={`${home}#faq`}>FAQ</a>
+					<a class="lang mono" href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>{other(lang).toUpperCase()}</a>
+					<a class="btn btn--ink hd-cta" href={`${home}#kontakt`}>{de ? 'Erstgespräch' : 'Intro call'}</a>
+				</nav>
+			</div>
+		</header>
+
+		<main id="main">
+			<slot />
+		</main>
+
+		<footer class="ft">
+			<div class="wrap ft-in">
+				<div>
+					<p class="ft-brand">Formatschnitt</p>
+					<p class="mono">{de ? 'Schnitt-Systeme für wiederkehrende Videoformate' : 'Edit systems for recurring video formats'}</p>
+				</div>
+				<ul>
+					<li><a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a></li>
+					<li><a href={de ? 'https://micharoessler.com/de/' : 'https://micharoessler.com/'}>{de ? 'Outdoor- & Expeditionsfilm → micharoessler.com' : 'Outdoor & expedition film → micharoessler.com'}</a></li>
+				</ul>
+				<ul>
+					<li><a href={href(lang, 'imprint')}>{de ? 'Impressum' : 'Legal notice'}</a></li>
+					<li><a href={href(lang, 'privacy')}>{de ? 'Datenschutz' : 'Privacy'}</a></li>
+					<li class="mono">© {new Date().getFullYear()} Micha Roessler LLC</li>
+				</ul>
+			</div>
+		</footer>
+
+		<script>
+			const io = new IntersectionObserver(
+				(es) =>
+					es.forEach((e) => {
+						if (e.isIntersecting) {
+							e.target.classList.add('in');
+							io.unobserve(e.target);
+						}
+					}),
+				{ rootMargin: '0px 0px -6% 0px' },
+			);
+			document.querySelectorAll('.reveal, .tl').forEach((el) => io.observe(el));
+		</script>
+
+		<style>
+			.hd {
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				background: rgb(245 245 242 / 0.88);
+				backdrop-filter: blur(10px);
+				border-bottom: 1px solid var(--rule);
+			}
+			.bar {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				height: 64px;
+				gap: 1rem;
+			}
+			.brand {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				text-decoration: none;
+				font-weight: 600;
+				letter-spacing: -0.02em;
+				font-size: var(--s2);
+			}
+			nav {
+				display: flex;
+				align-items: center;
+				gap: clamp(0.75rem, 2vw, 1.75rem);
+				font-size: var(--s0);
+			}
+			nav > a:not(.btn) {
+				text-decoration: none;
+				color: var(--graphite);
+			}
+			nav > a:not(.btn):hover {
+				color: var(--ink);
+			}
+			.hd-cta {
+				padding: 0.6em 1.1em;
+			}
+			@media (max-width: 820px) {
+				nav > a:not(.btn):not(.lang) {
+					display: none;
+				}
+			}
+			.ft {
+				background: var(--dark);
+				color: #e9e9e4;
+				padding-block: 4rem 2.5rem;
+			}
+			.ft .mono {
+				color: #9a9ca3;
+			}
+			.ft-in {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+				gap: 2rem;
+			}
+			.ft-brand {
+				font-size: var(--s4);
+				font-weight: 560;
+				letter-spacing: -0.03em;
+				margin-bottom: 0.5rem;
+			}
+			.ft ul {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: grid;
+				gap: 0.5rem;
+				align-content: start;
+				font-size: var(--s0);
+			}
+			.ft a {
+				text-decoration: none;
+				color: #c9cac6;
+			}
+			.ft a:hover {
+				color: #fff;
+			}
+		</style>
+	</body>
+</html>

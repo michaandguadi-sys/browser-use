@@ -1,0 +1,57 @@
+---
+import Base from '../layouts/Base.astro';
+import { type Lang } from '../i18n';
+import { impressum, privacy } from '../data/legal';
+
+interface Props {
+	lang: Lang;
+	kind: 'imprint' | 'privacy';
+}
+const { lang, kind } = Astro.props;
+const en = lang === 'en';
+const sections = kind === 'imprint' ? impressum[lang] : privacy('Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA')[lang];
+const title = kind === 'imprint' ? (en ? 'Imprint' : 'Impressum') : en ? 'Privacy policy' : 'Datenschutzerklärung';
+const alt = kind === 'imprint' ? { en: '/imprint/', de: '/de/impressum/' } : { en: '/privacy/', de: '/de/datenschutz/' };
+---
+
+<Base lang={lang} title={`${title} | Micha Rössler`} description={title} alt={alt} solidHeader>
+	<div class="wrap l">
+		<h1>{title}</h1>
+		{
+			sections.map((s) => (
+				<section>
+					<h2>{s.h}</h2>
+					{s.p.map((p) => (
+						<p set:html={p} />
+					))}
+				</section>
+			))
+		}
+	</div>
+</Base>
+
+<style>
+	.l {
+		padding-top: 8rem;
+		max-width: 820px;
+	}
+	h1 {
+		font-size: var(--step-6);
+		margin-bottom: 2.5rem;
+	}
+	section {
+		margin-top: 2rem;
+	}
+	h2 {
+		font-size: var(--step-2);
+		margin-bottom: 0.75rem;
+	}
+	p {
+		font-family: var(--serif);
+		font-size: 1.1rem;
+		color: #d6d4cd;
+	}
+	p + p {
+		margin-top: 0.75rem;
+	}
+</style>

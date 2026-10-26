@@ -1,0 +1,154 @@
+---
+import Base from '../layouts/Base.astro';
+import { type Lang } from '../i18n';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const en = lang === 'en';
+const L = en
+	? {
+			h: 'Planning an expedition or campaign?',
+			p: 'Tell me where, when and what you need. I answer within two working days.',
+			name: 'Your name',
+			org: 'Organisation / brand (optional)',
+			type: 'What is it?',
+			types: ['Expedition / mountain film', 'Camera operator', 'Documentary edit', 'Destination / hotel film', 'Partnership on a planned expedition', 'Something else'],
+			when: 'Dates or time window',
+			where: 'Region / location',
+			deliver: 'What should come out of it?',
+			send: 'Write email',
+			note: 'This opens your email app with the details filled in. Nothing is stored on this website.',
+			direct: 'Or write directly:',
+		}
+	: {
+			h: 'Expedition oder Kampagne geplant?',
+			p: 'Schreib mir wo, wann und was du brauchst. Ich antworte innerhalb von zwei Werktagen.',
+			name: 'Dein Name',
+			org: 'Organisation / Marke (optional)',
+			type: 'Worum geht es?',
+			types: ['Expeditions- / Bergfilm', 'Kameramann', 'Doku-Schnitt', 'Destinations- / Hotelfilm', 'Partnerschaft bei geplanter Expedition', 'Etwas anderes'],
+			when: 'Termin oder Zeitraum',
+			where: 'Region / Ort',
+			deliver: 'Was soll am Ende rauskommen?',
+			send: 'E-Mail schreiben',
+			note: 'Öffnet dein E-Mail-Programm mit den ausgefüllten Angaben. Auf dieser Website wird nichts gespeichert.',
+			direct: 'Oder direkt schreiben:',
+		};
+---
+
+<Base
+	lang={lang}
+	title={en ? 'Contact – Book an Expedition Filmmaker | Micha Rössler' : 'Kontakt – Outdoor-Filmemacher buchen | Micha Rössler'}
+	description={en ? 'Book Micha Rössler as expedition filmmaker, camera operator or documentary editor. Reply within two working days.' : 'Micha Rössler als Expeditionsfilmer, Kameramann oder Doku-Cutter anfragen. Antwort innerhalb von zwei Werktagen.'}
+	alt={{ en: '/contact/', de: '/de/kontakt/' }}
+	solidHeader
+>
+	<div class="wrap c">
+		<p class="meta">{en ? 'Contact' : 'Kontakt'}</p>
+		<h1>{L.h}</h1>
+		<p class="prose c-p">{L.p}</p>
+
+		<form class="f" id="brief" data-subject={en ? 'Shoot request' : 'Drehanfrage'}>
+			<label><span class="meta">{L.name}</span><input name={L.name} required autocomplete="name" /></label>
+			<label><span class="meta">{L.org}</span><input name={L.org} autocomplete="organization" /></label>
+			<label class="full">
+				<span class="meta">{L.type}</span>
+				<select name={L.type}>{L.types.map((x) => <option>{x}</option>)}</select>
+			</label>
+			<label><span class="meta">{L.when}</span><input name={L.when} /></label>
+			<label><span class="meta">{L.where}</span><input name={L.where} /></label>
+			<label class="full"><span class="meta">{L.deliver}</span><textarea name={L.deliver} rows="5"></textarea></label>
+			<div class="full f-send">
+				<button class="btn btn--signal" type="submit">{L.send} →</button>
+				<p class="meta f-note">{L.note}</p>
+			</div>
+		</form>
+
+		<p class="direct">
+			<span class="meta">{L.direct}</span>
+			<a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
+		</p>
+	</div>
+</Base>
+
+<script>
+	const f = document.getElementById('brief') as HTMLFormElement;
+	f?.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const lines = [...new FormData(f).entries()].filter(([, v]) => String(v).trim()).map(([k, v]) => `${k}: ${v}`);
+		location.href = `mailto:hello@micharoessler.com?subject=${encodeURIComponent(f.dataset.subject ?? '')}&body=${encodeURIComponent(lines.join('\n\n'))}`;
+	});
+</script>
+
+<style>
+	.c {
+		padding-top: 8rem;
+		max-width: 1000px;
+	}
+	h1 {
+		font-size: var(--step-6);
+		margin: 0.75rem 0 1.25rem;
+	}
+	.f {
+		margin-top: 3rem;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		gap: 1.5rem;
+	}
+	.full {
+		grid-column: 1 / -1;
+	}
+	label {
+		display: grid;
+		gap: 0.5rem;
+	}
+	input,
+	select,
+	textarea {
+		font: inherit;
+		color: var(--firn);
+		background: var(--moraine);
+		border: 1px solid var(--moraine-2);
+		border-radius: 4px;
+		padding: 0.85rem 1rem;
+		width: 100%;
+	}
+	input:focus,
+	select:focus,
+	textarea:focus {
+		outline: none;
+		border-color: var(--signal);
+	}
+	.f-send {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem 1.5rem;
+		align-items: center;
+	}
+	.f-send button {
+		cursor: pointer;
+	}
+	.f-note {
+		text-transform: none;
+		letter-spacing: 0;
+		max-width: 32em;
+	}
+	.direct {
+		margin-top: 3rem;
+		display: grid;
+		gap: 0.5rem;
+	}
+	.direct a {
+		font-weight: 750;
+		font-stretch: 68%;
+		text-transform: uppercase;
+		font-size: var(--step-4);
+		text-decoration: none;
+		overflow-wrap: anywhere;
+	}
+	.direct a:hover {
+		color: var(--signal);
+	}
+</style>

@@ -1,0 +1,239 @@
+---
+import '../styles/global.css';
+import { getImage } from 'astro:assets';
+import { href, other, ui, type Lang } from '../i18n';
+import { pic } from '../data/projects';
+
+interface Props {
+	lang: Lang;
+	title: string;
+	description: string;
+	alt: Record<Lang, string>; // same page in both languages, for hreflang + switcher
+	ogImage?: string;
+	jsonLd?: Record<string, unknown>[];
+	solidHeader?: boolean;
+}
+
+const { lang, title, description, alt, ogImage = 'bolivia-ridge-climbers', jsonLd = [], solidHeader = false } =
+	Astro.props;
+const t = ui[lang];
+const site = Astro.site!;
+const canonical = new URL(alt[lang], site).href;
+const og = await getImage({ src: pic(ogImage), width: 1200, height: 630, fit: 'cover', format: 'jpg' });
+const ogUrl = new URL(og.src, site).href;
+
+const person = {
+	'@context': 'https://schema.org',
+	'@type': 'Person',
+	'@id': 'https://micharoessler.com/#person',
+	name: 'Micha Rössler',
+	alternateName: 'Micha Roessler',
+	jobTitle: lang === 'en' ? 'Expedition & adventure filmmaker' : 'Expeditions- & Outdoor-Filmemacher',
+	url: 'https://micharoessler.com/',
+	email: 'mailto:hello@micharoessler.com',
+	knowsLanguage: ['de', 'en'],
+	worksFor: { '@type': 'Organization', name: 'Micha Roessler LLC' },
+	sameAs: ['https://www.instagram.com/michaaroessler/', 'https://www.youtube.com/@GuadiandMicha', 'https://formatschnitt.de/'],
+};
+---
+
+<!doctype html>
+<html lang={lang === 'de' ? 'de-DE' : 'en'}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<link rel="alternate" hreflang="en" href={new URL(alt.en, site).href} />
+		<link rel="alternate" hreflang="de-DE" href={new URL(alt.de, site).href} />
+		<link rel="alternate" hreflang="x-default" href={new URL(alt.en, site).href} />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta name="theme-color" content="#0e0f0d" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Micha Rössler" />
+		<meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={ogUrl} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<script type="application/ld+json" set:html={JSON.stringify([person, ...jsonLd])} />
+	</head>
+	<body>
+		<a class="skip" href="#main">{t.skip}</a>
+		<header class:list={['site-header', { solid: solidHeader }]}>
+			<div class="wrap bar">
+				<a class="brand" href={href(lang, 'home')}>
+					<span>Micha Rössler</span>
+				</a>
+				<nav aria-label={lang === 'de' ? 'Hauptnavigation' : 'Main'}>
+					<ul>
+						<li><a href={href(lang, 'work')}>{t.nav.work}</a></li>
+						<li><a href={href(lang, 'about')}>{t.nav.about}</a></li>
+						<li><a href={href(lang, 'contact')}>{t.nav.contact}</a></li>
+						<li>
+							<a class="lang" href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>
+								{other(lang).toUpperCase()}<span class="sr-only"> – {t.switch}</span>
+							</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		</header>
+
+		<main id="main">
+			<slot />
+		</main>
+
+		<footer class="site-footer">
+			<div class="wrap foot">
+				<div class="foot-big">
+					<p class="meta">{lang === 'en' ? 'Available worldwide · based on the road' : 'Weltweit verfügbar · zuhause unterwegs'}</p>
+					<a class="foot-mail" href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
+				</div>
+				<div class="foot-cols">
+					<ul>
+						<li><a href="https://www.instagram.com/michaaroessler/" rel="me noopener">Instagram</a></li>
+						<li><a href="https://www.youtube.com/@GuadiandMicha" rel="me noopener">YouTube · Guadi &amp; Micha</a></li>
+						<li>
+							<a href="https://formatschnitt.de/" rel="me">
+								{lang === 'en' ? 'Format editing & workflow → formatschnitt.de' : 'Format-Schnitt & Workflow → formatschnitt.de'}
+							</a>
+						</li>
+					</ul>
+					<ul>
+						<li><a href={href(lang, 'imprint')}>{t.imprint}</a></li>
+						<li><a href={href(lang, 'privacy')}>{t.privacy}</a></li>
+						<li class="meta">© {new Date().getFullYear()} Micha Roessler LLC</li>
+					</ul>
+				</div>
+			</div>
+		</footer>
+
+		<script>
+			const io = new IntersectionObserver(
+				(es) =>
+					es.forEach((e) => {
+						if (e.isIntersecting) {
+							e.target.classList.add('in');
+							io.unobserve(e.target);
+						}
+					}),
+				{ rootMargin: '0px 0px -8% 0px' },
+			);
+			document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+			const header = document.querySelector('.site-header');
+			const onScroll = () => header?.classList.toggle('scrolled', scrollY > 40);
+			addEventListener('scroll', onScroll, { passive: true });
+			onScroll();
+		</script>
+
+		<style>
+			.site-header {
+				position: fixed;
+				inset: 0 0 auto;
+				z-index: 50;
+				transition:
+					background 0.3s var(--ease),
+					backdrop-filter 0.3s;
+			}
+			.site-header.scrolled,
+			.site-header.solid {
+				background: rgb(14 15 13 / 0.82);
+				backdrop-filter: blur(10px);
+			}
+			.bar {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				height: 64px;
+			}
+			.brand {
+				text-decoration: none;
+				font-weight: 750;
+				font-stretch: 68%;
+				font-size: var(--step-1);
+				text-transform: uppercase;
+				letter-spacing: 0.02em;
+			}
+			nav ul {
+				display: flex;
+				gap: clamp(0.9rem, 2.5vw, 2rem);
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			nav a {
+				text-decoration: none;
+				font-size: var(--step--1);
+				font-weight: 600;
+				font-stretch: 90%;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+			}
+			nav a:hover {
+				color: var(--signal);
+			}
+			.lang {
+				color: var(--lichen);
+			}
+			.site-footer {
+				border-top: 1px solid var(--moraine-2);
+				margin-top: clamp(4rem, 10vw, 8rem);
+				padding-block: clamp(3rem, 6vw, 5rem) 2rem;
+			}
+			.foot {
+				display: grid;
+				gap: 3rem;
+			}
+			.foot-mail {
+				display: inline-block;
+				margin-top: 0.75rem;
+				font-weight: 750;
+				font-stretch: 68%;
+				text-transform: uppercase;
+				font-size: clamp(1.6rem, 6vw, 4.5rem);
+				line-height: 1;
+				text-decoration: none;
+				overflow-wrap: anywhere;
+			}
+			.foot-mail:hover {
+				color: var(--signal);
+			}
+			.foot-cols {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: space-between;
+				gap: 1.5rem 3rem;
+			}
+			.foot-cols ul {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: grid;
+				gap: 0.4rem;
+				font-size: 0.9rem;
+			}
+			.foot-cols a {
+				text-decoration: none;
+				color: var(--lichen);
+			}
+			.foot-cols a:hover {
+				color: var(--firn);
+			}
+			@media (max-width: 560px) {
+				.brand span {
+					font-size: 1.05rem;
+				}
+				nav ul {
+					gap: 0.75rem;
+				}
+			}
+		</style>
+	</body>
+</html>

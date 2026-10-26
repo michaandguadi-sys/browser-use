@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import { type Lang } from '../i18n';
+import { impressum, privacy } from '../data/legal';
+
+interface Props {
+	lang: Lang;
+	kind: 'imprint' | 'privacy';
+}
+const { lang, kind } = Astro.props;
+const de = lang === 'de';
+const sections = kind === 'imprint' ? impressum[lang] : privacy('Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA')[lang];
+const title = kind === 'imprint' ? (de ? 'Impressum' : 'Legal notice') : de ? 'Datenschutzerklärung' : 'Privacy policy';
+const alt = kind === 'imprint' ? { de: '/impressum/', en: '/en/legal/' } : { de: '/datenschutz/', en: '/en/privacy/' };
+---
+
+<Base lang={lang} title={`${title} | Formatschnitt`} description={title} alt={alt}>
+	<div class="wrap l">
+		<h1>{title}</h1>
+		{
+			sections.map((s) => (
+				<section>
+					<h2>{s.h}</h2>
+					{s.p.map((p) => (
+						<p set:html={p} />
+					))}
+				</section>
+			))
+		}
+	</div>
+</Base>
+
+<style>
+	.l {
+		padding-block: 5rem;
+		max-width: 820px;
+	}
+	h1 {
+		font-size: var(--s5);
+		margin-bottom: 2.5rem;
+	}
+	section {
+		margin-top: 2rem;
+	}
+	h2 {
+		font-size: var(--s2);
+		margin-bottom: 0.6rem;
+	}
+	p {
+		color: var(--graphite);
+	}
+	p + p {
+		margin-top: 0.6rem;
+	}
+</style>

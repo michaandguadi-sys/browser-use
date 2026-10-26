@@ -1,0 +1,115 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import { href, type Lang } from '../i18n';
+import { projects, pic } from '../data/projects';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const en = lang === 'en';
+---
+
+<Base
+	lang={lang}
+	title={en ? 'Work – Expedition, Documentary & Destination Films | Micha Rössler' : 'Projekte – Expeditions-, Doku- & Destinationsfilme | Micha Rössler'}
+	description={en
+		? 'Expedition films from the Bolivian Andes and Kilimanjaro, documentaries with 1.2M and 1.4M views, destination and hospitality films.'
+		: 'Expeditionsfilme aus den bolivianischen Anden und vom Kilimandscharo, Dokus mit 1,2 und 1,4 Mio. Aufrufen, Destinations- und Hotelfilme.'}
+	alt={{ en: '/work/', de: '/de/work/' }}
+	solidHeader
+>
+	<div class="wrap w">
+		<p class="meta">{en ? 'Index' : 'Übersicht'} · {projects.length}</p>
+		<h1>{en ? 'Work' : 'Projekte'}</h1>
+		<ol class="list">
+			{
+				projects.map((p, i) => (
+					<li>
+						<a href={href(lang, p.slug)}>
+							<span class="meta n">{String(i + 1).padStart(2, '0')}</span>
+							<span class="t">{p.title[lang]}</span>
+							<span class="meta k">{p.kicker[lang]}</span>
+							<span class="meta y">{p.year || '—'}</span>
+							<span class="thumb" aria-hidden="true">
+								<Image src={pic(p.cover)} alt="" widths={[320, 480]} sizes="240px" />
+							</span>
+						</a>
+					</li>
+				))
+			}
+		</ol>
+	</div>
+</Base>
+
+<style>
+	.w {
+		padding-top: 8rem;
+	}
+	h1 {
+		font-size: var(--step-7);
+		font-stretch: 62%;
+		font-weight: 800;
+		margin: 0.5rem 0 3rem;
+	}
+	.list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		border-top: 1px solid var(--moraine-2);
+	}
+	.list a {
+		position: relative;
+		display: grid;
+		grid-template-columns: 3rem 1fr auto 4.5rem;
+		gap: 1rem;
+		align-items: baseline;
+		padding: 1.4rem 0;
+		border-bottom: 1px solid var(--moraine-2);
+		text-decoration: none;
+	}
+	.t {
+		font-weight: 750;
+		font-stretch: 65%;
+		text-transform: uppercase;
+		font-size: var(--step-4);
+		line-height: 1;
+		transition: color 0.25s;
+	}
+	.y {
+		text-align: right;
+	}
+	.list a:hover .t {
+		color: var(--signal);
+	}
+	.thumb {
+		position: absolute;
+		right: 7rem;
+		top: 50%;
+		width: 240px;
+		translate: 0 -50%;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.3s var(--ease);
+		z-index: 2;
+	}
+	@media (hover: hover) and (min-width: 900px) {
+		.list a:hover .thumb {
+			opacity: 1;
+		}
+	}
+	@media (max-width: 700px) {
+		.list a {
+			grid-template-columns: 2.2rem 1fr;
+		}
+		.k,
+		.y {
+			grid-column: 2;
+		}
+		.y {
+			text-align: left;
+			margin-top: -0.6rem;
+		}
+	}
+</style>
