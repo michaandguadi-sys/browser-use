@@ -190,6 +190,12 @@ def test_api_auth_chat_memory_settings_and_timezone_follow(tmp_path, llm):
 		assert client.get('/').status_code == 200 and client.get('/sw.js').status_code == 200
 		assert client.get('/healthz').json()['ok']
 
+		stolen_cookie = client.cookies.get('mentor_session')
+		assert stolen_cookie
+		assert client.post('/api/logout').status_code == 200
+		client.cookies.set('mentor_session', stolen_cookie)
+		assert client.get('/api/state').status_code == 401  # logout revokes server-side, not just in the browser
+
 
 def test_login_rate_limit(tmp_path, llm):
 	app = create_app(make_config(tmp_path), llm=llm, run_scheduler=False)

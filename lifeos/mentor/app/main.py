@@ -96,7 +96,7 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 	app.state.db, app.state.mentor, app.state.scheduler = db, mentor, scheduler
 
 	def require_auth(request: Request) -> None:
-		if not request.session.get('auth'):
+		if not request.session.get('auth') or request.session.get('epoch') != db.session_epoch():
 			raise HTTPException(status_code=401, detail='login required')
 		tz = request.headers.get('x-timezone', '')
 		if tz and tz in available_timezones() and tz != db.get_settings().timezone:
@@ -115,10 +115,13 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 			failures[ip].append(now)
 			raise HTTPException(status_code=401, detail='wrong passphrase')
 		request.session['auth'] = True
+		request.session['epoch'] = db.session_epoch()
 		return {'ok': True}
 
 	@app.post('/api/logout')
 	async def logout(request: Request):
+		if request.session.get('auth') and request.session.get('epoch') == db.session_epoch():
+			db.bump_session_epoch()  # server-side revocation: copied cookies stop working too
 		request.session.clear()
 		return {'ok': True}
 

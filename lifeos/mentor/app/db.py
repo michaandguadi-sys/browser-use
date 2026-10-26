@@ -77,6 +77,19 @@ class DB:
 			)
 		return merged
 
+	def session_epoch(self) -> int:
+		rows = self._exec("SELECT value FROM settings WHERE key='_session_epoch'")
+		return int(json.loads(rows[0]['value'])) if rows else 0
+
+	def bump_session_epoch(self) -> int:
+		"""Invalidate every issued session cookie (logout = log out everywhere)."""
+		epoch = self.session_epoch() + 1
+		self._exec(
+			"INSERT INTO settings(key, value) VALUES('_session_epoch', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+			(json.dumps(epoch),),
+		)
+		return epoch
+
 	# --- memory ---------------------------------------------------------
 
 	def add_memory(self, kind: str, text: str, source: str, due_at: str | None = None) -> MemoryItem:
