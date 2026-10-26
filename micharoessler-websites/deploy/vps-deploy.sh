@@ -36,13 +36,29 @@ log "Detecting Traefik setup"
 TRAEFIK_CT="$(docker ps --format '{{.Names}} {{.Image}}' | awk 'tolower($2) ~ /traefik/ {print $1; exit}')"
 [ -n "$TRAEFIK_CT" ] || die "no running Traefik container found"
 
-if [ -z "${TRAEFIK_NETWORK:-}" ]; then
-	TRAEFIK_NETWORK="$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}' "$TRAEFIK_CT" | grep -vE '^(bridge|host|none)$' | head -n1 || true)"
-fi
-[ -n "$TRAEFIK_NETWORK" ] || die "could not detect Traefik's docker network (set TRAEFIK_NETWORK=…)"
-
 # All labels of all running containers (Mapae/Postiz already use Traefik – copy their conventions).
 LABELS="$(docker ps -q | xargs -r docker inspect -f '{{range $k, $v := .Config.Labels}}{{$k}}={{$v}}{{"\n"}}{{end}}')"
+
+nets_of() { docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}' "$1" 2>/dev/null; }
+TRAEFIK_MODE="$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$TRAEFIK_CT")"
+if [ -z "${TRAEFIK_NETWORK:-}" ]; then
+	# 1. a network other containers already route through (traefik.docker.network=…)
+	TRAEFIK_NETWORK="$(printf '%s\n' "$LABELS" | sed -n 's/^traefik\.docker\.network=\(.*\)$/\1/p' | sort | uniq -c | sort -rn | awk 'NR==1{print $2}')"
+fi
+if [ -z "$TRAEFIK_NETWORK" ]; then
+	# 2. a user-defined network Traefik is attached to
+	TRAEFIK_NETWORK="$(nets_of "$TRAEFIK_CT" | grep -vE '^(bridge|host|none)?$' | head -n1 || true)"
+fi
+if [ -z "$TRAEFIK_NETWORK" ]; then
+	# 3. Traefik runs with network_mode host or on the default bridge: it reaches containers on "bridge" by IP
+	case "$TRAEFIK_MODE" in host | bridge | default) TRAEFIK_NETWORK=bridge ;; esac
+	nets_of "$TRAEFIK_CT" | grep -qx bridge && TRAEFIK_NETWORK=bridge
+fi
+if [ -z "$TRAEFIK_NETWORK" ]; then
+	echo "Traefik container: $TRAEFIK_CT  network mode: $TRAEFIK_MODE" >&2
+	docker ps --format '{{.Names}}\t{{.Networks}}' >&2
+	die "could not detect Traefik's docker network (re-run with TRAEFIK_NETWORK=<name from the list above>)"
+fi
 if [ -z "${CERT_RESOLVER:-}" ]; then
 	CERT_RESOLVER="$(printf '%s\n' "$LABELS" | sed -n 's/.*tls\.certresolver=\([^[:space:]]*\).*/\1/p' | sort | uniq -c | sort -rn | awk 'NR==1{print $2}')"
 fi
@@ -59,7 +75,7 @@ fi
 WEB_EP="$(printf '%s\n' "$EPS" | grep -xE 'web|http' | head -n1 || true)"
 
 echo "Traefik container : $TRAEFIK_CT"
-echo "Docker network    : $TRAEFIK_NETWORK"
+echo "Docker network    : $TRAEFIK_NETWORK (Traefik mode: $TRAEFIK_MODE)"
 echo "Cert resolver     : $CERT_RESOLVER"
 echo "HTTPS entrypoint  : $ENTRYPOINT"
 echo "HTTP entrypoint   : ${WEB_EP:-<none found – assuming Traefik redirects globally>}"
