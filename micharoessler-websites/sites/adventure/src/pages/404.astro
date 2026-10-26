@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base lang="en" title="Page not found | Micha Rössler" description="This page does not exist." alt={{ en: '/', de: '/de/' }} solidHeader>
+	<div class="wrap nf">
+		<p class="meta">404 · Off route</p>
+		<h1>This trail ends here.</h1>
+		<p class="prose">The page you were looking for does not exist (anymore). <span lang="de">Diese Seite gibt es nicht (mehr).</span></p>
+		<p class="nf-links">
+			<a class="btn btn--signal" href="/">Home</a>
+			<a class="btn" href="/work/">Work</a>
+			<a class="btn" href="/de/">Deutsch</a>
+		</p>
+	</div>
+</Base>
+
+<style>
+	.nf {
+		padding-top: 10rem;
+		min-height: 70vh;
+	}
+	h1 {
+		font-size: var(--step-6);
+		margin: 0.75rem 0 1.5rem;
+	}
+	.nf-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-top: 2rem;
+	}
+</style>
