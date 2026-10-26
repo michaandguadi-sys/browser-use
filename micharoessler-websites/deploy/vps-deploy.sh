@@ -7,7 +7,9 @@
 #
 # Optional overrides (prefix the bash call), e.g.
 #   ssh root@82.112.238.211 'DOMAIN_B=formatschnitt.de bash -s' < vps-deploy.sh
+#   AUTO_UPDATE=1   installs a cron job that redeploys within 10 min of every new commit
 #   TRAEFIK_NETWORK=…  CERT_RESOLVER=…  ENTRYPOINT=…  BRANCH=…
+# Settings are remembered in $BASE/deploy.env (edit it to remove one), so later runs need no prefixes.
 #
 # What it does – and does not do:
 #   + builds both static sites from GitHub inside a throwaway node container
@@ -16,11 +18,19 @@
 #   - never touches DNS (you switch the A records at Namecheap yourself)
 set -euo pipefail
 
-REPO="${REPO:-https://github.com/michaandguadi-sys/browser-use.git}"
-BRANCH="${BRANCH:-claude/focused-cray-8uqvci}"
 BASE="${BASE:-/opt/websites}"
+# settings from the previous run; variables given on the command line win
+if [ -f "$BASE/deploy.env" ]; then
+	while IFS='=' read -r k v; do
+		if [ -n "$k" ] && [ -z "${!k:-}" ]; then export "$k=$v"; fi
+	done <"$BASE/deploy.env"
+fi
+REPO="${REPO:-https://github.com/michaandguadi-sys/browser-use.git}"
+RAW="${RAW:-https://raw.githubusercontent.com/michaandguadi-sys/browser-use}"
+BRANCH="${BRANCH:-claude/focused-cray-8uqvci}"
 DOMAIN_A="${DOMAIN_A:-micharoessler.com}"
 DOMAIN_B="${DOMAIN_B:-}" # set to formatschnitt.de once the domain is registered and points here
+AUTO_UPDATE="${AUTO_UPDATE:-0}"
 NGINX_IMAGE="nginx:1.27-alpine"
 NODE_IMAGE="node:22-bookworm-slim"
 NAME="websites-nginx"
@@ -215,20 +225,52 @@ check "$DOMAIN_A" /work/bolivia-andes/
 check "$DOMAIN_A" /does-not-exist/   # expect 404
 [ -n "$DOMAIN_B" ] && check "$DOMAIN_B" /
 
+# ---------------------------------------------------------------- 7. remember settings, optional auto-update
+printf '%s\n' "REPO=$REPO" "RAW=$RAW" "BRANCH=$BRANCH" "DOMAIN_A=$DOMAIN_A" "DOMAIN_B=$DOMAIN_B" "AUTO_UPDATE=$AUTO_UPDATE" >"$BASE/deploy.env"
+if [ "$AUTO_UPDATE" = 1 ]; then
+	log "Auto-update: checking GitHub every 10 minutes"
+	cat >"$BASE/auto-update.sh" <<'EOS'
+#!/usr/bin/env bash
+# Redeploys the websites when the branch has a new commit (installed by vps-deploy.sh).
+set -euo pipefail
+. /opt/websites/deploy.env
+remote="$(git ls-remote "$REPO" "refs/heads/$BRANCH" | cut -f1)"
+current="$(git -C /opt/websites/src rev-parse HEAD 2>/dev/null || true)"
+[ -n "$remote" ] && [ "$remote" != "$current" ] || exit 0
+echo "$(date -u '+%F %T') deploying $remote"
+curl -fsSL "$RAW/$remote/micharoessler-websites/deploy/vps-deploy.sh" | bash
+EOS
+	chmod +x "$BASE/auto-update.sh"
+	echo "*/10 * * * * root flock -n /run/websites-deploy.lock $BASE/auto-update.sh >>/var/log/websites-deploy.log 2>&1" >/etc/cron.d/websites-deploy
+	command -v cron >/dev/null || command -v crond >/dev/null || echo "  warning: no cron daemon found – auto-update will not run"
+	echo "  log: tail -f /var/log/websites-deploy.log   ·   turn off: rm /etc/cron.d/websites-deploy"
+fi
+
 log "DNS status"
 SERVER_IP="$(curl -fsS -4 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')"
-for h in "$DOMAIN_A" "www.$DOMAIN_A"; do
-	printf '  %-24s -> %s\n' "$h" "$(getent ahostsv4 "$h" | awk 'NR==1{print $1}')"
-done
 echo "  this server               -> $SERVER_IP"
-cat <<EOF
+dns_todo=""
+for d in "$DOMAIN_A" ${DOMAIN_B:+"$DOMAIN_B"}; do
+	for h in "$d" "www.$d"; do
+		ip="$(getent ahostsv4 "$h" | awk 'NR==1{print $1}' || true)"
+		printf '  %-24s -> %s\n' "$h" "${ip:-<no record>}"
+		[ "$ip" = "$SERVER_IP" ] || dns_todo="$dns_todo $d"
+	done
+done
+if [ -z "$dns_todo" ]; then
+	echo
+	echo "Done – all domains point here. Traefik renews HTTPS certificates automatically."
+	exit 0
+fi
+for d in $(printf '%s\n' $dns_todo | sort -u); do
+	cat <<EOF
 
-Done. Next (only once): at Namecheap → Domain List → $DOMAIN_A → Advanced DNS:
-  • delete the old A / CNAME records for @ and www (Adobe Portfolio, 151.101.x.119)
+DNS for $d does not point here yet. At the registrar → $d → DNS records:
+  • delete old A / CNAME records for @ and www
   • add  A Record      @    $SERVER_IP   (TTL 5 min)
-  • add  CNAME Record  www  $DOMAIN_A.
-  • leave all MX records (Google Workspace) exactly as they are
-Traefik fetches the HTTPS certificate automatically once DNS points here (usually 5–30 min).
-Watch it with:  docker logs -f $TRAEFIK_CT 2>&1 | grep -i $DOMAIN_A
-Update the sites later: just run this script again.
+  • add  CNAME Record  www  $d.
+  • leave all MX (mail) records exactly as they are
+Then run this script once more: Traefik only requests the HTTPS certificate
+after DNS points here, and a failed attempt is not retried by itself.
 EOF
+done
