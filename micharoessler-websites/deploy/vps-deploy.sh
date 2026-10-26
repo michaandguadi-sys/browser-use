@@ -35,6 +35,10 @@ NGINX_IMAGE="nginx:1.27-alpine"
 NODE_IMAGE="node:22-bookworm-slim"
 NAME="websites-nginx"
 
+# apex domains (example.com) also get www.; subdomains (preview.example.com) don't
+hosts_for() { case "$1" in *.*.*) echo "$1" ;; *) echo "$1 www.$1" ;; esac; }
+CANONICAL_B="formatschnitt.de" # site B's canonical URLs point here; any other host is a noindex preview
+
 log() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 
@@ -124,7 +128,7 @@ build systems
 # ---------------------------------------------------------------- 4. nginx config
 log "Writing nginx config"
 server_block() {
-	local names="$1" root="$2"
+	local names="$1" root="$2" extra="${3:-}"
 	cat <<EOF
 server {
 	listen 80;
@@ -137,6 +141,7 @@ server {
 	add_header Referrer-Policy strict-origin-when-cross-origin always;
 	add_header X-Frame-Options SAMEORIGIN always;
 	add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+$extra
 
 	location /_astro/ {
 		expires 1y;
@@ -154,8 +159,12 @@ EOF
 	echo "gzip on; gzip_comp_level 6; gzip_min_length 512;"
 	echo "gzip_types text/css application/javascript image/svg+xml application/json application/xml text/xml;"
 	echo "server_tokens off;"
-	server_block "$DOMAIN_A www.$DOMAIN_A" adventure
-	[ -n "$DOMAIN_B" ] && server_block "$DOMAIN_B www.$DOMAIN_B" systems
+	server_block "$(hosts_for "$DOMAIN_A")" adventure
+	if [ -n "$DOMAIN_B" ]; then
+		noindex=""
+		[ "$DOMAIN_B" = "$CANONICAL_B" ] || noindex='	add_header X-Robots-Tag "noindex" always;'
+		server_block "$(hosts_for "$DOMAIN_B")" systems "$noindex"
+	fi
 	# anything else (IP access, unknown hosts) -> 404 instead of leaking a site
 	printf 'server {\n\tlisten 80 default_server;\n\treturn 404;\n}\n'
 } >"$BASE/nginx.conf"
@@ -195,10 +204,10 @@ add_host() {
 	return 0
 }
 add_host site-a "$DOMAIN_A"
-add_host site-a-www "www.$DOMAIN_A" websites-www
+[ "$(hosts_for "$DOMAIN_A")" = "$DOMAIN_A" ] || add_host site-a-www "www.$DOMAIN_A" websites-www
 if [ -n "$DOMAIN_B" ]; then
 	add_host site-b "$DOMAIN_B"
-	add_host site-b-www "www.$DOMAIN_B" websites-www
+	[ "$(hosts_for "$DOMAIN_B")" = "$DOMAIN_B" ] || add_host site-b-www "www.$DOMAIN_B" websites-www
 fi
 
 docker rm -f "$NAME" >/dev/null 2>&1 || true
@@ -251,7 +260,7 @@ SERVER_IP="$(curl -fsS -4 https://ifconfig.me 2>/dev/null || hostname -I | awk '
 echo "  this server               -> $SERVER_IP"
 dns_todo=""
 for d in "$DOMAIN_A" ${DOMAIN_B:+"$DOMAIN_B"}; do
-	for h in "$d" "www.$d"; do
+	for h in $(hosts_for "$d"); do
 		ip="$(getent ahostsv4 "$h" | awk 'NR==1{print $1}' || true)"
 		printf '  %-24s -> %s\n' "$h" "${ip:-<no record>}"
 		[ "$ip" = "$SERVER_IP" ] || dns_todo="$dns_todo $d"
@@ -263,14 +272,21 @@ if [ -z "$dns_todo" ]; then
 	exit 0
 fi
 for d in $(printf '%s\n' $dns_todo | sort -u); do
-	cat <<EOF
-
+	echo
+	if [ "$(hosts_for "$d")" = "$d" ]; then
+		cat <<EOF
+DNS for $d does not point here yet. In the DNS of ${d#*.}:
+  • add  A Record  ${d%%.*}  $SERVER_IP   (TTL 5 min)
+EOF
+	else
+		cat <<EOF
 DNS for $d does not point here yet. At the registrar → $d → DNS records:
   • delete old A / CNAME records for @ and www
   • add  A Record      @    $SERVER_IP   (TTL 5 min)
   • add  CNAME Record  www  $d.
   • leave all MX (mail) records exactly as they are
-Then run this script once more: Traefik only requests the HTTPS certificate
-after DNS points here, and a failed attempt is not retried by itself.
 EOF
+	fi
+	echo "Then run this script once more: Traefik only requests the HTTPS certificate"
+	echo "after DNS points here, and a failed attempt is not retried by itself."
 done
