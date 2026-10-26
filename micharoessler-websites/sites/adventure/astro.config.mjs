@@ -16,5 +16,5 @@ export default defineConfig({
 		}),
 	],
 	image: { responsiveStyles: true },
-	build: { inlineStylesheets: 'auto' },
+	build: { inlineStylesheets: 'always' },
 });

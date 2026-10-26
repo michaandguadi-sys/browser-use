@@ -1,12 +1,13 @@
 ---
 import '../styles/global.css';
 import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import { href, other, ui, type Lang } from '../i18n';
 import { pic } from '../data/projects';
-import { dms, type Place } from '../data/terrain';
 import portrait from '../assets/micha-portrait.jpg';
-import serifFont from '@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-normal.woff2?url';
 import monoFont from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
+import sansFont from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url';
+import Icon from '../components/Icon.astro';
 
 interface Props {
 	lang: Lang;
@@ -15,20 +16,19 @@ interface Props {
 	alt: Record<Lang, string>; // same page in both languages, for hreflang + switcher
 	ogImage?: string;
 	jsonLd?: Record<string, unknown>[];
-	solidHeader?: boolean;
-	sheet?: string; // sheet ID shown rotated in the margin, e.g. "A/01"
-	place?: Place; // real coordinates of the page's place, for the neatline ticks
+	hero?: { src: ImageMetadata; widths: number[]; sizes: string }; // LCP image to preload (AVIF)
+	terrainCredit?: boolean; // page shows real-terrain contours
 }
 
-const { lang, title, description, alt, ogImage = 'bolivia-ridge-climbers', jsonLd = [], solidHeader = false, sheet = 'A/00', place } =
-	Astro.props;
-const coords = place ? dms(place, lang) : null;
+const { lang, title, description, alt, ogImage = 'bolivia-ridge-climbers', jsonLd = [], hero, terrainCredit = false } = Astro.props;
 const t = ui[lang];
+const en = lang === 'en';
 const site = Astro.site!;
 const canonical = new URL(alt[lang], site).href;
 const og = await getImage({ src: pic(ogImage), width: 1200, height: 630, fit: 'cover', format: 'jpg' });
 const ogUrl = new URL(og.src, site).href;
 const face = await getImage({ src: portrait, width: 800, format: 'jpg' });
+const heroPre = hero ? await getImage({ src: hero.src, widths: hero.widths, format: 'avif', quality: 78 }) : null;
 
 const person = {
 	'@context': 'https://schema.org',
@@ -36,7 +36,7 @@ const person = {
 	'@id': 'https://micharoessler.com/#person',
 	name: 'Micha Rössler',
 	alternateName: 'Micha Roessler',
-	jobTitle: lang === 'en' ? 'Expedition & adventure filmmaker' : 'Expeditions- & Outdoor-Filmemacher',
+	jobTitle: en ? 'Expedition & adventure filmmaker' : 'Expeditions- & Outdoor-Filmemacher',
 	url: 'https://micharoessler.com/',
 	email: 'mailto:hello@micharoessler.com',
 	knowsLanguage: ['de', 'en'],
@@ -44,6 +44,8 @@ const person = {
 	worksFor: { '@type': 'Organization', name: 'Micha Roessler LLC' },
 	sameAs: ['https://www.instagram.com/michaaroessler/', 'https://www.youtube.com/@GuadiandMicha', 'https://formatschnitt.de/'],
 };
+const path = Astro.url.pathname;
+const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefined);
 ---
 
 <!doctype html>
@@ -53,8 +55,9 @@ const person = {
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{title}</title>
 		<script is:inline>document.documentElement.classList.add('js');</script>
-		<link rel="preload" href={serifFont} as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href={monoFont} as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href={sansFont} as="font" type="font/woff2" crossorigin />
+		{heroPre && <link rel="preload" as="image" type="image/avif" imagesrcset={heroPre.srcSet.attribute} imagesizes={hero!.sizes} fetchpriority="high" />}
 		<meta name="description" content={description} />
 		<link rel="canonical" href={canonical} />
 		<link rel="alternate" hreflang="en" href={new URL(alt.en, site).href} />
@@ -62,7 +65,7 @@ const person = {
 		<link rel="alternate" hreflang="x-default" href={new URL(alt.en, site).href} />
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 		<link rel="sitemap" href="/sitemap-index.xml" />
-		<meta name="theme-color" content="#111315" />
+		<meta name="theme-color" content="#0f0f0f" />
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content="Micha Rössler" />
 		<meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} />
@@ -81,35 +84,20 @@ const person = {
 	<body>
 		<a class="skip" href="#main">{t.skip}</a>
 
-		<div class="neatline" aria-hidden="true">
-			<span class="nl-ticks nl-top"></span>
-			<span class="nl-ticks nl-bot"></span>
-			<span class="nl-ticks nl-left"></span>
-			<span class="nl-ticks nl-right"></span>
-			{
-				coords && (
-					<>
-						<span class="nl-c nl-c-lat">{coords.lat}</span>
-						<span class="nl-c nl-c-lon">{coords.lon}</span>
-					</>
-				)
-			}
-			<span class="nl-sheet">MR-SHEET-{sheet}</span>
-		</div>
-
-		<header class:list={['site-header', { solid: solidHeader }]}>
-			<div class="bar">
+		<header class="site-header">
+			<div class="wrap bar">
 				<a class="brand" href={href(lang, 'home')}>Micha Rössler</a>
-				<nav aria-label={lang === 'de' ? 'Hauptnavigation' : 'Main'}>
+				<nav aria-label={en ? 'Main' : 'Hauptnavigation'}>
 					<ul>
-						<li><a href={href(lang, 'work')}>{t.nav.work}</a></li>
-						<li><a href={href(lang, 'about')}>{t.nav.about}</a></li>
-						<li><a href={href(lang, 'contact')}>{t.nav.contact}</a></li>
+						<li><a href={href(lang, 'work')} aria-current={current('work')}>{t.nav.work}</a></li>
+						<li><a href={href(lang, 'about')} aria-current={current('about')}>{t.nav.about}</a></li>
 						<li>
 							<a class="lang" href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>
 								{other(lang).toUpperCase()}<span class="sr-only"> – {t.switch}</span>
 							</a>
 						</li>
+						<li class="nav-rule" aria-hidden="true"></li>
+						<li><a class="nav-cta" href={href(lang, 'contact')} aria-current={current('contact')}>{t.nav.contact}</a></li>
 					</ul>
 				</nav>
 			</div>
@@ -119,37 +107,51 @@ const person = {
 			<slot />
 		</main>
 
-		<footer class="site-footer sheet sheet--basalt">
-			<div class="wrap foot">
-				<div class="foot-big">
-					<p class="meta">{lang === 'en' ? 'Available worldwide · based on the road' : 'Weltweit verfügbar · zuhause unterwegs'}</p>
-					<a class="foot-mail" href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
+		<footer class="site-footer">
+			<div class="wrap">
+				<ul class="socials">
+					<li>
+						<a href="https://www.instagram.com/michaaroessler/" rel="me noopener"><Icon name="instagram" />Instagram</a>
+					</li>
+					<li aria-hidden="true" class="rule"></li>
+					<li>
+						<a href="https://www.youtube.com/@GuadiandMicha" rel="me noopener"><Icon name="youtube" />YouTube · Guadi &amp; Micha</a>
+					</li>
+					<li aria-hidden="true" class="rule"></li>
+					<li>
+						<a href="https://formatschnitt.de/" rel="me">{en ? 'Format editing & workflow → formatschnitt.de' : 'Format-Schnitt & Workflow → formatschnitt.de'}</a>
+					</li>
+				</ul>
+			</div>
+			<div class="foot">
+				<div class="wrap foot-bar">
+					<div class="foot-id">
+						<a class="brand" href={href(lang, 'home')}>Micha Rössler</a>
+						<span class="rule" aria-hidden="true"></span>
+						<a class="foot-mail" href="mailto:hello@micharoessler.com"><Icon name="mail" />hello@micharoessler.com</a>
+					</div>
+					<ul class="foot-nav">
+						<li><a href={href(lang, 'work')}>{t.nav.work}</a></li>
+						<li><a href={href(lang, 'about')}>{t.nav.about}</a></li>
+						<li><a href={href(lang, 'contact')}>{t.nav.contact}</a></li>
+					</ul>
 				</div>
-				<div class="foot-cols">
-					<ul>
-						<li><a href="https://www.instagram.com/michaaroessler/" rel="me noopener">Instagram</a></li>
-						<li><a href="https://www.youtube.com/@GuadiandMicha" rel="me noopener">YouTube · Guadi &amp; Micha</a></li>
-						<li>
-							<a href="https://formatschnitt.de/" rel="me">
-								{lang === 'en' ? 'Format editing & workflow → formatschnitt.de' : 'Format-Schnitt & Workflow → formatschnitt.de'}
-							</a>
-						</li>
-					</ul>
-					<ul>
-						<li><a href={href(lang, 'imprint')}>{t.imprint}</a></li>
-						<li><a href={href(lang, 'privacy')}>{t.privacy}</a></li>
-						<li class="meta">© {new Date().getFullYear()} Micha Roessler LLC</li>
-					</ul>
-					<p class="meta foot-credit">
-						<span>MR-SHEET-{sheet}</span>
-						<span>
-							{
-								lang === 'en'
-									? 'Terrain: AWS Terrain Tiles (Mapzen) · SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey'
-									: 'Gelände: AWS Terrain Tiles (Mapzen) · SRTM- und GMTED2010-Geländedaten mit freundlicher Genehmigung des U.S. Geological Survey'
-							}
-						</span>
+				<div class="wrap foot-legal">
+					<p class="meta">{en ? 'Available worldwide · based on the road' : 'Weltweit verfügbar · zuhause unterwegs'}</p>
+					<p class="meta">© {new Date().getFullYear()} Micha Roessler LLC</p>
+					<p class="meta foot-links">
+						<a href={href(lang, 'imprint')}>{t.imprint}</a>
+						<a href={href(lang, 'privacy')}>{t.privacy}</a>
 					</p>
+					{
+						terrainCredit && (
+							<p class="meta foot-terrain">
+								{en
+									? 'Terrain: AWS Terrain Tiles (Mapzen) · SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey'
+									: 'Gelände: AWS Terrain Tiles (Mapzen) · SRTM- und GMTED2010-Geländedaten mit freundlicher Genehmigung des U.S. Geological Survey'}
+							</p>
+						)
+					}
 				</div>
 			</div>
 		</footer>
@@ -163,230 +165,219 @@ const person = {
 							io.unobserve(e.target);
 						}
 					}),
-				{ rootMargin: '0px 0px -10% 0px' },
+				{ rootMargin: '0px 0px -6% 0px' },
 			);
-			document.querySelectorAll('.reveal, [data-trace]').forEach((el) => io.observe(el));
-
-			const header = document.querySelector('.site-header');
-			const onScroll = () => header?.classList.toggle('scrolled', scrollY > 40);
-			addEventListener('scroll', onScroll, { passive: true });
-			onScroll();
+			document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 		</script>
 
 		<style>
-			/* Neatline: fixed 1px survey frame inset from the viewport, inverted against whatever sheet lies below. */
-			.neatline {
-				position: fixed;
-				inset: var(--neat);
-				z-index: 70;
-				pointer-events: none;
-				border: 1px solid var(--firn);
-				mix-blend-mode: difference;
-				color: var(--firn);
-				opacity: 0.55;
-			}
-			.nl-ticks {
-				position: absolute;
-			}
-			.nl-top,
-			.nl-bot {
-				left: 0;
-				right: 0;
-				height: 5px;
-				background: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 96px);
-			}
-			.nl-top {
-				top: 0;
-			}
-			.nl-bot {
-				bottom: 0;
-			}
-			.nl-left,
-			.nl-right {
-				top: 0;
-				bottom: 0;
-				width: 5px;
-				background: repeating-linear-gradient(180deg, currentColor 0 1px, transparent 1px 96px);
-			}
-			.nl-left {
-				left: 0;
-			}
-			.nl-right {
-				right: 0;
-			}
-			.nl-c,
-			.nl-sheet {
-				position: absolute;
-				font-family: var(--mono);
-				font-size: 10px;
-				letter-spacing: 0.08em;
-				font-variant-numeric: tabular-nums;
-				line-height: 1;
-				white-space: nowrap;
-			}
-			.nl-c-lat {
-				left: 10px;
-				bottom: 8px;
-			}
-			.nl-c-lon {
-				right: 10px;
-				bottom: 8px;
-			}
-			.nl-sheet {
-				right: 8px;
-				top: 50%;
-				writing-mode: vertical-rl;
-				translate: 0 -50%;
-			}
-			@media (max-width: 900px) {
-				.nl-sheet {
-					display: none;
-				}
-			}
-			@media (max-width: 600px) {
-				.nl-c,
-				.nl-ticks {
-					display: none;
-				}
-			}
-
 			.site-header {
-				position: fixed;
-				top: var(--neat);
-				left: var(--neat);
-				right: var(--neat);
-				z-index: 50;
-				color: var(--firn);
-				transition: background 0.3s var(--ease);
-			}
-			.site-header.scrolled,
-			.site-header.solid {
-				background: var(--basalt);
-				border-bottom: 1px solid var(--rule-basalt);
+				position: relative;
+				z-index: 20;
 			}
 			.bar {
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
 				gap: 1rem;
-				height: 56px;
-				max-width: var(--max);
-				margin-inline: auto;
-				padding-inline: calc(var(--gutter) - var(--neat));
+				height: clamp(76px, 8vw, 120px);
 			}
 			.brand {
-				text-decoration: none;
-				font-family: var(--serif);
-				font-size: 21px;
-				font-weight: 400;
+				font-family: var(--mono);
+				font-size: 16px;
+				font-weight: 500;
 				letter-spacing: -0.01em;
+				text-decoration: none;
 				white-space: nowrap;
 			}
 			nav ul {
 				display: flex;
-				gap: clamp(0.7rem, 2.4vw, 2.25rem);
-				list-style: none;
+				align-items: center;
+				gap: clamp(14px, 2.4vw, 32px);
 				margin: 0;
 				padding: 0;
+				list-style: none;
 			}
 			nav a {
-				display: inline-block;
-				padding-block: 0.9rem;
-				text-decoration: none;
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
 				font-family: var(--mono);
-				font-size: 12px;
-				font-weight: 500;
+				font-size: 13px;
+				letter-spacing: 0.04em;
 				text-transform: uppercase;
-				letter-spacing: 0.08em;
+				text-decoration: none;
 			}
-			nav a:hover {
+			nav a:hover,
+			nav a[aria-current='page'] {
 				text-decoration: underline;
-				text-decoration-color: var(--ochre);
-				text-underline-offset: 0.5em;
+				text-underline-offset: 0.45em;
 			}
 			.lang {
-				color: var(--muted-basalt);
+				color: var(--muted);
 			}
+			.nav-rule {
+				width: 48px;
+				height: 1px;
+				background: var(--line-2);
+			}
+			.nav-cta {
+				min-height: 40px !important;
+				padding: 0 18px;
+				border-radius: 6px;
+				background: var(--ink);
+				color: var(--bg);
+				transition:
+					background 0.3s var(--ease),
+					color 0.3s var(--ease);
+			}
+			.nav-cta:hover,
+			.nav-cta[aria-current='page'] {
+				text-decoration: none !important;
+				background: transparent;
+				color: var(--ink);
+				box-shadow: inset 0 0 0 1px var(--ink);
+			}
+			@media (max-width: 640px) {
+				.brand {
+					font-size: 14px;
+				}
+				nav ul {
+					gap: 12px;
+				}
+				nav a {
+					font-size: 11px;
+					letter-spacing: 0.02em;
+				}
+				.nav-rule {
+					display: none;
+				}
+				.nav-cta {
+					padding: 0;
+					background: none;
+					color: var(--ink);
+				}
+				.nav-cta:hover,
+				.nav-cta[aria-current='page'] {
+					box-shadow: none;
+					text-decoration: underline !important;
+				}
+			}
+
 			.site-footer {
-				border-top: 1px solid var(--rule);
-				padding-block: clamp(3.5rem, 7vw, 6rem) 2.5rem;
+				margin-top: var(--section);
+			}
+			.socials {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: center;
+				align-items: center;
+				gap: 0.5rem 2rem;
+				margin: 0;
+				padding: 0 0 var(--section);
+				list-style: none;
+				font-family: var(--mono);
+				font-size: 14px;
+			}
+			.socials a {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.7em;
+				min-height: 44px;
+				text-decoration: none;
+			}
+			.socials a:hover {
+				text-decoration: underline;
+			}
+			.rule {
+				display: block;
+				width: 48px;
+				height: 1px;
+				background: var(--line-2);
 			}
 			.foot {
-				display: grid;
-				gap: 3.5rem;
+				background: var(--bg-2);
+				padding-block: clamp(48px, 6vw, 80px) 40px;
+			}
+			.foot-bar {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				justify-content: space-between;
+				gap: 1.5rem 2rem;
+			}
+			.foot-id {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 0.75rem 2rem;
 			}
 			.foot-mail {
-				display: inline-block;
-				margin-top: 0.75rem;
-				font-size: clamp(30px, 5.4vw, 84px);
-				font-weight: 250;
-				font-variation-settings: 'opsz' 60;
-				letter-spacing: -0.03em;
-				line-height: 1;
+				display: inline-flex;
+				align-items: center;
+				gap: 0.7em;
+				min-height: 44px;
+				font-family: var(--mono);
+				font-size: 14px;
 				text-decoration: none;
-				overflow-wrap: anywhere;
 			}
 			.foot-mail:hover {
 				text-decoration: underline;
-				text-decoration-thickness: 1px;
-				text-decoration-color: var(--ochre);
 			}
-			.foot-cols {
-				display: grid;
+			.foot-nav {
+				display: flex;
 				gap: 2rem;
-				border-top: 1px solid var(--rule);
-				padding-top: 1.5rem;
-			}
-			@media (min-width: 900px) {
-				.foot-cols {
-					grid-template-columns: repeat(12, minmax(0, 1fr));
-					column-gap: var(--colgap);
-				}
-				.foot-cols ul:first-child {
-					grid-column: 1 / 5;
-				}
-				.foot-cols ul:nth-child(2) {
-					grid-column: 5 / 8;
-				}
-				.foot-credit {
-					grid-column: 9 / 13;
-				}
-			}
-			.foot-cols ul {
-				list-style: none;
 				margin: 0;
 				padding: 0;
-				display: grid;
-				gap: 0.15rem;
+				list-style: none;
+			}
+			.foot-nav a,
+			.foot-links a {
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
 				font-family: var(--mono);
 				font-size: 13px;
-			}
-			.foot-cols a {
-				display: inline-block;
-				padding-block: 0.35rem;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
 				text-decoration: none;
-				color: var(--firn);
+				color: var(--ink);
 			}
-			.foot-cols a:hover {
+			.foot-nav a:hover,
+			.foot-links a:hover {
 				text-decoration: underline;
-				text-decoration-color: var(--ochre);
 			}
-			.foot-credit {
-				display: grid;
-				gap: 0.6rem;
-				text-transform: none;
-				letter-spacing: 0.02em;
+			.foot-legal {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				justify-content: space-between;
+				gap: 0.5rem 2rem;
+				margin-top: clamp(32px, 4vw, 56px);
+				padding-top: 1.25rem;
+				border-top: 1px solid var(--line);
+				font-size: 13px;
 			}
-			@media (max-width: 560px) {
-				.brand {
-					font-size: 16px;
+			.foot-links {
+				display: flex;
+				gap: 1.75rem;
+			}
+			.foot-terrain {
+				flex-basis: 100%;
+				font-size: 12px;
+			}
+			@media (max-width: 640px) {
+				.socials {
+					flex-direction: column;
+					gap: 0.25rem;
+					text-align: center;
 				}
-				nav ul {
-					gap: 0.65rem;
+				.socials .rule {
+					width: 1px;
+					height: 20px;
 				}
-				nav a {
-					font-size: 10.5px;
-					letter-spacing: 0.04em;
+				.foot-id .rule {
+					display: none;
 				}
 			}
 		</style>

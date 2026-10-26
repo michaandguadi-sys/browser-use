@@ -1,0 +1,32 @@
+---
+// <picture> with AVIF + WebP, quality 78, never requesting widths larger than the master.
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { pic } from '../data/projects';
+
+interface Props {
+	src: string | ImageMetadata;
+	alt: string;
+	widths: number[];
+	sizes: string;
+	eager?: boolean;
+	class?: string;
+}
+const { src, alt, widths, sizes, eager = false, class: cls } = Astro.props;
+const img = typeof src === 'string' ? pic(src) : src;
+const usable = widths.filter((w) => w < img.width);
+usable.push(Math.min(img.width, Math.max(...widths)));
+---
+
+<Picture
+	src={img}
+	alt={alt}
+	formats={['avif', 'webp']}
+	quality={78}
+	widths={[...new Set(usable)]}
+	sizes={sizes}
+	loading={eager ? 'eager' : 'lazy'}
+	decoding={eager ? 'sync' : 'async'}
+	fetchpriority={eager ? 'high' : 'auto'}
+	class={cls}
+/>

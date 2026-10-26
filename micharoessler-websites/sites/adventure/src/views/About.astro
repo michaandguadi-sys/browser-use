@@ -1,8 +1,8 @@
 ---
-import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import { href, type Lang } from '../i18n';
-import { pic } from '../data/projects';
+import Photo from '../components/Photo.astro';
+import ExpeditionMap from '../components/ExpeditionMap.astro';
 import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
@@ -36,14 +36,12 @@ const timeline = en
 		: 'Expeditions- und Outdoor-Filmemacher, Kameramann und Dokumentarfilm-Cutter. Aufgewachsen in einem kleinen Dorf in Bayern, heute dauerhaft unterwegs.'}
 	alt={{ en: '/about/', de: '/de/ueber-mich/' }}
 	ogImage="kilimanjaro-ridge"
-	sheet="A/03"
-	solidHeader
 >
-	<div class="sheet sheet--basalt a">
-		<div class="wrap g12 a-grid">
+	<div class="wrap a">
+		<div class="a-grid">
 			<div class="a-main">
-				<p class="meta">{en ? 'About' : 'Über mich'}</p>
-				<h1 class="h2">{en ? 'Still looking for the next hard, honest story' : 'Immer auf der Suche nach der nächsten harten, ehrlichen Geschichte'}</h1>
+				<p class="label">{en ? 'About' : 'Über mich'}</p>
+				<h1>{en ? 'Still looking for the next hard, honest story' : 'Immer auf der Suche nach der nächsten harten, ehrlichen Geschichte'}</h1>
 				<div class="prose a-prose">
 					{
 						en ? (
@@ -65,147 +63,119 @@ const timeline = en
 				</div>
 			</div>
 			<figure class="a-fig">
-				<div class="grain"><Image src={portrait} alt="Micha Rössler" widths={[480, 720, 960, 1280]} sizes="(min-width: 960px) 30vw, 100vw" loading="eager" fetchpriority="high" /></div>
+				<div class="media a-img">
+					<Photo src={portrait} alt="Micha Rössler" widths={[480, 800, 1200, 1600]} sizes="(min-width: 960px) 36vw, 92vw" eager />
+				</div>
 				<figcaption class="meta">Micha Rössler · {en ? 'filmmaker & editor' : 'Filmemacher & Cutter'}</figcaption>
 			</figure>
 		</div>
 
-	</div>
-
-	<section class="tl sheet sheet--firn" aria-labelledby="tl-h">
-		<div class="wrap g12">
-			<h2 id="tl-h" class="h2 tl-h">{en ? 'Timeline' : 'Stationen'}</h2>
-			<div class="tl-body" data-trace>
-				<svg class="tl-line" viewBox="0 0 2 100" preserveAspectRatio="none" aria-hidden="true">
-					<path class="trace" pathLength="1" d="M1 0V100"></path>
-				</svg>
-				<ol>
-					{
-						timeline.map(([y, txt]) => (
-							<li>
-								<span class="tl-y">{y}</span>
-								<p>{txt}</p>
-							</li>
-						))
-					}
-				</ol>
+		<section class="section tl" aria-labelledby="tl-h">
+			<div class="head">
+				<h2 id="tl-h" class="h2">{en ? 'Timeline' : 'Stationen'}</h2>
 			</div>
-		</div>
-	</section>
+			<ol class="rows">
+				{
+					timeline.map(([y, txt]) => (
+						<li>
+							<span class="tl-y">{y}</span>
+							<p>{txt}</p>
+						</li>
+					))
+				}
+			</ol>
+		</section>
 
-	<section class="also sheet sheet--basalt">
-		<div class="wrap g12">
-			<div class="col-prose also-in">
-				<p class="meta">{en ? 'Also' : 'Außerdem'}</p>
-				<p class="prose">
+		<section class="section" aria-labelledby="map-h">
+			<div class="head">
+				<h2 id="map-h" class="h2">{en ? 'Where I have filmed' : 'Wo ich gedreht habe'}</h2>
+				<p class="meta">{en ? 'Hover or tap a pin' : 'Pin antippen oder überfahren'}</p>
+			</div>
+			<ExpeditionMap lang={lang} />
+		</section>
+
+		<section class="section also">
+			<p class="label">{en ? 'Also' : 'Außerdem'}</p>
+			<p class="prose also-p">
 					{en ? 'I build edit systems for recurring video formats – templates, data-driven graphics and shorts pipelines – at ' : 'Für wiederkehrende Videoformate baue ich Schnitt-Systeme – Templates, datengetriebene Grafiken und Shorts-Pipelines – bei '}
 					<a href={en ? 'https://formatschnitt.de/en/' : 'https://formatschnitt.de/'}>formatschnitt.de</a>.
 				</p>
-				<a class="btn btn--primary" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}</a>
-			</div>
-		</div>
-	</section>
+			<a class="btn" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}</a>
+		</section>
+	</div>
 </Base>
 
 <style>
 	.a {
-		padding-top: calc(var(--neat) + 56px + clamp(3rem, 7vw, 6rem));
-		padding-bottom: clamp(4rem, 9vw, 7rem);
+		padding-top: clamp(24px, 4vw, 56px);
 	}
 	.a-grid {
-		row-gap: 3rem;
+		display: grid;
+		gap: 56px clamp(24px, 6vw, 96px);
 	}
 	@media (min-width: 960px) {
-		.a-main {
-			grid-column: 1 / 8 !important;
+		.a-grid {
+			grid-template-columns: 7fr 5fr;
+			align-items: start;
 		}
 		.a-fig {
-			grid-column: 9 / 13 !important;
 			position: sticky;
-			top: 6rem;
-			align-self: start;
-		}
-		.a-prose {
-			margin-left: calc((100% + var(--colgap)) / 7);
+			top: 32px;
 		}
 	}
 	h1 {
-		margin: 0.75rem 0 2.5rem;
-		max-width: 18ch;
+		margin: 14px 0 clamp(32px, 4vw, 48px);
+		font-size: clamp(30px, 2.4vw + 14px, 52px);
+		line-height: 1.18;
+		letter-spacing: -0.025em;
+		max-width: 22ch;
+	}
+	.a-prose {
+		font-size: clamp(17px, 0.4vw + 15px, 19px);
 	}
 	.a-fig {
 		margin: 0;
 	}
-	.a-fig :global(img) {
-		width: 100%;
+	.a-img {
+		aspect-ratio: 4 / 5;
+	}
+	.a-img :global(img) {
+		object-position: 50% 20%;
 	}
 	.a-fig figcaption {
-		margin-top: 0.6rem;
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--rule);
-	}
-	.tl {
-		padding-block: clamp(4rem, 9vw, 7rem);
-	}
-	.tl-h {
-		margin-bottom: 2.5rem;
-	}
-	@media (min-width: 960px) {
-		.tl-h {
-			grid-column: 1 / 4 !important;
-		}
-		.tl-body {
-			grid-column: 4 / 12 !important;
-		}
-	}
-	.tl-body {
-		position: relative;
-		padding-left: clamp(1.25rem, 3vw, 2.5rem);
-	}
-	.tl-line {
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 2px;
-		height: 100%;
-		overflow: visible;
-	}
-	.tl ol {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		border-top: 1px solid var(--ink);
+		margin-top: 12px;
+		font-size: 13px;
 	}
 	.tl li {
 		display: grid;
-		grid-template-columns: 8.5rem 1fr;
+		grid-template-columns: 9rem 1fr;
 		gap: 1rem;
-		padding: 1.4rem 0;
-		border-bottom: 1px solid var(--rule);
+		padding-block: 20px;
 		align-items: baseline;
 	}
+	.tl ol {
+		border-top: 1px solid var(--line);
+	}
 	.tl-y {
-		font-size: 32px;
-		font-weight: 300;
-		line-height: 1;
-		color: var(--ochre);
-		font-variant-numeric: tabular-nums lining-nums;
+		font-family: var(--mono);
+		font-size: var(--t-title);
 	}
 	.tl p {
-		max-width: 62ch;
+		color: #cfcdc7;
+		max-width: 64ch;
 	}
 	.also {
-		padding-block: clamp(4rem, 9vw, 7rem);
-	}
-	.also-in {
 		display: grid;
-		gap: 1.25rem;
 		justify-items: start;
+		gap: 20px;
+	}
+	.also-p {
+		font-size: clamp(17px, 0.4vw + 15px, 19px);
 	}
 	@media (max-width: 560px) {
 		.tl li {
 			grid-template-columns: 1fr;
-			gap: 0.4rem;
+			gap: 6px;
 		}
 	}
 </style>

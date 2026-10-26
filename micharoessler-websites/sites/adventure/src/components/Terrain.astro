@@ -101,13 +101,18 @@ for (let i = ai; i < N; i++) {
 
 <style>
 	.terrain {
+		--contour: rgb(242 240 235 / 0.14);
+		--contour-index: rgb(242 240 235 / 0.42);
+		--rule: var(--line);
+		--glacier: rgb(242 240 235 / 0.6);
 		margin: 0;
 		display: grid;
 		gap: 0.9rem;
 	}
 	.t-map {
 		position: relative;
-		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		background: #121212;
 		overflow: hidden;
 	}
 	.t-map svg {
@@ -157,6 +162,7 @@ for (let i = ai; i < N; i++) {
 		position: absolute;
 		margin: 0;
 		translate: 18px -150%;
+		font-size: 12px;
 		color: var(--ink);
 		white-space: nowrap;
 		pointer-events: none;
@@ -203,6 +209,9 @@ for (let i = ai; i < N; i++) {
 		margin-top: 1.4rem;
 	}
 	figcaption {
+		font-family: var(--mono);
+		font-size: 13px;
+		color: var(--muted);
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.2rem 1.5rem;

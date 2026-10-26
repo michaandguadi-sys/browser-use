@@ -1,17 +1,14 @@
 ---
-import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import { href, type Lang } from '../i18n';
-import { projects, pic } from '../data/projects';
-import { places, dms } from '../data/terrain';
+import WorkGrid from '../components/WorkGrid.astro';
+import { type Lang } from '../i18n';
+import { projects } from '../data/projects';
 
 interface Props {
 	lang: Lang;
 }
 const { lang } = Astro.props;
 const en = lang === 'en';
-const pad = (n: number) => String(n).padStart(2, '0');
-const plate = en ? 'Plate' : 'Tafel';
 ---
 
 <Base
@@ -21,219 +18,22 @@ const plate = en ? 'Plate' : 'Tafel';
 		? 'Expedition films from the Bolivian Andes and Kilimanjaro, documentaries with 1.2M and 1.4M views, destination and hospitality films.'
 		: 'Expeditionsfilme aus den bolivianischen Anden und vom Kilimandscharo, Dokus mit 1,2 und 1,4 Mio. Aufrufen, Destinations- und Hotelfilme.'}
 	alt={{ en: '/work/', de: '/de/work/' }}
-	sheet="A/02"
-	solidHeader
 >
-	<div class="sheet sheet--basalt w">
-		<div class="wrap">
-			<p class="meta w-k">{en ? 'Index' : 'Übersicht'} · {projects.length}</p>
-			<h1 class="display">{en ? 'Work' : 'Projekte'}</h1>
-			<div class="reg" data-trace>
-				<svg class="reg-line" viewBox="0 0 2 100" preserveAspectRatio="none" aria-hidden="true">
-					<path class="trace" pathLength="1" d="M1 0V100"></path>
-				</svg>
-				<ol class="list">
-					{
-						projects.map((p, i) => (
-							<li>
-								<a href={href(lang, p.slug)}>
-									<span class="plate n">
-										{plate} <b>{pad(i + 1)}</b>
-									</span>
-									<span class="t">{p.title[lang]}</span>
-									<span class="meta c">{places[p.slug] ? `${dms(places[p.slug], lang).lat} ${dms(places[p.slug], lang).lon}` : '—'}</span>
-									<span class="meta k">{p.kicker[lang]}</span>
-									<span class="meta y">{p.year || '—'}</span>
-									<span class="thumb grain" aria-hidden="true">
-										<Image src={pic(p.cover)} alt="" widths={[320, 480]} sizes="(min-width: 700px) 280px, 30vw" />
-									</span>
-								</a>
-							</li>
-						))
-					}
-				</ol>
-			</div>
-		</div>
+	<div class="wrap w">
+		<p class="label">{en ? 'Index' : 'Übersicht'} · {projects.length}</p>
+		<h1>{en ? 'Work' : 'Projekte'}</h1>
+		<WorkGrid lang={lang} items={projects} headingLevel="h2" eagerFirst />
 	</div>
-	<div class="peek grain" aria-hidden="true"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" /></div>
 </Base>
-
-<script>
-	// One fixed still follows the cursor over the register (fine pointers only); touch keeps inline thumbnails.
-	if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
-		const peek = document.querySelector<HTMLElement>('.peek');
-		const img = peek?.querySelector('img');
-		let x = 0,
-			y = 0,
-			raf = 0;
-		const move = () => {
-			peek!.style.transform = `translate3d(${x + 24}px, ${y - 90}px, 0)`;
-			raf = 0;
-		};
-		const show = (a: HTMLAnchorElement) => {
-			const src = a.querySelector<HTMLImageElement>('.thumb img');
-			if (img && src) img.src = src.currentSrc || src.src;
-			peek?.classList.add('on');
-		};
-		document.querySelectorAll<HTMLAnchorElement>('.list a').forEach((a) => {
-			a.addEventListener('pointerenter', () => show(a));
-			a.addEventListener('pointerleave', () => peek?.classList.remove('on'));
-			a.addEventListener('pointermove', (e) => {
-				x = e.clientX;
-				y = e.clientY;
-				if (!raf) raf = requestAnimationFrame(move);
-			});
-			a.addEventListener('focus', () => {
-				if (!a.matches(':focus-visible')) return;
-				const r = a.getBoundingClientRect();
-				x = r.right - 360;
-				y = r.top + r.height / 2;
-				move();
-				show(a);
-			});
-			a.addEventListener('blur', () => peek?.classList.remove('on'));
-		});
-	}
-</script>
 
 <style>
 	.w {
-		padding-top: calc(var(--neat) + 56px + clamp(3rem, 7vw, 6rem));
-		padding-bottom: clamp(4rem, 9vw, 7rem);
-		min-height: 80vh;
+		padding-top: clamp(24px, 4vw, 56px);
 	}
 	h1 {
-		margin: 0.75rem 0 clamp(2.5rem, 5vw, 4rem) -0.04em;
-	}
-	.reg {
-		position: relative;
-		padding-left: clamp(1.25rem, 3vw, 2.5rem);
-	}
-	.reg-line {
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 2px;
-		height: 100%;
-		overflow: visible;
-	}
-	.list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		border-top: 1px solid var(--ink);
-	}
-	.list a {
-		display: grid;
-		grid-template-columns: 7.5rem 1fr 11rem minmax(10rem, auto) 4rem;
-		gap: 1rem;
-		align-items: baseline;
-		padding: 1.4rem 0;
-		border-bottom: 1px solid var(--rule);
-		text-decoration: none;
-	}
-	.t {
-		font-size: var(--t-h3);
-		font-weight: 300;
-		font-variation-settings: 'opsz' 60;
-		letter-spacing: -0.02em;
+		margin: 14px 0 clamp(48px, 6vw, 88px);
+		font-size: clamp(36px, 4vw + 12px, 72px);
+		letter-spacing: -0.03em;
 		line-height: 1.05;
-		text-decoration: underline;
-		text-decoration-color: transparent;
-		text-decoration-thickness: 1px;
-		text-underline-offset: 0.16em;
-		transition: text-decoration-color 0.25s var(--ease);
-	}
-	.list a:hover .t,
-	.list a:focus-visible .t {
-		text-decoration-color: var(--ochre);
-	}
-	.y {
-		text-align: right;
-	}
-	.thumb {
-		display: none;
-	}
-	@media (max-width: 1100px) {
-		.c {
-			display: none;
-		}
-	}
-	.peek {
-		position: fixed;
-		left: 0;
-		top: 0;
-		z-index: 40;
-		width: 300px;
-		aspect-ratio: 3 / 2;
-		pointer-events: none;
-		opacity: 0;
-		transition: opacity 0.2s var(--ease);
-	}
-	.peek img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	.peek.on {
-		opacity: 1;
-	}
-	/* Touch / coarse pointers: inline thumbnails. */
-	@media not ((hover: hover) and (pointer: fine)) {
-		.list a {
-			grid-template-columns: 1fr 30vw;
-			grid-template-areas: 'n th' 't th' 'k th' 'y th';
-			column-gap: 1rem;
-			row-gap: 0.2rem;
-			align-items: start;
-		}
-		.n {
-			grid-area: n;
-		}
-		.t {
-			grid-area: t;
-		}
-		.k {
-			grid-area: k;
-		}
-		.y {
-			grid-area: y;
-			text-align: left;
-		}
-		.thumb {
-			display: block;
-			grid-area: th;
-			aspect-ratio: 3 / 2;
-			align-self: center;
-		}
-		.thumb :global(img) {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
-		.peek,
-		.c {
-			display: none;
-		}
-	}
-	@media (max-width: 700px) {
-		.list a {
-			grid-template-columns: 1fr 30vw;
-			grid-template-areas: 'n th' 't th' 'k th' 'y th';
-			row-gap: 0.2rem;
-		}
-		.n {
-			grid-area: n;
-		}
-		.t {
-			grid-area: t;
-		}
-		.k {
-			grid-area: k;
-		}
-		.y {
-			grid-area: y;
-			text-align: left;
-		}
 	}
 </style>

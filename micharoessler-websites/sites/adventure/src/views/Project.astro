@@ -1,10 +1,9 @@
 ---
-import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
+import Photo from '../components/Photo.astro';
 import YouTube from '../components/YouTube.astro';
-import Log from '../components/Log.astro';
 import Terrain from '../components/Terrain.astro';
-import { places, terrainFor, dms } from '../data/terrain';
+import { terrainFor } from '../data/terrain';
 import { href, ui, type Lang } from '../i18n';
 import { projects, pic, type Project } from '../data/projects';
 
@@ -50,35 +49,13 @@ const jsonLd: Record<string, unknown>[] = [
 			]
 		: []),
 ];
-const pad = (n: number) => String(n).padStart(2, '0');
-const plate = en ? 'Plate' : 'Tafel';
-const place = places[p.slug];
-const coords = place ? dms(place, lang) : null;
 const area = terrainFor[p.slug];
 const peakFact = p.facts.find((f) => /\d.*m\b/.test(f.value[lang]) && f.value[lang].includes(' m'));
-
-// Altitude ruler: real scale from 0 to the documented peak; otherwise an unlabelled reading scale.
-const peakNum = p.peak ? parseInt(p.peak.replace(/[^\d]/g, ''), 10) : 0;
-const rulerTicks = Array.from({ length: 21 }, (_, i) => i / 20);
-const rulerLabels = peakNum
-	? Array.from({ length: Math.floor((peakNum - 1) / 1000) }, (_, i) => (i + 1) * 1000).map((e) => ({ at: e / peakNum, txt: e.toLocaleString(en ? 'en-US' : 'de-DE') }))
-	: [];
-
-// Gallery rows: pair portrait stills with a landscape neighbour so no half-row is left empty.
-type Still = { name: string; tall: boolean; n: number };
-const stills: Still[] = p.gallery.map((g, i) => {
-	const im = pic(g);
-	return { name: g, tall: im.height > im.width, n: i + 1 };
-});
-const rows: Still[][] = [];
-for (let i = 0; i < stills.length; i++) {
-	const a = stills[i];
-	const b = stills[i + 1];
-	if (b && (a.tall || b.tall)) {
-		rows.push([a, b]);
-		i++;
-	} else rows.push([a]);
-}
+const cover = pic(p.cover);
+const heroWidths = [640, 960, 1280, 1920, 2560];
+const heroSizes = '(min-width: 1440px) 1280px, 92vw';
+// Same candidate list as <Photo>/<YouTube> build, so the preload and the <picture> pick identical files.
+const coverWidths = [...new Set([...heroWidths.filter((w) => w < cover.width), Math.min(cover.width, Math.max(...heroWidths))])];
 ---
 
 <Base
@@ -88,434 +65,243 @@ for (let i = 0; i < stills.length; i++) {
 	alt={{ en: href('en', p.slug), de: href('de', p.slug) }}
 	ogImage={p.cover}
 	jsonLd={jsonLd}
-	sheet={`B/${pad(idx + 1)}`}
-	place={place}
+	hero={{ src: cover, widths: coverWidths, sizes: heroSizes }}
+	terrainCredit={!!area}
 >
-	<div class="ruler" aria-hidden="true">
-		<span class="ruler-top meta">{p.peak ? (en ? p.peak : p.peak.replace(',', '.')) : p.location[lang].split(',')[0]}</span>
-		<span class="ruler-scale">
-			{rulerTicks.map((k, i) => <i class:list={['rt', { major: i % 5 === 0 }]} style={`bottom:${k * 100}%`}></i>)}
-			{rulerLabels.map((l) => <b class="rl" style={`bottom:${l.at * 100}%`}>{l.txt}</b>)}
-			<span class="ruler-fill"></span>
-		</span>
-		<span class="ruler-bot meta">{p.peak ? (en ? 'Base' : 'Basis') : p.year || '—'}</span>
-	</div>
-
-	<article class="has-ruler">
-		<header class="p-hero sheet sheet--basalt">
-			<div class="wrap">
-				<p class="meta p-top">
-					<span class="plate">{plate} <b>{pad(idx + 1)}</b> / {pad(projects.length)}</span>
-					{coords && <span>{coords.lat} {coords.lon}</span>}
-				</p>
-				<div class="p-frame grain" style={`view-transition-name: p-${p.slug}`}>
-					<Image src={pic(p.cover)} alt="" widths={[640, 960, 1280, 1440, 1920, 2560]} sizes="(min-width: 1440px) 1330px, 94vw" loading="eager" fetchpriority="high" />
-				</div>
-				<div class="p-card">
-					<div class="p-title">
-						<p class="meta p-kicker">{p.kicker[lang]}</p>
-						<h1>{p.title[lang]}</h1>
-						<p class="lede p-sum">{p.summary[lang]}</p>
-					</div>
-					<dl class="credits">
-						{
-							credits.map(([k, v]) => (
-								<div>
-									<dt class="meta">{k}</dt>
-									<dd>{v}</dd>
-								</div>
-							))
-						}
-					</dl>
-				</div>
-			</div>
+	<article>
+		<header class="wrap p-head">
+			<a class="link back" href={href(lang, 'work')}>← {t.allWork}</a>
+			<p class="label">{p.kicker[lang]}</p>
+			<h1>{p.title[lang]}</h1>
+			<p class="p-sum">{p.summary[lang]}</p>
+			<dl class="credits">
+				{
+					credits.map(([k, v]) => (
+						<div>
+							<dt class="label">{k}</dt>
+							<dd>{v}</dd>
+						</div>
+					))
+				}
+			</dl>
 		</header>
 
-		{
-			p.youtube && (
-				<section class="p-video sheet sheet--basalt" aria-label={en ? 'Film' : 'Film'}>
-					<div class="wrap">
-						<YouTube id={p.youtube} title={p.title[lang]} lang={lang} />
-						<a class="ulink yt-link" href={`https://www.youtube.com/watch?v=${p.youtube}`} rel="noopener">
+		<div class="wrap p-media">
+			{
+				p.youtube ? (
+					<div style={`view-transition-name: p-${p.slug}`}>
+						<YouTube id={p.youtube} title={p.title[lang]} lang={lang} poster={cover} alt={p.title[lang]} eager widths={heroWidths} sizes={heroSizes} />
+						<a class="link yt-link" href={`https://www.youtube.com/watch?v=${p.youtube}`} rel="noopener">
 							{en ? 'Watch on YouTube – check the views yourself ↗' : 'Auf YouTube ansehen – Aufrufe selbst prüfen ↗'}
 						</a>
 					</div>
-				</section>
-			)
-		}
+				) : (
+					<div class="media hero-img" style={`view-transition-name: p-${p.slug}`}>
+						<Photo src={cover} alt={p.title[lang]} widths={heroWidths} sizes={heroSizes} eager />
+					</div>
+				)
+			}
+		</div>
 
-		<section class="p-text sheet sheet--firn">
-			<div class="wrap g12">
-				<div class="prose col-prose">
-					{p.body.map((b) => <p>{b[lang]}</p>)}
-				</div>
-				<aside class="col-note p-log" aria-label={en ? 'Field log' : 'Drehprotokoll'}>
-					<Log lang={lang} id="field-log" title={en ? 'Field log' : 'Drehprotokoll'} rows={p.facts.map((f) => [f.label[lang], f.value[lang]] as [string, string])} />
-				</aside>
+		<section class="wrap section p-text">
+			<div class="prose p-body">
+				{p.body.map((b) => <p>{b[lang]}</p>)}
 			</div>
+			<aside aria-labelledby="log-h">
+				<p class="label" id="log-h">{en ? 'Field log' : 'Drehprotokoll'}</p>
+				<dl class="rows facts">
+					{
+						p.facts.map((f) => (
+							<div>
+								<dt class="meta">{f.label[lang]}</dt>
+								<dd>{f.value[lang]}</dd>
+							</div>
+						))
+					}
+				</dl>
+			</aside>
 		</section>
 
 		{
 			area && (
-				<section class="p-terrain sheet sheet--basalt" aria-label={en ? 'Terrain' : 'Gelände'}>
-					<div class="wrap">
-						<Terrain id={area} lang={lang} side section name={peakFact && area === 'kilimanjaro' ? peakFact.value[lang] : undefined} />
-					</div>
+				<section class="wrap section p-terrain" aria-label={en ? 'Terrain' : 'Gelände'}>
+					<Terrain id={area} lang={lang} name={peakFact && area === 'kilimanjaro' ? peakFact.value[lang] : undefined} />
 				</section>
 			)
 		}
 
 		{
-			rows.length > 0 && (
-				<section class="gallery sheet sheet--basalt" aria-label={en ? 'Stills' : 'Standbilder'}>
-					<div class="wrap">
-						{rows.map((row) => (
-							<div class:list={['g-row', { pair: row.length === 2 }, row.length === 2 && (row[0].tall ? 'tall-first' : 'tall-last')]}>
-								{row.map((st) => (
-									<figure class:list={['reveal', { tall: st.tall }]}>
-										<div class="g-img grain">
-											<Image
-												src={pic(st.name)}
-												alt={`${p.title[lang]} – ${en ? 'still' : 'Standbild'}`}
-												widths={st.tall ? [480, 720, 960] : [640, 960, 1440, 1920]}
-												sizes={row.length === 2 ? (st.tall ? '(min-width: 900px) 32vw, 100vw' : '(min-width: 900px) 62vw, 100vw') : '(min-width: 1440px) 1330px, 94vw'}
-											/>
-										</div>
-										<figcaption>
-											<span class="plate">
-												{plate} <b>{pad(st.n)}</b> / {pad(stills.length)}
-											</span>
-											<span class="meta">
-												{p.location[lang]}
-												{p.year && <> · {p.year}</>}
-												{p.galleryCredit && <> · {en ? 'Photo' : 'Foto'}: {p.galleryCredit}</>}
-											</span>
-										</figcaption>
-									</figure>
-								))}
-							</div>
+			p.gallery.length > 0 && (
+				<section class="wrap section" aria-label={en ? 'Stills' : 'Standbilder'}>
+					<div class="gallery">
+						{p.gallery.map((g) => (
+							<figure class="media reveal">
+								<Photo
+									src={g}
+									alt={`${p.title[lang]} – ${en ? 'still' : 'Standbild'}`}
+									widths={[480, 640, 800, 1200, 1600]}
+									sizes="(min-width: 1440px) 620px, (min-width: 760px) 44vw, 92vw"
+								/>
+							</figure>
 						))}
 					</div>
+					{p.galleryCredit && (
+						<p class="meta credit">
+							{en ? 'Photos' : 'Fotos'}: {p.galleryCredit}
+						</p>
+					)}
 				</section>
 			)
 		}
 
-		<section class="p-end sheet sheet--basalt">
-			<nav class="wrap p-next" aria-label={t.next}>
-				<a href={href(lang, 'work')} class="ulink">← {t.allWork}</a>
-				<a href={href(lang, nxt.slug)} class="p-next-link">
-					<span class="meta">{t.next}</span>
-					<span class="p-next-title">{nxt.title[lang]} →</span>
-				</a>
-			</nav>
+		<nav class="wrap section p-next" aria-label={t.next}>
+			<a href={href(lang, nxt.slug)} class="p-next-link">
+				<span class="label">{t.next}</span>
+				<span class="p-next-title">{nxt.title[lang]}</span>
+				<span class="p-next-arrow" aria-hidden="true">→</span>
+			</a>
+		</nav>
 
-			<div class="wrap p-cta">
-				<h2 class="h2">{en ? 'Have a project like this?' : 'Ein ähnliches Projekt geplant?'}</h2>
-				<a class="btn btn--primary" href={href(lang, 'contact')}>{t.cta}</a>
-			</div>
+		<section class="wrap section p-cta">
+			<h2 class="h2">{en ? 'Have a project like this?' : 'Ein ähnliches Projekt geplant?'}</h2>
+			<a class="btn" href={href(lang, 'contact')}>{t.cta}</a>
 		</section>
 	</article>
 </Base>
 
-<script>
-	// Fallback for browsers without scroll-driven animations.
-	if (!CSS.supports('animation-timeline: scroll()')) {
-		const fill = document.querySelector<HTMLElement>('.ruler-fill');
-		const upd = () => fill?.style.setProperty('--rail', String(scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight)));
-		addEventListener('scroll', upd, { passive: true });
-		upd();
-	}
-</script>
-
 <style>
-	.p-hero {
-		padding-top: calc(var(--neat) + 56px + clamp(0.75rem, 2vw, 1.5rem));
-		padding-bottom: clamp(3rem, 6vw, 5rem);
+	.p-head {
+		padding-top: clamp(24px, 4vw, 56px);
 	}
-	.p-top {
-		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-		padding-bottom: 0.6rem;
-		color: var(--firn);
-	}
-	.p-frame {
-		aspect-ratio: 4 / 3;
-	}
-	@media (min-width: 700px) {
-		.p-frame {
-			aspect-ratio: 2.39 / 1;
-		}
-	}
-	.p-frame :global(img) {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	.p-card {
-		display: grid;
-		gap: 2rem;
-		padding-top: clamp(1.25rem, 2.4vw, 2rem);
+	.back {
+		margin-bottom: clamp(32px, 5vw, 64px);
+		color: var(--muted);
 	}
 	h1 {
-		font-size: clamp(52px, 8vw, 140px);
-		font-weight: 250;
-		line-height: 0.88;
-		letter-spacing: -0.035em;
-		margin: 0.6rem 0 1.25rem;
-		max-width: 14ch;
+		margin: 14px 0 22px;
+		font-size: clamp(32px, 3.6vw + 12px, 64px);
+		line-height: 1.12;
+		letter-spacing: -0.025em;
+		max-width: 20ch;
 	}
 	.p-sum {
-		max-width: 34ch;
+		max-width: 46ch;
+		font-size: clamp(18px, 0.7vw + 14px, 22px);
+		line-height: 1.5;
+		color: #d4d2cc;
 	}
 	.credits {
-		margin: 0;
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: 1rem 1.5rem;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+		gap: 0 clamp(24px, 3vw, 48px);
+		margin: clamp(40px, 5vw, 64px) 0 0;
+	}
+	.credits div {
+		display: grid;
 		align-content: start;
+		gap: 6px;
+		padding: 14px 0;
+		border-top: 1px solid var(--line);
 	}
 	.credits dd {
-		margin: 0.15rem 0 0;
+		margin: 0;
 		font-family: var(--mono);
-		font-size: 13px;
-		line-height: 1.45;
+		font-size: 15px;
 	}
-	@media (min-width: 1000px) {
-		.p-card {
-			grid-template-columns: repeat(12, minmax(0, 1fr));
-			column-gap: var(--colgap);
-			align-items: end;
-		}
-		.p-title {
-			grid-column: 1 / 9;
-		}
-		.credits {
-			grid-column: 10 / 13;
-			grid-template-columns: 1fr;
-			border-left: 1px solid var(--rule);
-			padding-left: 1rem;
-		}
+	.p-media {
+		margin-top: clamp(40px, 5vw, 64px);
 	}
-
-	/* Altitude ruler: vertical mono scale, the ochre reading fills from base to peak as you read. */
-	.ruler {
-		display: none;
-	}
-	@media (min-width: 1100px) {
-		.has-ruler :global(.wrap) {
-			padding-left: max(var(--gutter), 6.5rem);
-		}
-		.ruler {
-			position: fixed;
-			left: calc(var(--neat) + 10px);
-			top: 50%;
-			translate: 0 -50%;
-			z-index: 30;
-			display: grid;
-			justify-items: start;
-			gap: 0.6rem;
-			padding: 0.75rem 0.6rem;
-			background: var(--basalt);
-			color: var(--firn);
-			--muted: var(--muted-basalt);
-			width: 68px;
-		}
-	}
-	.ruler-top,
-	.ruler-bot {
-		font-size: 10px;
-		color: var(--firn);
-		max-width: 100%;
-		overflow-wrap: anywhere;
-	}
-	.ruler-scale {
-		position: relative;
-		width: 100%;
-		height: 46vh;
-		border-left: 1px solid rgb(232 230 223 / 0.5);
-	}
-	.rt {
-		position: absolute;
-		left: 0;
-		width: 5px;
-		height: 1px;
-		background: rgb(232 230 223 / 0.45);
-	}
-	.rt.major {
-		width: 10px;
-		background: var(--firn);
-	}
-	.rl {
-		position: absolute;
-		left: 14px;
-		translate: 0 50%;
-		font-family: var(--mono);
-		font-size: 10px;
-		font-weight: 400;
-		color: var(--muted-basalt);
-		font-variant-numeric: tabular-nums;
-	}
-	.ruler-fill {
-		position: absolute;
-		left: -1px;
-		bottom: 0;
-		width: 2px;
-		height: 100%;
-		background: var(--ochre);
-		transform-origin: bottom;
-		transform: scaleY(var(--rail, 0));
-	}
-	@supports (animation-timeline: scroll()) {
-		.ruler-fill {
-			animation: climb linear both;
-			animation-timeline: scroll(root);
-		}
-	}
-	@keyframes climb {
-		from {
-			transform: scaleY(0);
-		}
-		to {
-			transform: scaleY(1);
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.ruler-fill {
-			transform: scaleY(1);
-		}
-	}
-
-	.p-video {
-		padding-bottom: clamp(3rem, 6vw, 5rem);
+	.hero-img {
+		aspect-ratio: 16 / 9;
 	}
 	.yt-link {
-		margin-top: 0.75rem;
+		margin-top: 8px;
+		color: var(--muted);
+		font-size: 12px;
 	}
 	.p-text {
-		padding-block: clamp(4rem, 9vw, 7rem);
+		display: grid;
+		gap: 48px clamp(24px, 6vw, 96px);
 	}
-	.p-log {
-		margin-top: 3rem;
-	}
-	@media (min-width: 960px) {
-		.p-log {
-			margin-top: 0.4rem;
+	@media (min-width: 900px) {
+		.p-text {
+			grid-template-columns: 7fr 5fr;
 		}
 	}
-	.p-terrain {
-		padding-block: clamp(4rem, 8vw, 6rem) 0;
+	.p-body {
+		font-size: clamp(17px, 0.4vw + 15px, 20px);
+		line-height: 1.7;
+	}
+	.facts {
+		margin-top: 14px;
+		border-top: 1px solid var(--line);
+	}
+	.facts div {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+		gap: 1rem;
+		align-items: baseline;
+	}
+	.facts dd {
+		margin: 0;
+		font-family: var(--mono);
+		font-size: 15px;
+	}
+	.p-terrain :global(.terrain) {
+		max-width: 880px;
+		margin-inline: auto;
 	}
 	.gallery {
-		padding-top: clamp(4rem, 8vw, 6rem);
+		columns: 1;
+		column-gap: clamp(16px, 3vw, 40px);
 	}
-	.gallery .wrap {
-		display: grid;
-		gap: clamp(2rem, 4vw, 3.5rem);
-	}
-	.g-row {
-		display: grid;
-		gap: clamp(2rem, 4vw, 3.5rem) var(--colgap);
-	}
-	@media (min-width: 900px) {
-		.g-row.pair {
-			grid-template-columns: repeat(12, minmax(0, 1fr));
-		}
-		.tall-first figure:first-child,
-		.tall-last figure:last-child {
-			grid-column: span 4;
-		}
-		.tall-first figure:last-child,
-		.tall-last figure:first-child {
-			grid-column: span 8;
-		}
-		.pair figure {
-			display: grid;
-			grid-template-rows: 1fr auto;
-		}
-		.pair figure:not(.tall) .g-img {
-			aspect-ratio: 3 / 2;
-		}
-		.pair figure.tall .g-img {
-			position: relative;
-			min-height: 0;
-		}
-		.pair figure.tall .g-img :global(img) {
-			position: absolute;
-			inset: 0;
+	@media (min-width: 760px) {
+		.gallery {
+			columns: 2;
 		}
 	}
-	figure {
-		margin: 0;
+	.gallery figure {
+		margin: 0 0 clamp(16px, 3vw, 40px);
+		break-inside: avoid;
 	}
-	.g-img :global(img) {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
+	.gallery figure :global(img) {
+		height: auto;
 	}
-	figure.tall .g-img {
-		aspect-ratio: 4 / 5;
-	}
-	@media (min-width: 900px) {
-		.pair figure.tall .g-img {
-			aspect-ratio: auto;
-		}
-	}
-	figcaption {
-		display: flex;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
-		margin-top: 0.6rem;
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--rule);
-	}
-	.p-end {
-		padding-bottom: clamp(4rem, 8vw, 6rem);
-	}
-	.p-next {
-		display: flex;
-		justify-content: space-between;
-		align-items: end;
-		flex-wrap: wrap;
-		gap: 1.5rem;
-		margin-top: clamp(4rem, 8vw, 6rem);
-		padding-top: 1.25rem;
-		border-top: 1px solid var(--rule);
-	}
-	.p-next a {
-		text-decoration: none;
-	}
-	.p-next .ulink {
-		text-decoration: underline;
-		text-decoration-color: var(--ochre);
+	.credit {
+		font-size: 13px;
 	}
 	.p-next-link {
 		display: grid;
-		text-align: right;
-		gap: 0.4rem;
-		padding-top: 1rem;
-		margin-left: auto;
+		grid-template-columns: 1fr auto;
+		align-items: end;
+		gap: 10px 24px;
+		padding-top: 22px;
+		border-top: 1px solid var(--line);
+		text-decoration: none;
+	}
+	.p-next-link .label {
+		grid-column: 1 / -1;
 	}
 	.p-next-title {
-		font-size: var(--t-h2);
-		font-weight: 300;
-		line-height: 0.95;
+		font-family: var(--mono);
+		font-size: clamp(26px, 2.6vw + 10px, 48px);
+		line-height: 1.15;
 		letter-spacing: -0.02em;
 	}
-	.p-next-link:hover .p-next-title {
-		text-decoration: underline;
-		text-decoration-thickness: 1px;
-		text-decoration-color: var(--ochre);
+	.p-next-arrow {
+		font-family: var(--mono);
+		font-size: clamp(26px, 2.6vw + 10px, 48px);
+		line-height: 1.15;
+		transition: translate 0.4s var(--ease);
+	}
+	.p-next-link:hover .p-next-arrow {
+		translate: 8px 0;
 	}
 	.p-cta {
-		margin-top: clamp(4rem, 8vw, 6rem);
-		padding-top: 2rem;
-		border-top: 1px solid var(--rule);
 		display: flex;
 		flex-wrap: wrap;
-		gap: 1.5rem;
-		align-items: end;
+		align-items: center;
 		justify-content: space-between;
+		gap: 24px;
 	}
 </style>

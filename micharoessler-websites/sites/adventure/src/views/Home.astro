@@ -1,13 +1,11 @@
 ---
-import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
+import Photo from '../components/Photo.astro';
+import Icon from '../components/Icon.astro';
+import YouTube from '../components/YouTube.astro';
+import WorkGrid from '../components/WorkGrid.astro';
 import { href, ui, type Lang } from '../i18n';
 import { projects, brands, creators, pic } from '../data/projects';
-import ExpeditionMap from '../components/ExpeditionMap.astro';
-import Terrain from '../components/Terrain.astro';
-import Log from '../components/Log.astro';
-import ContactStrip from '../components/ContactStrip.astro';
-import { places, dms } from '../data/terrain';
 import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
@@ -99,644 +97,475 @@ const title = en
 const description = en
 	? 'Expedition & adventure filmmaker for outdoor brands, expedition teams and tourism boards: mountain film, camera operator, documentary editing.'
 	: 'Expeditions- & Outdoor-Filmemacher für Outdoor-Marken, Expeditionsteams und Tourismus: Bergfilm, Kameramann, Dokumentarfilm-Schnitt.';
-const plate = en ? 'Plate' : 'Tafel';
-const pad = (n: number) => String(n).padStart(2, '0');
-const heroPlace = dms(places['bolivia-andes'], lang);
-const sahara = projects.find((p) => p.slug === 'moroccan-sahara')!;
-const roll = [
-	{ src: 'sahara-dusk-dunes', alt: en ? 'Dunes of the Moroccan Sahara at dusk' : 'Dünen der marokkanischen Sahara in der Dämmerung' },
-	{ src: 'sahara-lone-walker', alt: en ? 'A man with a backpack standing on a dune in the Moroccan Sahara' : 'Ein Mann mit Rucksack auf einer Düne in der marokkanischen Sahara' },
-	{ src: 'sahara-dunes', alt: en ? 'A man carrying palm fronds below the dunes of the Moroccan Sahara' : 'Ein Mann mit Palmwedeln unterhalb der Dünen der marokkanischen Sahara' },
-	{ src: 'sahara-flag-plain', alt: en ? 'Two people with a flag on a gravel plain in the Moroccan Sahara' : 'Zwei Personen mit einer Fahne auf einer Geröllebene in der marokkanischen Sahara' },
-	{ src: 'sahara-mesa-vertical', alt: en ? 'Rock formations in the Moroccan Sahara' : 'Felsformationen in der marokkanischen Sahara' },
+// Stats band: numbers taken from the "field" facts above (no new data).
+const split = (v: string, re: RegExp) => {
+	const m = v.match(re);
+	return m ? m[1] : v;
+};
+const stats = [
+	{ n: split(field[5][1], /^([\d.,]+\s?(?:Mio\.|M))/), l: field[5][0] },
+	{ n: split(field[0][1], /([\d.,]+ m)$/), l: field[0][0] },
+	{ n: split(field[1][1], /^(\d+ \S+?),/), l: field[1][0] },
 ];
+const facts = [field[2], field[3], field[4]];
+
+const film = projects.find((p) => p.slug === 'drivers-eye-24h-nurburgring')!;
+const heroImg = pic('bolivia-ridge-climbers');
+const heroWidths = [640, 960, 1280, 1920, 2560];
+const heroSizes = '(min-width: 1440px) 1280px, 92vw';
 ---
 
-<Base lang={lang} title={title} description={description} alt={{ en: '/', de: '/de/' }} sheet="A/01" place={places['bolivia-andes']}>
-	<section class="hero sheet sheet--basalt">
-		<div class="wrap">
-			<p class="meta hero-top">
-				<span>{heroPlace.lat} {heroPlace.lon}</span>
-				<span>2.39 : 1</span>
-			</p>
-			<div class="hero-frame grain">
-				<Image
-					src={pic('bolivia-ridge-climbers')}
-					alt={en ? 'Two climbers on a snowy ridge in the Bolivian Andes at dusk' : 'Zwei Bergsteiger auf einem verschneiten Grat in den bolivianischen Anden in der Dämmerung'}
-					widths={[640, 960, 1280, 1440, 1920, 2560]}
-					sizes="(min-width: 1440px) 1330px, 94vw"
-					loading="eager"
-					fetchpriority="high"
-					class="hero-img"
-				/>
-			</div>
-			<div class="hero-card">
-				<h1>
-					<span class="display wordmark">Micha Rössler</span>
-					<span class="lede h1-role">{t.role}</span>
-				</h1>
-				<dl class="hero-credits">
-					<div><dt class="meta">{t.location_l}</dt><dd>{en ? 'Sajama region, Bolivia' : 'Sajama-Region, Bolivien'}</dd></div>
-					<div><dt class="meta">{en ? 'Altitude' : 'Höhe'}</dt><dd>4,000 m+</dd></div>
-					<div><dt class="meta">{t.year_l}</dt><dd>2024</dd></div>
-				</dl>
-				<div class="hero-actions">
-					<a class="btn btn--primary" href={href(lang, 'contact')}>{t.cta}</a>
-					<a class="ulink" href="#work">{en ? 'See the films' : 'Filme ansehen'}</a>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<section class="intro sheet sheet--firn" aria-labelledby="intro-h">
-		<div class="wrap g12">
-			<p class="meta intro-k" id="intro-h">{en ? 'What I do' : 'Was ich mache'}</p>
-			<p class="lede intro-lead">
+<Base lang={lang} title={title} description={description} alt={{ en: '/', de: '/de/' }} hero={{ src: heroImg, widths: heroWidths, sizes: heroSizes }}>
+	<section class="wrap hero">
+		<h1>
+			<span class="label eyebrow">Micha Rössler · {t.role}</span>
+			<span class="statement">
 				{
 					en
 						? 'I film people at the edge of what they can do – on mountains, in snow, on multi-day journeys – and edit it into stories that are honest about what it took.'
 						: 'Ich filme Menschen an der Grenze ihrer Möglichkeiten – am Berg, im Schnee, auf mehrtägigen Touren – und schneide daraus Geschichten, die ehrlich zeigen, was es gekostet hat.'
 				}
-			</p>
-			<ol class="services">
-				{
-					services.map((s) => (
-						<li>
-							<span class="svc-n" aria-hidden="true">{s.n}</span>
-							<h2>{s.h}</h2>
-							<p>{s.p}</p>
-						</li>
-					))
-				}
-			</ol>
-		</div>
-	</section>
-
-	<section id="work" class="work sheet sheet--basalt" aria-labelledby="work-h">
-		<div class="wrap">
-			<div class="sec-head">
-				<h2 id="work-h" class="h2">{en ? 'Selected work' : 'Ausgewählte Projekte'}</h2>
-				<a class="ulink" href={href(lang, 'work')}>{t.allWork} →</a>
-			</div>
-			<ul class="grid">
-				{
-					projects.map((p, i) => (
-						<li class:list={['card', { wide: i === 0 || (i === projects.length - 1 && projects.length % 2 === 0) }]}>
-							<a href={href(lang, p.slug)}>
-								<div class="card-img grain" style={`view-transition-name: p-${p.slug}`}>
-									<Image
-										src={pic(p.cover)}
-										alt={p.title[lang]}
-										widths={i === 0 ? [640, 960, 1440, 1920] : [480, 720, 960]}
-										sizes={i === 0 ? '(min-width: 900px) 92vw, 100vw' : '(min-width: 900px) 45vw, 100vw'}
-									/>
-								</div>
-								<div class="card-txt">
-									<p class="card-line">
-										<span class="plate">
-											{plate} <b>{pad(i + 1)}</b> / {pad(projects.length)}
-										</span>
-										<span class="meta">
-											{p.kicker[lang]}
-											{p.year && <> · {p.year}</>}
-										</span>
-									</p>
-									<h3>{p.title[lang]}</h3>
-									<p class="card-sum">{p.summary[lang]}</p>
-									<p class="meta card-role">
-										{p.roles[lang]}
-										{p.client && <> · {p.client}</>}
-									</p>
-								</div>
-							</a>
-						</li>
-					))
-				}
-			</ul>
-		</div>
-		<span class="pill" aria-hidden="true">{t.viewFilm} →</span>
-		<div class="roll">
-			<ContactStrip
+			</span>
+		</h1>
+		<ul class="hero-meta">
+			<li><Icon name="pin" />{en ? 'Available worldwide · based on the road' : 'Weltweit verfügbar · zuhause unterwegs'}</li>
+			<li class="hm-rule" aria-hidden="true"></li>
+			<li><a href="mailto:hello@micharoessler.com"><Icon name="mail" />hello@micharoessler.com</a></li>
+		</ul>
+		<div class="hero-media">
+			<YouTube
+				id={film.youtube!}
+				title={film.title[lang]}
 				lang={lang}
-				frames={roll}
-				pick={1}
-				href={href(lang, sahara.slug)}
-				label={sahara.title[lang]}
-				caption={`${sahara.title[lang]} · ${sahara.location[lang]} · ${sahara.year} · ${en ? 'Photos' : 'Fotos'}: Fabian Baggeler`}
+				poster={heroImg}
+				alt={en ? 'Two climbers on a snowy ridge in the Bolivian Andes at dusk' : 'Zwei Bergsteiger auf einem verschneiten Grat in den bolivianischen Anden in der Dämmerung'}
+				badge
+				eager
+				widths={heroWidths}
+				sizes={heroSizes}
 			/>
-		</div>
-	</section>
-
-	<section class="mapsec sheet sheet--firn" aria-labelledby="map-h">
-		<div class="wrap">
-			<div class="sec-head">
-				<h2 id="map-h" class="h2">{en ? 'Where I have filmed' : 'Wo ich gedreht habe'}</h2>
-				<p class="meta">{en ? 'Hover or tap a pin' : 'Pin antippen oder überfahren'}</p>
-			</div>
-			<ExpeditionMap lang={lang} />
-		</div>
-	</section>
-
-	<section class="field sheet sheet--basalt" aria-labelledby="field-h">
-		<div class="wrap field-in">
-			<div class="field-txt">
-				<p class="meta">{en ? 'For expedition teams' : 'Für Expeditionsteams'}</p>
-				<h2 id="field-h" class="h2">{en ? 'In the field' : 'Im Gelände'}</h2>
-				<p class="prose field-p">
-					{
-						en
-							? 'An expedition camera has to carry its own weight. I travel full-time, I am used to long days in cold and thin air, and I plan the shoot around the objective – never the other way round.'
-							: 'Eine Expeditionskamera muss ihr eigenes Gewicht tragen. Ich reise dauerhaft, bin lange Tage in Kälte und dünner Luft gewohnt und plane den Dreh um das Ziel herum – nie umgekehrt.'
-					}
-				</p>
-				<Log lang={lang} id="log-h" title={en ? 'Log' : 'Protokoll'} rows={field as [string, string][]} />
-			</div>
-			<div class="field-map">
-				<Terrain id="kilimanjaro" lang={lang} section name={en ? 'Uhuru Peak, 5,895 m' : 'Uhuru Peak, 5.895 m'} />
-			</div>
-		</div>
-	</section>
-
-	<section class="names sheet sheet--firn" aria-labelledby="names-h">
-		<div class="wrap g12">
-			<h2 id="names-h" class="meta names-h">{en ? 'Brands & creators I have worked with' : 'Marken & Creators, mit denen ich gearbeitet habe'}</h2>
-			<p class="names-list">
-				{brands.join(' · ')}
-			</p>
-			<p class="names-list names-list--c">
-				{creators.join(' · ')}
+			<p class="hero-cap meta">
+				<span>{film.title[lang]} · {film.kicker[lang]} · {film.year}</span>
+				<a href={href(lang, film.slug)}>{t.viewFilm} →</a>
 			</p>
 		</div>
 	</section>
 
-	<section class="me sheet sheet--basalt" aria-labelledby="me-h">
-		<div class="wrap me-in">
-			<div class="me-img grain reveal">
-				<Image src={portrait} alt="Micha Rössler" widths={[400, 640, 900]} sizes="(min-width: 900px) 34vw, 80vw" />
-			</div>
-			<div class="me-txt">
-				<p class="meta">{en ? 'Who you will work with' : 'Mit wem du arbeitest'}</p>
-				<h2 id="me-h" class="h2">{en ? 'Hi, I am Micha.' : 'Hi, ich bin Micha.'}</h2>
-				<p class="prose">
+	<section class="wrap section names" aria-labelledby="names-h">
+		<h2 id="names-h" class="label names-h">{en ? 'Brands & creators I have worked with' : 'Marken & Creators, mit denen ich gearbeitet habe'}</h2>
+		<ul class="names-row">{brands.map((b) => <li>{b}</li>)}</ul>
+		<ul class="names-row names-row--c">{creators.map((c) => <li>{c}</li>)}</ul>
+	</section>
+
+	<section id="work" class="wrap section" aria-labelledby="work-h">
+		<div class="head">
+			<h2 id="work-h" class="h2">{en ? 'Selected work' : 'Ausgewählte Projekte'}</h2>
+			<a class="link" href={href(lang, 'work')}>{t.allWork} →</a>
+		</div>
+		<WorkGrid lang={lang} items={projects} />
+	</section>
+
+	<section class="wrap section" aria-labelledby="svc-h">
+		<div class="head">
+			<h2 id="svc-h" class="h2">{en ? 'What I do' : 'Was ich mache'}</h2>
+		</div>
+		<ol class="services">
+			{
+				services.map((s) => (
+					<li>
+						<span class="meta">{s.n}</span>
+						<h3>{s.h}</h3>
+						<p>{s.p}</p>
+					</li>
+				))
+			}
+		</ol>
+	</section>
+
+	<section class="wrap section" aria-labelledby="talk-h">
+		<div class="band media">
+			<Photo src="bolivia-snowfield" alt="" widths={[640, 960, 1280, 1920]} sizes="(min-width: 1440px) 1280px, 92vw" class="band-img" />
+			<div class="band-in">
+				<h2 id="talk-h" class="label band-k">{en ? "Let's talk" : 'Lass uns reden'}</h2>
+				<span class="band-rule" aria-hidden="true"></span>
+				<dl class="stats">
 					{
-						en
-							? 'No agency, no account manager. When you write, I answer – and I am the one carrying the camera up the mountain and sitting in the edit afterwards.'
-							: 'Keine Agentur, kein Account-Manager. Wenn du schreibst, antworte ich – und ich bin derjenige, der die Kamera auf den Berg trägt und danach im Schnitt sitzt.'
+						stats.map((s) => (
+							<div>
+								<dt class="meta">{s.l}</dt>
+								<dd>{s.n}</dd>
+							</div>
+						))
 					}
-				</p>
-				<div class="me-actions">
-					<a class="btn btn--primary" href={href(lang, 'contact')}>{t.cta}</a>
-					<a class="ulink" href={href(lang, 'about')}>{en ? 'My story' : 'Meine Geschichte'}</a>
-				</div>
+				</dl>
+				<a class="btn" href={href(lang, 'contact')}>
+					{t.cta}
+					<Icon name="arrow" class="arrow" />
+				</a>
 			</div>
 		</div>
+	</section>
 
-		<div class="wrap next" aria-labelledby="next-h" role="region">
-			<div class="sec-head">
-				<h2 id="next-h" class="h2">{en ? 'Next expeditions' : 'Nächste Expeditionen'}</h2>
-				<p class="meta">{en ? 'Open for partners & sponsors' : 'Offen für Partner & Sponsoren'}</p>
-			</div>
-			<ul class="next-list">
+	<section class="wrap section field" aria-labelledby="field-h">
+		<div>
+			<p class="label">{en ? 'For expedition teams' : 'Für Expeditionsteams'}</p>
+			<h2 id="field-h" class="h2">{en ? 'In the field' : 'Im Gelände'}</h2>
+		</div>
+		<div>
+			<p class="prose field-p">
 				{
-					next.map(([d, what, s]) => (
-						<li>
-							<span class="next-d">{d}</span>
-							<span class="next-what">{what}</span>
-							<span class="meta next-s">{s}</span>
-						</li>
+					en
+						? 'An expedition camera has to carry its own weight. I travel full-time, I am used to long days in cold and thin air, and I plan the shoot around the objective – never the other way round.'
+						: 'Eine Expeditionskamera muss ihr eigenes Gewicht tragen. Ich reise dauerhaft, bin lange Tage in Kälte und dünner Luft gewohnt und plane den Dreh um das Ziel herum – nie umgekehrt.'
+				}
+			</p>
+			<dl class="rows facts">
+				{
+					facts.map(([k, v]) => (
+						<div>
+							<dt class="meta">{k}</dt>
+							<dd>{v}</dd>
+						</div>
 					))
 				}
-			</ul>
-			<a class="btn btn--primary" href={href(lang, 'contact')}>{en ? 'Partner on a film' : 'Film unterstützen'}</a>
+			</dl>
 		</div>
+	</section>
+
+	<section class="wrap section me" aria-labelledby="me-h">
+		<div class="media me-img reveal">
+			<Photo src={portrait} alt="Micha Rössler" widths={[480, 800, 1200]} sizes="(min-width: 900px) 34vw, 92vw" />
+		</div>
+		<div class="me-txt">
+			<p class="label">{en ? 'Who you will work with' : 'Mit wem du arbeitest'}</p>
+			<h2 id="me-h" class="h2">{en ? 'Hi, I am Micha.' : 'Hi, ich bin Micha.'}</h2>
+			<p class="prose">
+				{
+					en
+						? 'No agency, no account manager. When you write, I answer – and I am the one carrying the camera up the mountain and sitting in the edit afterwards.'
+						: 'Keine Agentur, kein Account-Manager. Wenn du schreibst, antworte ich – und ich bin derjenige, der die Kamera auf den Berg trägt und danach im Schnitt sitzt.'
+				}
+			</p>
+			<div class="actions">
+				<a class="btn" href={href(lang, 'contact')}>{t.cta}</a>
+				<a class="link" href={href(lang, 'about')}>{en ? 'My story' : 'Meine Geschichte'} →</a>
+			</div>
+		</div>
+	</section>
+
+	<section class="wrap section" aria-labelledby="next-h">
+		<div class="head">
+			<h2 id="next-h" class="h2">{en ? 'Next expeditions' : 'Nächste Expeditionen'}</h2>
+			<p class="meta">{en ? 'Open for partners & sponsors' : 'Offen für Partner & Sponsoren'}</p>
+		</div>
+		<ul class="rows next-list">
+			{
+				next.map(([d, what, s]) => (
+					<li>
+						<span class="meta">{d}</span>
+						<span class="next-what">{what}</span>
+						<span class="meta next-s">{s}</span>
+					</li>
+				))
+			}
+		</ul>
+		<a class="btn btn--ghost" href={href(lang, 'contact')}>{en ? 'Partner on a film' : 'Film unterstützen'}</a>
 	</section>
 </Base>
 
-<script>
-	// "View project" label follows the cursor over work cards (fine pointers only).
-	if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
-		const pill = document.querySelector<HTMLElement>('.pill');
-		const cards = document.querySelectorAll<HTMLElement>('.card a');
-		if (pill) {
-			let x = 0,
-				y = 0,
-				raf = 0;
-			const move = () => {
-				pill.style.transform = `translate3d(${x + 16}px, ${y + 16}px, 0)`;
-				raf = 0;
-			};
-			cards.forEach((c) => {
-				c.addEventListener('pointerenter', () => pill.classList.add('on'));
-				c.addEventListener('pointerleave', () => pill.classList.remove('on'));
-				c.addEventListener('pointermove', (e) => {
-					x = e.clientX;
-					y = e.clientY;
-					if (!raf) raf = requestAnimationFrame(move);
-				});
-			});
-		}
-	}
-</script>
-
 <style>
-	/* Title card: 2.39:1 letterboxed frame, serif name, credit lines in mono. */
 	.hero {
-		padding-top: calc(var(--neat) + 56px + clamp(0.75rem, 2vw, 1.5rem));
-		padding-bottom: clamp(3rem, 7vw, 6rem);
-	}
-	.hero-top {
-		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-		padding-bottom: 0.6rem;
-		color: var(--firn);
-	}
-	.hero-frame {
-		aspect-ratio: 4 / 3;
-		width: 100%;
-	}
-	@media (min-width: 700px) {
-		.hero-frame {
-			aspect-ratio: 2.39 / 1;
-			width: min(100%, calc((100svh - 330px) * 2.39));
-			min-width: min(100%, 640px);
-		}
-	}
-	.hero-img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		object-position: 50% 62%;
-	}
-	.hero-card {
-		display: grid;
-		gap: 1.5rem 2rem;
-		padding-top: clamp(0.9rem, 1.8vw, 1.6rem);
+		padding-top: clamp(40px, 7vw, 96px);
 	}
 	h1 {
 		display: grid;
-		gap: clamp(0.6rem, 1.4vw, 1.2rem);
+		gap: clamp(20px, 2.4vw, 32px);
+		font-size: inherit;
 	}
-	.wordmark {
-		display: block;
-		margin-left: -0.04em;
+	h1 .statement {
+		max-width: 34ch;
 	}
-	.h1-role {
-		font-style: italic;
-		color: var(--firn);
+	.eyebrow {
+		letter-spacing: 0.08em;
 	}
-	.hero-credits {
-		margin: 0;
-		display: grid;
-		grid-template-columns: repeat(3, auto);
-		justify-content: start;
-		gap: 0.5rem 2.5rem;
-	}
-	.hero-credits dd {
-		margin: 0.1rem 0 0;
-		font-family: var(--mono);
-		font-size: 13px;
-		font-variant-numeric: tabular-nums;
-	}
-	.hero-actions {
+	.hero-meta {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.75rem 1.75rem;
-	}
-	@media (min-width: 1000px) {
-		.hero-card {
-			grid-template-columns: repeat(12, minmax(0, 1fr));
-			column-gap: var(--colgap);
-			align-items: end;
-		}
-		h1 {
-			grid-column: 1 / 10;
-			grid-row: 1 / 3;
-		}
-		.hero-credits {
-			grid-column: 10 / 13;
-			grid-row: 1;
-			grid-template-columns: 1fr;
-			align-self: end;
-			border-left: 1px solid var(--rule);
-			padding-left: 1rem;
-		}
-		.hero-actions {
-			grid-column: 10 / 13;
-			grid-row: 2;
-		}
-	}
-	@media (max-width: 520px) {
-		.hero-credits {
-			grid-template-columns: repeat(2, auto);
-		}
-	}
-
-	.intro {
-		padding-block: clamp(4.5rem, 10vw, 9rem);
-	}
-	.intro-k {
-		align-self: start;
-		padding-top: 0.7rem;
-	}
-	.intro-lead {
-		margin-top: 1rem;
-	}
-	@media (min-width: 960px) {
-		.intro-k {
-			grid-column: 1 / 2;
-		}
-		.intro-lead {
-			grid-column: 2 / 11;
-			margin-top: 0;
-		}
-		.services {
-			grid-column: 2 / 13 !important;
-		}
-	}
-	.services {
-		list-style: none;
-		margin: clamp(3rem, 7vw, 5.5rem) 0 0;
+		gap: 0.5rem 1.75rem;
+		margin: clamp(48px, 7vw, 104px) 0 0;
 		padding: 0;
-		display: grid;
-		grid-template-columns: 1fr;
-		column-gap: clamp(1.5rem, 4vw, 4rem);
-		border-top: 1px solid var(--ink);
+		list-style: none;
+		font-family: var(--mono);
+		font-size: 14px;
 	}
-	.services li {
-		display: grid;
-		grid-template-columns: 3.4rem 1fr;
-		column-gap: 0.75rem;
-		padding: 1.5rem 1.5rem 2.25rem 0;
-		border-bottom: 1px solid var(--rule);
+	.hero-meta li,
+	.hero-meta a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.7em;
+		min-height: 44px;
+		text-decoration: none;
 	}
-	@media (min-width: 760px) {
-		.services {
-			grid-template-columns: 1fr 1fr;
+	.hero-meta a:hover {
+		text-decoration: underline;
+	}
+	.hero-meta :global(.icon) {
+		color: var(--muted);
+	}
+	.hm-rule {
+		width: 48px;
+		height: 1px;
+		min-height: 0 !important;
+		background: var(--line-2);
+	}
+	.hero-media {
+		margin-top: clamp(40px, 6vw, 88px);
+	}
+	.hero-cap {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.5rem 2rem;
+		margin-top: 14px;
+		font-size: 13px;
+	}
+	.hero-cap a {
+		color: var(--ink);
+		text-decoration: none;
+	}
+	.hero-cap a:hover {
+		text-decoration: underline;
+	}
+
+	.names {
+		text-align: center;
+	}
+	.names-h {
+		margin-bottom: 28px;
+	}
+	.names-row {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 0.6rem 0;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		font-family: var(--mono);
+		font-size: clamp(14px, 0.4vw + 11px, 17px);
+		color: #d9d7d1;
+	}
+	.names-row li + li::before {
+		content: '';
+		display: inline-block;
+		width: clamp(16px, 2vw, 32px);
+		height: 1px;
+		margin-inline: clamp(10px, 1.2vw, 18px);
+		vertical-align: middle;
+		background: var(--line-2);
+	}
+	@media (max-width: 1000px) {
+		.names-row {
+			gap: 10px 28px;
+		}
+		.names-row li + li::before {
+			display: none;
 		}
 	}
-	.svc-n {
-		grid-row: 1 / 3;
-		font-size: 28px;
-		font-weight: 300;
-		line-height: 1;
-		color: var(--ochre);
-		font-variant-numeric: tabular-nums;
-	}
-	.services h2 {
-		font-size: var(--t-h3);
-		margin: 0 0 0.8rem;
-	}
-	.services p {
-		grid-column: 2;
-		max-width: 38ch;
+	.names-row--c {
+		margin-top: 16px;
+		font-size: 13px;
+		color: var(--muted);
 	}
 
-	.sec-head {
-		display: flex;
-		align-items: end;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: 0.5rem 1.5rem;
-		margin-bottom: clamp(2rem, 4vw, 3rem);
-		padding-bottom: 1rem;
-		border-bottom: 1px solid var(--rule);
-	}
-
-	.work {
-		padding-top: clamp(4.5rem, 10vw, 8rem);
-	}
-	.grid {
+	.services {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		display: grid;
-		grid-template-columns: 1fr;
-		gap: clamp(3rem, 5vw, 4.5rem) var(--colgap);
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+		gap: 40px clamp(24px, 3vw, 48px);
 	}
-	@media (min-width: 900px) {
-		.grid {
-			grid-template-columns: 1fr 1fr;
-		}
-		.card.wide {
-			grid-column: 1 / -1;
-		}
-		.card.wide .card-img {
-			aspect-ratio: 2.39 / 1;
-		}
-		.card.wide .card-txt {
-			display: grid;
-			grid-template-columns: repeat(12, minmax(0, 1fr));
-			column-gap: var(--colgap);
-		}
-		.card.wide .card-txt > * {
-			grid-column: 1 / 8;
-		}
-		.card.wide .card-txt > .card-line {
-			grid-column: 1 / -1;
-		}
+	.services li {
+		display: grid;
+		align-content: start;
+		gap: 12px;
+		padding-top: 18px;
+		border-top: 1px solid var(--line);
 	}
-	.card a {
-		text-decoration: none;
-		display: block;
+	.services h3 {
+		font-size: var(--t-title);
+		line-height: 1.35;
 	}
-	.card-img {
-		aspect-ratio: 3 / 2;
+	.services p {
+		color: var(--muted);
+		font-size: 16px;
+		line-height: 1.6;
 	}
-	.card-img :global(img) {
+
+	.band {
+		min-height: clamp(460px, 44vw, 600px);
+		display: grid;
+	}
+	.band :global(picture),
+	.band :global(.band-img) {
+		position: absolute;
+		inset: 0;
+	}
+	.band :global(.band-img) {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		filter: saturate(0.9);
-		transition: filter 0.5s var(--ease);
 	}
-	.card a:hover .card-img :global(img) {
-		filter: saturate(1.05);
+	.band::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: rgb(10 10 10 / 0.66);
 	}
-	.card-txt {
-		padding-top: 0.75rem;
+	.band-in {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		justify-items: center;
+		align-content: center;
+		gap: clamp(28px, 3.5vw, 48px);
+		padding: clamp(48px, 6vw, 80px) 24px;
+		text-align: center;
 	}
-	.card-line {
+	.band-k {
+		color: var(--ink);
+		letter-spacing: 0.1em;
+	}
+	.band-rule {
+		width: 1px;
+		height: 32px;
+		background: var(--line-2);
+	}
+	.stats {
 		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-		padding-bottom: 0.6rem;
-		border-bottom: 1px solid var(--rule);
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 28px clamp(32px, 6vw, 96px);
+		margin: 0;
 	}
-	.card h3 {
-		font-size: var(--t-h3);
-		margin: 1rem 0 0.6rem;
-		text-decoration: underline;
-		text-decoration-color: transparent;
-		text-decoration-thickness: 1px;
-		text-underline-offset: 0.18em;
-		transition: text-decoration-color 0.25s var(--ease);
+	.stats div {
+		display: flex;
+		flex-direction: column-reverse;
+		align-items: center;
+		gap: 6px;
 	}
-	.card a:hover h3 {
-		text-decoration-color: var(--ochre);
-	}
-	.card-sum {
-		max-width: 52ch;
-		color: #d8d6cf;
-	}
-	.card-role {
-		margin-top: 0.9rem;
-	}
-	.pill {
-		position: fixed;
-		left: 0;
-		top: 0;
-		z-index: 40;
-		padding: 0.55em 0.9em;
-		background: var(--basalt);
-		color: var(--firn);
-		border: 1px solid var(--firn);
+	.stats dd {
+		margin: 0;
 		font-family: var(--mono);
-		font-size: 11px;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		pointer-events: none;
-		opacity: 0;
-		transition: opacity 0.2s var(--ease);
-		white-space: nowrap;
+		font-size: clamp(32px, 3.4vw, 52px);
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		font-variant-numeric: tabular-nums;
 	}
-	.pill.on {
-		opacity: 1;
-	}
-	.roll {
-		padding-block: clamp(4rem, 8vw, 6.5rem) clamp(4.5rem, 9vw, 7rem);
-	}
-
-	.mapsec {
-		padding-block: clamp(4.5rem, 10vw, 8rem);
+	.stats dt {
+		font-size: 13px;
+		color: #c4c2bc;
 	}
 
 	.field {
-		padding-block: clamp(4.5rem, 10vw, 8rem);
-	}
-	.field-in {
 		display: grid;
-		gap: 3.5rem;
+		gap: 32px clamp(24px, 4.5vw, 64px);
 	}
-	.field h2 {
-		margin: 0.75rem 0 1.5rem;
+	.field .h2 {
+		margin-top: 14px;
 	}
 	.field-p {
-		margin-bottom: 2.5rem;
+		margin-bottom: 36px;
 	}
-	@media (min-width: 1000px) {
-		.field-in {
-			grid-template-columns: repeat(12, minmax(0, 1fr));
-			column-gap: var(--colgap);
-			align-items: start;
-		}
-		.field-txt {
-			grid-column: 1 / 6;
-		}
-		.field-map {
-			grid-column: 7 / 13;
-			position: sticky;
-			top: 6rem;
-		}
+	.facts div {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+		gap: 1rem;
+		align-items: baseline;
 	}
-
-	.names {
-		padding-block: clamp(4rem, 9vw, 7rem);
+	.facts dd {
+		margin: 0;
+		font-family: var(--mono);
+		font-size: 15px;
 	}
-	.names-list {
-		margin-top: 1.25rem;
-		font-size: clamp(30px, 3.6vw, 56px);
-		font-weight: 300;
-		font-variation-settings: 'opsz' 60;
-		letter-spacing: -0.02em;
-		line-height: 1.12;
-	}
-	.names-list--c {
-		color: var(--muted);
-	}
-	@media (min-width: 960px) {
-		.names-h {
-			grid-column: 1 / 4 !important;
-			padding-top: 1.6rem;
-		}
-		.names-list {
-			grid-column: 4 / 13 !important;
+	@media (min-width: 900px) {
+		.field {
+			grid-template-columns: 1fr 1fr;
 		}
 	}
 
 	.me {
-		padding-block: clamp(4.5rem, 10vw, 8rem) clamp(4.5rem, 10vw, 8rem);
-	}
-	.me-in {
 		display: grid;
-		gap: 2.5rem;
+		gap: 40px clamp(24px, 6vw, 96px);
 		align-items: center;
 	}
 	@media (min-width: 900px) {
-		.me-in {
-			grid-template-columns: repeat(12, minmax(0, 1fr));
-			column-gap: var(--colgap);
-		}
-		.me-img {
-			grid-column: 1 / 5;
-		}
-		.me-txt {
-			grid-column: 6 / 12;
+		.me {
+			grid-template-columns: 5fr 7fr;
 		}
 	}
 	.me-img {
-		max-width: 460px;
 		aspect-ratio: 4 / 5;
+		max-width: 520px;
 	}
 	.me-img :global(img) {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		object-position: 50% 20%;
+		object-position: 50% 22%;
 	}
 	.me h2 {
-		margin: 0.75rem 0 1.5rem;
+		margin: 14px 0 24px;
 	}
-	.me-actions {
+	.actions {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.75rem 1.75rem;
-		margin-top: 2rem;
+		gap: 16px 32px;
+		margin-top: 36px;
 	}
-	.next {
-		padding-top: clamp(5rem, 10vw, 8rem);
-	}
+
 	.next-list {
-		list-style: none;
-		margin: 0 0 2.5rem;
-		padding: 0;
+		margin-bottom: 40px;
+		border-top: 1px solid var(--line);
 	}
 	.next-list li {
 		display: grid;
-		grid-template-columns: 8rem 1fr auto;
+		grid-template-columns: 9rem 1fr auto;
 		gap: 1rem;
 		align-items: baseline;
-		padding: 1.1rem 0;
-		border-bottom: 1px solid var(--rule);
-	}
-	.next-d {
-		font-family: var(--mono);
-		font-size: 13px;
-		color: var(--ochre);
-		font-variant-numeric: tabular-nums;
+		padding-block: 18px;
 	}
 	.next-what {
-		font-size: var(--t-body);
+		font-family: var(--mono);
+		font-size: var(--t-title);
+		line-height: 1.4;
 	}
-	@media (max-width: 600px) {
+	@media (max-width: 640px) {
+		.hero-media :global(.yt) {
+			aspect-ratio: 4 / 3;
+		}
+		.hero-cap {
+			flex-direction: column;
+		}
+		.stats {
+			flex-direction: column;
+			gap: 22px;
+		}
 		.next-list li {
 			grid-template-columns: 1fr auto;
 		}
 		.next-what {
 			grid-column: 1 / -1;
 			grid-row: 2;
+		}
+		.hm-rule {
+			display: none;
+		}
+		.hero-meta {
+			gap: 0;
+			flex-direction: column;
+			align-items: flex-start;
 		}
 	}
 </style>

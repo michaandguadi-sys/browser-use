@@ -1,0 +1,20 @@
+---
+// Tiny inline line icons (decorative; the adjacent text carries the meaning).
+interface Props {
+	name: 'pin' | 'mail' | 'instagram' | 'youtube' | 'arrow' | 'play';
+	class?: string;
+}
+const { name, class: cls } = Astro.props;
+const paths: Record<Props['name'], string> = {
+	pin: '<path d="M8 15s5-4.6 5-8.5a5 5 0 1 0-10 0C3 10.4 8 15 8 15Z"/><circle cx="8" cy="6.5" r="1.8"/>',
+	mail: '<rect x="1.5" y="3.5" width="13" height="9" rx="1.5"/><path d="m2 4.5 6 4.5 6-4.5"/>',
+	instagram: '<rect x="2" y="2" width="12" height="12" rx="3.5"/><circle cx="8" cy="8" r="2.8"/><circle cx="11.6" cy="4.4" r=".5" fill="currentColor"/>',
+	youtube: '<rect x="1.5" y="3.5" width="13" height="9" rx="2.5"/><path d="m6.7 6 3.3 2-3.3 2Z" fill="currentColor"/>',
+	arrow: '<path d="M0 8h31M26 3.5 31 8l-5 4.5"/>',
+	play: '<path d="M5 3.5v9l7.5-4.5Z" fill="currentColor"/>',
+};
+const vb = name === 'arrow' ? '0 0 32 16' : '0 0 16 16';
+const w = name === 'arrow' ? 34 : 16;
+---
+
+<svg class:list={['icon', cls]} viewBox={vb} width={w} height="16" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={paths[name]} />

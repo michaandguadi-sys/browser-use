@@ -1,76 +1,54 @@
-@import '@fontsource-variable/source-serif-4/opsz.css';
-@import '@fontsource-variable/source-serif-4/opsz-italic.css';
 @import '@fontsource/ibm-plex-mono/400.css';
 @import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
 
-/* "Höhenprotokoll" — survey sheet meets documentary title card.
-   Firn (paper) and Basalt (ink) sheets; ochre only for contour/route lines and numerals; glacier only for data marks. */
+/* Clean, cinematic, near-black. One mono voice for statements/labels, Plex Sans for longer text. */
+
+/* Metric-matched fallbacks so the swap to the web fonts does not shift layout. */
+@font-face {
+	font-family: 'Plex Mono Fallback';
+	src: local('Courier New'), local('Liberation Mono'), local('Menlo');
+	size-adjust: 100%;
+	ascent-override: 102.5%;
+	descent-override: 27.5%;
+	line-gap-override: 0%;
+}
+@font-face {
+	font-family: 'Plex Sans Fallback';
+	src: local('Arial'), local('Liberation Sans'), local('Helvetica');
+	size-adjust: 100.5%;
+	ascent-override: 102%;
+	descent-override: 27.4%;
+	line-gap-override: 0%;
+}
+
 :root {
-	--firn: #e8e6df;
-	--basalt: #111315;
-	--ochre: #b86a2c;
-	--glacier: #9db7c2;
-	/* One muted tone cannot reach 4.5:1 on both grounds (the best single grey peaks at ≈3.9:1),
-	   so each sheet sets its own: #5b5d5e on Firn = 5.30:1, #8c8f90 on Basalt = 5.72:1. */
-	--muted-firn: #5b5d5e;
-	--muted-basalt: #8c8f90;
-	--rule-firn: #c9c6bc;
-	--rule-basalt: #2a2d30;
+	--bg: #0f0f0f;
+	--bg-2: #161616;
+	--ink: #f2f0eb;
+	--muted: #9b9a95; /* 6.9:1 on --bg */
+	--faint: #6f6e6a; /* decorative only */
+	--line: rgb(242 240 235 / 0.12);
+	--line-2: rgb(242 240 235 / 0.22);
 
-	/* Sheet context (Basalt default, Firn sheets override). */
-	--ground: var(--basalt);
-	--ink: var(--firn);
-	--muted: var(--muted-basalt);
-	--rule: var(--rule-basalt);
-	--num: var(--ochre); /* small numerals: ochre on Basalt only */
-	--contour: rgb(232 230 223 / 0.17);
-	--contour-index: rgb(232 230 223 / 0.42);
+	--mono: 'IBM Plex Mono', 'Plex Mono Fallback', ui-monospace, monospace;
+	--sans: 'IBM Plex Sans', 'Plex Sans Fallback', system-ui, sans-serif;
 
-	--serif: 'Source Serif 4 Variable', 'Source Serif Pro', Georgia, serif;
-	--mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+	--t-label: 12px;
+	--t-meta: 14px;
+	--t-body: clamp(16px, 0.35vw + 14.6px, 18px);
+	--t-title: clamp(17px, 0.4vw + 15px, 20px);
+	--t-h2: clamp(24px, 1.6vw + 16px, 36px);
+	--t-statement: clamp(25px, 2.3vw + 14px, 46px);
 
-	--t-micro: 11px;
-	--t-caption: 13px;
-	--t-body: clamp(17px, 1.05vw + 12px, 20px);
-	--t-lede: clamp(24px, 2vw + 12px, 34px);
-	--t-h2: clamp(40px, 4.5vw, 72px);
-	--t-h3: clamp(26px, 1.6vw + 12px, 40px);
-	--t-display: clamp(64px, 13vw, 220px);
-
-	--neat: 12px;
-	--gutter: clamp(1.5rem, 4vw, 3.5rem);
-	--colgap: clamp(0.75rem, 1.6vw, 1.5rem);
+	--gutter: clamp(20px, 5.5vw, 80px);
 	--max: 1440px;
+	--radius: 8px;
+	--section: clamp(88px, 11vw, 168px);
 	--ease: cubic-bezier(0.2, 0, 0, 1);
 
 	color-scheme: dark;
-}
-@media (max-width: 600px) {
-	:root {
-		--neat: 8px;
-	}
-}
-
-.sheet {
-	background: var(--ground);
-	color: var(--ink);
-}
-.sheet--firn {
-	--ground: var(--firn);
-	--ink: var(--basalt);
-	--muted: var(--muted-firn);
-	--rule: var(--rule-firn);
-	--num: var(--basalt);
-	--contour: rgb(17 19 21 / 0.15);
-	--contour-index: rgb(17 19 21 / 0.4);
-	color-scheme: light;
-}
-.sheet--basalt {
-	--ground: var(--basalt);
-	--ink: var(--firn);
-	--muted: var(--muted-basalt);
-	--rule: var(--rule-basalt);
-	--num: var(--ochre);
 }
 
 *,
@@ -82,19 +60,33 @@
 html {
 	-webkit-text-size-adjust: 100%;
 	text-size-adjust: 100%;
-	scroll-padding-top: 5rem;
+	scroll-padding-top: 2rem;
 }
 
 body {
 	margin: 0;
-	background: var(--basalt);
-	color: var(--firn);
-	font-family: var(--serif);
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--sans);
 	font-size: var(--t-body);
-	font-weight: 380;
-	line-height: 1.55;
+	line-height: 1.65;
 	-webkit-font-smoothing: antialiased;
 	overflow-x: hidden;
+}
+
+/* Very subtle film grain over the whole ground (static). */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	opacity: 0.045;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+body > * {
+	position: relative;
+	z-index: 1;
 }
 
 img {
@@ -105,24 +97,23 @@ img {
 
 a {
 	color: inherit;
-	text-underline-offset: 0.22em;
 	text-decoration-thickness: 1px;
+	text-underline-offset: 0.25em;
 }
 
 :focus-visible {
-	outline: 2px solid var(--ochre);
-	outline-offset: 3px;
+	outline: 1.5px solid var(--ink);
+	outline-offset: 4px;
 }
 
 h1,
 h2,
 h3 {
 	margin: 0;
-	font-family: var(--serif);
-	font-weight: 300;
-	font-variation-settings: 'opsz' 60;
-	letter-spacing: -0.02em;
-	line-height: 0.95;
+	font-family: var(--mono);
+	font-weight: 400;
+	letter-spacing: -0.01em;
+	line-height: 1.25;
 	text-wrap: balance;
 }
 
@@ -138,159 +129,136 @@ p {
 	padding-inline: var(--gutter);
 }
 
-/* 12-column survey grid. Prose in columns 2–7, margin notes in 10–12. */
-.g12 {
-	display: grid;
-	grid-template-columns: repeat(12, minmax(0, 1fr));
-	column-gap: var(--colgap);
-}
-.g12 > * {
-	grid-column: 1 / -1;
-}
-@media (min-width: 960px) {
-	.g12 > .col-prose {
-		grid-column: 2 / 8;
-	}
-	.g12 > .col-note {
-		grid-column: 10 / 13;
-	}
+.section {
+	padding-top: var(--section);
 }
 
-.display {
-	font-size: var(--t-display);
-	font-weight: 250;
-	line-height: 0.86;
-	letter-spacing: -0.035em;
-	font-variation-settings: 'opsz' 60;
+/* Small mono label (eyebrow / meta). */
+.label {
+	font-family: var(--mono);
+	font-size: var(--t-label);
+	font-weight: 400;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--muted);
+	line-height: 1.5;
 }
-.h2 {
-	font-size: var(--t-h2);
-	font-weight: 300;
-	line-height: 0.95;
-}
-.lede {
-	font-size: var(--t-lede);
-	font-weight: 300;
-	line-height: 1.22;
-	letter-spacing: -0.005em;
-}
-
-/* Mono data voice: micro labels, captions, nav, tables. */
 .meta {
 	font-family: var(--mono);
-	font-size: var(--t-micro);
-	font-weight: 400;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	font-variant-numeric: tabular-nums;
-	line-height: 1.5;
+	font-size: var(--t-meta);
 	color: var(--muted);
+	font-variant-numeric: tabular-nums;
 }
-.caption {
+
+.h2 {
+	font-size: var(--t-h2);
+	line-height: 1.2;
+}
+.statement {
 	font-family: var(--mono);
-	font-size: var(--t-caption);
-	font-variant-numeric: tabular-nums;
-	line-height: 1.5;
-	color: var(--muted);
+	font-size: var(--t-statement);
+	line-height: 1.32;
+	letter-spacing: -0.015em;
+	font-weight: 400;
 }
 
 .prose {
-	font-size: var(--t-body);
-	line-height: 1.6;
+	color: #cfcdc7;
 	max-width: 62ch;
 }
 .prose p + p {
-	margin-top: 1em;
+	margin-top: 1.1em;
 }
 
-/* Buttons are outlined or underlined, never filled with ochre. */
+/* Section head: title left, quiet link right, hairline under. */
+.head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.75rem 2rem;
+	margin-bottom: clamp(32px, 4vw, 56px);
+}
+
+/* Media: soft radius, dark placeholder, clipped. */
+.media {
+	position: relative;
+	overflow: hidden;
+	border-radius: var(--radius);
+	background: var(--bg-2);
+}
+.media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+/* Buttons: white square-ish pill (primary) or quiet outline. */
 .btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.7em;
+	justify-content: center;
+	gap: 0.9em;
 	min-height: 44px;
-	padding: 0.8em 1.3em;
-	border: 1px solid currentColor;
-	background: transparent;
-	color: inherit;
+	padding: 0.7em 1.35em;
+	border: 1px solid var(--ink);
+	border-radius: 6px;
+	background: var(--ink);
+	color: var(--bg);
 	font-family: var(--mono);
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 500;
-	letter-spacing: 0.08em;
+	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	text-decoration: none;
 	cursor: pointer;
 	transition:
-		background 0.25s var(--ease),
-		color 0.25s var(--ease);
+		background 0.3s var(--ease),
+		color 0.3s var(--ease);
 }
 .btn:hover {
-	background: var(--ink);
-	color: var(--ground);
+	background: transparent;
+	color: var(--ink);
 }
-.btn--primary {
-	box-shadow: inset 0 -3px 0 var(--ochre);
+.btn--ghost {
+	background: transparent;
+	color: var(--ink);
+	border-color: var(--line-2);
 }
-.ulink {
+.btn--ghost:hover {
+	border-color: var(--ink);
+}
+.btn .arrow {
+	width: 34px;
+	height: 10px;
+	flex: none;
+}
+
+.link {
+	font-family: var(--mono);
+	font-size: 13px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	text-decoration: none;
+	color: var(--ink);
 	display: inline-flex;
 	align-items: center;
+	gap: 0.6em;
 	min-height: 44px;
-	font-family: var(--mono);
-	font-size: 12px;
-	font-weight: 500;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+}
+.link:hover {
 	text-decoration: underline;
-	text-decoration-color: var(--ochre);
-	text-underline-offset: 0.55em;
-}
-.ulink:hover {
-	text-decoration-thickness: 2px;
 }
 
-/* Plate numbering: "PLATE 03 / 12". */
-.plate {
-	font-family: var(--mono);
-	font-size: var(--t-micro);
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	font-variant-numeric: tabular-nums;
-	color: var(--muted);
+/* Hairline rows (meta rows / facts). */
+.rows {
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
-.plate b {
-	font-weight: 500;
-	color: var(--num);
-}
-
-/* Photo grain, ~5.5 %, static (no Ken Burns, no parallax). */
-.grain {
-	position: relative;
-	overflow: hidden;
-	background: #0b0c0d;
-}
-.grain::after {
-	content: '';
-	position: absolute;
-	inset: 0;
-	pointer-events: none;
-	opacity: 0.055;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.6 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* Measured lines draw in with linear timing (pathLength="1" on the path). */
-.trace {
-	fill: none;
-	stroke: var(--ochre);
-	stroke-width: 1.5;
-}
-.js .trace {
-	stroke-dasharray: 1;
-	stroke-dashoffset: 1;
-	transition: stroke-dashoffset 2.4s linear;
-}
-.js .in .trace,
-.js .trace.in {
-	stroke-dashoffset: 0;
+.rows > * {
+	padding: 0.7rem 0;
+	border-bottom: 1px solid var(--line);
 }
 
 .sr-only {
@@ -304,28 +272,29 @@ p {
 
 .skip {
 	position: absolute;
-	left: 1.5rem;
+	left: 1rem;
 	top: -4rem;
 	z-index: 100;
-	background: var(--firn);
-	color: var(--basalt);
+	background: var(--ink);
+	color: var(--bg);
 	padding: 0.6rem 1rem;
 	font-family: var(--mono);
 	font-size: 13px;
+	border-radius: 6px;
 }
 .skip:focus {
-	top: 1.5rem;
+	top: 1rem;
 }
 
-/* Reveal: visible by default; only hidden once JS has marked the document (never on body copy or CTAs). */
+/* Reveal: images only; visible by default, animated only once JS has marked the document. */
 .js .reveal:not(.in) {
 	opacity: 0;
-	translate: 0 12px;
+	translate: 0 16px;
 }
 .reveal {
 	transition:
-		opacity 0.7s var(--ease),
-		translate 0.7s var(--ease);
+		opacity 0.8s var(--ease),
+		translate 0.8s var(--ease);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -339,12 +308,9 @@ p {
 		opacity: 1;
 		translate: none;
 	}
-	.js .trace {
-		stroke-dashoffset: 0;
-	}
 }
 
-/* Cross-document view transitions (Chrome 126+, Safari 18.2+; others just navigate normally). */
+/* Cross-document view transitions (Chrome 126+, Safari 18.2+). */
 @media (prefers-reduced-motion: no-preference) {
 	@view-transition {
 		navigation: auto;

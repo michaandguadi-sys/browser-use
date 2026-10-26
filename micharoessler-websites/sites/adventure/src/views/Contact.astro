@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { Image } from 'astro:assets';
+import { Picture } from 'astro:assets';
 import { type Lang } from '../i18n';
 import portrait from '../assets/micha-portrait.jpg';
 
@@ -45,43 +45,36 @@ const L = en
 	title={en ? 'Contact – Book an Expedition Filmmaker | Micha Rössler' : 'Kontakt – Outdoor-Filmemacher buchen | Micha Rössler'}
 	description={en ? 'Book Micha Rössler as expedition filmmaker, camera operator or documentary editor. Reply within two working days.' : 'Micha Rössler als Expeditionsfilmer, Kameramann oder Doku-Cutter anfragen. Antwort innerhalb von zwei Werktagen.'}
 	alt={{ en: '/contact/', de: '/de/kontakt/' }}
-	sheet="A/04"
-	solidHeader
 >
-	<div class="sheet sheet--firn c-sheet">
-		<div class="wrap g12 c">
+	<div class="c-sheet">
+		<div class="wrap c">
 			<div class="c-head">
-				<p class="meta">{en ? 'Contact' : 'Kontakt'}</p>
-				<h1 class="h2">{L.h}</h1>
-				<svg class="c-trace" viewBox="0 0 600 12" preserveAspectRatio="none" aria-hidden="true" data-trace>
-					<path class="trace" pathLength="1" d="M4 6H596"></path>
-					<circle cx="4" cy="6" r="3.5"></circle>
-					<path class="c-end" d="M596 0V12"></path>
-				</svg>
+				<p class="label">{en ? 'Contact' : 'Kontakt'}</p>
+				<h1>{L.h}</h1>
 				<div class="who">
-					<Image src={portrait} alt="Micha Rössler" width={160} height={160} widths={[96, 160]} sizes="80px" class="avatar" />
+					<Picture src={portrait} alt="Micha Rössler" formats={['avif', 'webp']} quality={78} width={160} height={160} widths={[80, 160]} sizes="72px" class="avatar" />
 					<p class="prose c-p">{L.p} {en ? 'You are writing to me directly – Micha.' : 'Du schreibst direkt mir – Micha.'}</p>
 				</div>
 			</div>
 
 			<form class="f" id="brief" data-subject={en ? 'Shoot request' : 'Drehanfrage'}>
-				<label><span class="meta">{L.name}</span><input name={L.name} required autocomplete="name" /></label>
-				<label><span class="meta">{L.org}</span><input name={L.org} autocomplete="organization" /></label>
+				<label><span class="label">{L.name}</span><input name={L.name} required autocomplete="name" /></label>
+				<label><span class="label">{L.org}</span><input name={L.org} autocomplete="organization" /></label>
 				<label class="full">
-					<span class="meta">{L.type}</span>
+					<span class="label">{L.type}</span>
 					<select name={L.type}>{L.types.map((x) => <option>{x}</option>)}</select>
 				</label>
-				<label><span class="meta">{L.when}</span><input name={L.when} /></label>
-				<label><span class="meta">{L.where}</span><input name={L.where} /></label>
-				<label class="full"><span class="meta">{L.deliver}</span><textarea name={L.deliver} rows="5"></textarea></label>
+				<label><span class="label">{L.when}</span><input name={L.when} /></label>
+				<label><span class="label">{L.where}</span><input name={L.where} /></label>
+				<label class="full"><span class="label">{L.deliver}</span><textarea name={L.deliver} rows="5"></textarea></label>
 				<div class="full f-send">
-					<button class="btn btn--primary" type="submit">{L.send} →</button>
+					<button class="btn" type="submit">{L.send} →</button>
 					<p class="meta f-note">{L.note}</p>
 				</div>
 			</form>
 
 			<p class="direct">
-				<span class="meta">{L.direct}</span>
+				<span class="label">{L.direct}</span>
 				<a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
 			</p>
 		</div>
@@ -99,141 +92,124 @@ const L = en
 
 <style>
 	.c-sheet {
-		padding-top: calc(var(--neat) + 56px + clamp(3rem, 7vw, 6rem));
-		padding-bottom: clamp(4rem, 9vw, 7rem);
+		padding-top: clamp(24px, 4vw, 56px);
+	}
+	.c {
+		display: grid;
+		gap: clamp(48px, 6vw, 80px) clamp(24px, 6vw, 96px);
 	}
 	@media (min-width: 960px) {
-		.c-head {
-			grid-column: 1 / 9 !important;
-		}
-		.f {
-			grid-column: 2 / 10 !important;
+		.c {
+			grid-template-columns: 5fr 7fr;
+			align-items: start;
 		}
 		.direct {
-			grid-column: 2 / 13 !important;
+			grid-column: 2;
 		}
 	}
 	h1 {
-		margin: 0.75rem 0 1.5rem;
+		margin: 14px 0 32px;
+		font-size: clamp(30px, 2.4vw + 14px, 52px);
+		line-height: 1.18;
+		letter-spacing: -0.025em;
 		max-width: 16ch;
-	}
-	.c-trace {
-		display: block;
-		width: min(100%, 560px);
-		height: 12px;
-		overflow: visible;
-		margin-bottom: 2rem;
-	}
-	.c-trace .trace {
-		stroke-width: 1.5;
-	}
-	.c-trace circle,
-	.c-end {
-		fill: none;
-		stroke: var(--ink);
-		stroke-width: 1.25;
-		vector-effect: non-scaling-stroke;
 	}
 	.who {
 		display: flex;
 		align-items: center;
-		gap: 1.25rem;
+		gap: 20px;
 	}
-	.avatar {
-		width: 80px;
-		height: 80px;
+	.who :global(picture) {
+		flex: none;
+	}
+	:global(.avatar) {
+		width: 72px;
+		height: 72px;
 		flex: none;
 		border-radius: 50%;
 		object-fit: cover;
 		object-position: 50% 18%;
-		background: var(--basalt);
+		background: var(--bg-2);
 	}
 	.c-p {
-		max-width: 46ch;
+		max-width: 40ch;
 	}
 	.f {
-		margin-top: 3.5rem;
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: 2rem var(--colgap);
-		border-top: 1px solid var(--ink);
-		padding-top: 2rem;
+		gap: 28px clamp(20px, 3vw, 40px);
 	}
-	.full {
-		grid-column: 1 / -1;
-	}
-	@media (min-width: 700px) {
+	@media (min-width: 640px) {
 		.f {
 			grid-template-columns: 1fr 1fr;
 		}
 	}
+	.full {
+		grid-column: 1 / -1;
+	}
 	label {
 		display: grid;
-		gap: 0.35rem;
+		gap: 8px;
 	}
 	input,
 	select,
 	textarea {
 		font: inherit;
-		font-size: 18px;
+		font-size: 16px;
 		color: var(--ink);
-		background: transparent;
-		border: 0;
-		border-bottom: 1px solid var(--ink);
-		border-radius: 0;
-		padding: 0.55rem 0;
+		background: var(--bg-2);
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 0.8rem 0.9rem;
 		width: 100%;
+		transition: border-color 0.3s var(--ease);
 	}
 	textarea {
-		border: 1px solid var(--ink);
-		padding: 0.75rem;
 		resize: vertical;
 	}
 	select {
 		appearance: none;
-		background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
-		background-position:
-			calc(100% - 12px) 55%,
-			calc(100% - 7px) 55%;
-		background-size: 5px 5px;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23f2f0eb' stroke-width='1.2'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E");
 		background-repeat: no-repeat;
-		padding-right: 2rem;
+		background-position: right 14px center;
+		padding-right: 2.5rem;
+	}
+	input:hover,
+	select:hover,
+	textarea:hover {
+		border-color: var(--line-2);
 	}
 	input:focus,
 	select:focus,
 	textarea:focus {
 		outline: none;
-		border-color: var(--ochre);
-		box-shadow: 0 1px 0 var(--ochre);
+		border-color: var(--ink);
 	}
 	.f-send {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 1rem 1.5rem;
+		gap: 16px 24px;
 		align-items: center;
 	}
 	.f-note {
-		text-transform: none;
-		letter-spacing: 0.02em;
-		max-width: 40em;
+		font-size: 13px;
+		max-width: 40ch;
 	}
 	.direct {
-		margin-top: 3.5rem;
 		display: grid;
-		gap: 0.5rem;
+		gap: 10px;
+		margin: 0;
+		padding-top: 24px;
+		border-top: 1px solid var(--line);
 	}
 	.direct a {
-		font-size: clamp(30px, 4.6vw, 64px);
-		font-weight: 250;
-		font-variation-settings: 'opsz' 60;
-		letter-spacing: -0.03em;
-		line-height: 1;
+		font-family: var(--mono);
+		font-size: clamp(22px, 2vw + 12px, 36px);
+		letter-spacing: -0.02em;
 		text-decoration: none;
 		overflow-wrap: anywhere;
 	}
 	.direct a:hover {
 		text-decoration: underline;
-		text-decoration-thickness: 1px;
-		text-decoration-color: var(--ochre);
 	}
 </style>
