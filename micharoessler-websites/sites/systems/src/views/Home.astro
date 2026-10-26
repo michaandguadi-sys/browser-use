@@ -20,41 +20,6 @@ const description = de
 	? 'Freelance-Cutter für wiederkehrende YouTube-Formate: Schnitt-Templates, datengetriebene Grafiken, Shorts-Pipeline und Retainer. Festpreise ab 1.950 €, Tagessatz 750 €.'
 	: 'Freelance editor for recurring YouTube formats: edit templates, data-driven graphics, shorts pipeline and retainers. Fixed prices from €1,950, day rate €750.';
 
-// Timeline clips for the hero diagram: [track, start%, width%, colour, label]
-const clips: [number, number, number, string, string][] = [
-	[0, 0, 9, 'var(--clip-red)', 'Hook'],
-	[0, 9, 11, 'var(--clip-blue)', 'Intro'],
-	[0, 20, 24, 'var(--clip-blue)', de ? 'Test A' : 'Segment A'],
-	[0, 44, 24, 'var(--clip-blue)', de ? 'Test B' : 'Segment B'],
-	[0, 68, 20, 'var(--clip-blue)', 'Verdict'],
-	[0, 88, 12, 'var(--clip-green)', 'End'],
-	[1, 3, 10, 'var(--clip-yellow)', 'Title'],
-	[1, 22, 9, 'var(--clip-yellow)', 'Spec'],
-	[1, 46, 9, 'var(--clip-yellow)', 'Spec'],
-	[1, 70, 13, 'var(--clip-yellow)', 'Score'],
-	[2, 0, 100, 'var(--clip-green)', ''],
-];
-const tracks = ['V1', 'GFX', 'A1'];
-
-// What the system automates at each beat – shown when the playhead crosses it.
-const beats: [number, number, string][] = de
-	? [
-			[0, 9, 'Hook · aus der Hook-Bank, 3 Varianten pro Folge vorbereitet'],
-			[9, 20, 'Intro · Template mit Titelkarte aus der Tabelle'],
-			[20, 44, 'Test A · Spec-Card automatisch befüllt'],
-			[44, 68, 'Test B · gleiche Grafik, neue Daten – kein Neu-Animieren'],
-			[68, 88, 'Verdict · Score-Overlay aus der Tabelle'],
-			[88, 100, 'Endscreen · Export-Preset + 3–6 Shorts aus Transkript-Selects'],
-		]
-	: [
-			[0, 9, 'Hook · from the hook bank, 3 variants prepared per episode'],
-			[9, 20, 'Intro · template with title card from the sheet'],
-			[20, 44, 'Segment A · spec card filled automatically'],
-			[44, 68, 'Segment B · same graphic, new data – no re-animating'],
-			[68, 88, 'Verdict · score overlay from the sheet'],
-			[88, 100, 'End screen · export preset + 3–6 shorts from transcript selects'],
-		];
-
 const steps = de
 	? [
 			['01', 'Erstgespräch', '15 Minuten, kostenlos. Ihr zeigt mir euer Format, ich sage ehrlich, ob ein System sich lohnt.', 'Kostenlos'],
@@ -90,77 +55,110 @@ const offerLd = {
 		description: p.points.map((x) => x[lang]).join('; '),
 	})),
 };
+
+// Hero "multiplier wall": one episode, six vertical clips (example rate, labelled as such).
+const perEp = 6;
+const startEps = 4;
+const ticks = [8, 22, 37, 54, 69, 86];
+const ep = de ? 'Folge' : 'Episode';
+const eps = (n: number) => (de ? (n === 1 ? 'Folge' : 'Folgen') : n === 1 ? 'episode' : 'episodes');
+const mwCap = de
+	? `Beispielrechnung: Aus jeder Folge entstehen ${perEp} Hochkant-Clips. Bei ${startEps} Folgen pro Monat sind das ${startEps * (1 + perEp)} Inhalte.`
+	: `Example calculation: every episode yields ${perEp} vertical clips. At ${startEps} episodes per month, that is ${startEps * (1 + perEp)} pieces of content.`;
+// Repetition band: the same word, every row, one row inverted.
+const repWord = de ? 'FOLGE' : 'EPISODE';
+const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 ---
 
 <Base lang={lang} title={title} description={description} alt={{ de: '/', en: '/en/' }} jsonLd={[faqLd, offerLd]}>
-	<section class="hero wrap">
-		<div class="hero-txt">
-			<p class="mono label">{de ? 'Freelance-Cutter · Workflow · Retainer' : 'Freelance editor · Workflow · Retainer'}</p>
-			<h1>
-				{de ? 'Euer YouTube-Format als Schnitt-System.' : 'Your YouTube format as an edit system.'}
-			</h1>
-			<p class="hero-sub">
-				{
-					de
-						? 'Weniger Handarbeit pro Folge, mehr Shorts aus jedem Dreh. Ich baue für euer wiederkehrendes Format Templates, datengetriebene Grafiken, eine Shorts-Pipeline und eine saubere Review-Schleife – und schneide darauf im Retainer oder übergebe alles an euer Team.'
-						: 'Less manual work per episode, more shorts from every shoot. I build templates, data-driven graphics, a shorts pipeline and a clean review loop for your recurring format – then edit on it for you on retainer, or hand it all to your team.'
-				}
-			</p>
-			<div class="hero-cta">
-				<a class="btn btn--ink" href="#kontakt">{de ? 'Erstgespräch buchen' : 'Book an intro call'} <span class="arr">→</span></a>
-				<a class="btn" href="#system">{de ? 'System ansehen' : 'See the system'}</a>
-			</div>
-			<dl class="spec">
-				<div><dt class="mono">{de ? 'Tagessatz' : 'Day rate'}</dt><dd>{de ? '750 €' : '€750'}</dd></div>
-				<div><dt class="mono">{de ? 'Einstieg' : 'Start'}</dt><dd>{de ? 'Pilot, Festpreis' : 'Fixed-price pilot'}</dd></div>
-				<div><dt class="mono">{de ? 'Tools' : 'Tools'}</dt><dd>Premiere · Resolve · Remotion</dd></div>
-				<div><dt class="mono">{de ? 'Sprachen' : 'Languages'}</dt><dd>DE · EN</dd></div>
-			</dl>
-		</div>
+	<section class="hero">
+		<div class="wrap hero-in">
+			<div class="guides grid" aria-hidden="true">{Array.from({ length: 12 }, () => <span />)}</div>
+			<div class="grid hero-g">
+				<p class="mono label hero-k">{de ? 'Freelance-Cutter · Workflow · Retainer' : 'Freelance editor · Workflow · Retainer'}</p>
+				<h1 class="display">
+					{de ? 'Euer YouTube-Format als Schnitt-System.' : 'Your YouTube format as an edit system.'}
+				</h1>
+				<div class="hero-txt">
+					<p class="hero-sub">
+						{
+							de
+								? 'Weniger Handarbeit pro Folge, mehr Shorts aus jedem Dreh. Ich baue für euer wiederkehrendes Format Templates, datengetriebene Grafiken, eine Shorts-Pipeline und eine saubere Review-Schleife – und schneide darauf im Retainer oder übergebe alles an euer Team.'
+								: 'Less manual work per episode, more shorts from every shoot. I build templates, data-driven graphics, a shorts pipeline and a clean review loop for your recurring format – then edit on it for you on retainer, or hand it all to your team.'
+						}
+					</p>
+					<div class="hero-cta">
+						<a class="btn btn--ink" href="#kontakt">{de ? 'Erstgespräch buchen' : 'Book an intro call'} <span class="arr">→</span></a>
+						<a class="btn" href="#system">{de ? 'System ansehen' : 'See the system'}</a>
+					</div>
+					<dl class="spec">
+						<div><dt class="mono">{de ? 'Tagessatz' : 'Day rate'}</dt><dd>{de ? '750 €' : '€750'}</dd></div>
+						<div><dt class="mono">{de ? 'Einstieg' : 'Start'}</dt><dd>{de ? 'Pilot, Festpreis' : 'Fixed-price pilot'}</dd></div>
+						<div><dt class="mono">{de ? 'Tools' : 'Tools'}</dt><dd>Premiere · Resolve · Remotion</dd></div>
+						<div><dt class="mono">{de ? 'Sprachen' : 'Languages'}</dt><dd>DE · EN</dd></div>
+					</dl>
+				</div>
 
-		<figure class="tl" tabindex="0" data-beats={JSON.stringify(beats)} aria-label={de ? 'Schema einer Format-Timeline: Hook, Intro, Segmente, Verdict, Endscreen mit Grafik-Spur' : 'Diagram of a format timeline: hook, intro, segments, verdict, end screen with graphics track'}>
-			<div class="tl-head mono">
-				<span>EP_042_{de ? 'Vergleichstest' : 'comparison'}.prproj</span>
-				<span class="tc">00:12:48:16</span>
-			</div>
-			<div class="tl-ruler mono" aria-hidden="true">
-				{['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00'].map((x) => <span>{x}</span>)}
-			</div>
-			<div class="tl-tracks" aria-hidden="true">
-				{
-					tracks.map((name, ti) => (
-						<div class="track">
-							<span class="mono tn">{name}</span>
-							<div class="lane">
-								{clips
-									.filter((c) => c[0] === ti)
-									.map(([, x, w, c, l], i) => (
-										<span class="clip" style={`--x:${x}%;--w:${w}%;--c:${c};--d:${(ti * 6 + i) * 70}ms`}>
-											{l}
-										</span>
-									))}
-								{ti === 2 && (
-									<svg class="wave" viewBox="0 0 400 20" preserveAspectRatio="none">
-										<path d={Array.from({ length: 100 }, (_, i) => `M${i * 4} ${10 - ((i * 7919) % 9)}V${10 + ((i * 104729) % 9)}`).join('')} stroke="#2a6b33" stroke-width="1.6" />
-									</svg>
-								)}
-							</div>
+				<figure class="mw" data-mw data-io data-lang={lang} data-per={perEp} style="--base:18" aria-labelledby="mw-cap">
+					<div class="mw-head mono">
+						<span>{de ? `Beispielrechnung: ${perEp} Clips pro Folge` : `Example calculation: ${perEp} clips per episode`}</span>
+						<span aria-hidden="true">16:9 → 9:16</span>
+					</div>
+					<div class="unit" aria-hidden="true">
+						<div class="tile ep" style="--d:0">
+							<span class="mono t-l">{ep.toUpperCase()} 01</span>
+							<span class="mono t-f">16:9</span>
+							<span class="tl">{ticks.map((x, i) => <i style={`--x:${x}%;--d:${3 + i * 2}`} />)}</span>
 						</div>
-					))
-				}
-				<span class="playhead"></span>
+						{
+							Array.from({ length: perEp }, (_, i) => (
+								<div class="tile clip" style={`--d:${3 + i * 2}`}>
+									<span class="mono t-l">
+										CLIP
+										<br />
+										{String(i + 1).padStart(2, '0')}
+									</span>
+									<span class="mono t-f">9:16</span>
+								</div>
+							))
+						}
+					</div>
+					<div class="wall" aria-hidden="true">
+						{
+							Array.from({ length: 8 }, (_, s) => (
+								<div class:list={['slot', { on: s < startEps }]} style={`--s:${s}`}>
+									<span class="mono s-n">{String(s + 1).padStart(2, '0')}</span>
+									<div class="s-t">
+										{Array.from({ length: 1 + perEp }, (_, k) => (
+											<i style={`--k:${k}`} />
+										))}
+									</div>
+								</div>
+							))
+						}
+					</div>
+					<div class="mw-ctrl">
+						<label for="mw-n" class="mono">{de ? 'Folgen pro Monat' : 'Episodes per month'}</label>
+						<output for="mw-n" class="mono mw-v" data-o="n">{startEps}</output>
+						<input id="mw-n" type="range" min="1" max="8" step="1" value={startEps} aria-valuetext={`${startEps} ${eps(startEps)} → ${startEps * (1 + perEp)} ${de ? 'Inhalte' : 'pieces of content'}`} />
+					</div>
+					<div class="mw-eq" aria-live="polite">
+						<p class="eq eq-n"><b data-o="n">{startEps}</b><span class="mono" data-o="nl">{eps(startEps)}</span></p>
+						<span class="eq-arr" aria-hidden="true">→</span>
+						<p class="eq eq-t"><b data-o="t">{startEps * (1 + perEp)}</b><span class="mono">{de ? 'Inhalte pro Monat' : 'pieces of content per month'}</span></p>
+					</div>
+					<p class="mono mw-f" aria-hidden="true">
+						<span data-o="n">{startEps}</span> × (1 {de ? 'Folge' : 'episode'} + {perEp} {de ? 'Clips' : 'clips'}) = <span data-o="t">{startEps * (1 + perEp)}</span>
+					</p>
+					<figcaption id="mw-cap" class="sr-only">{mwCap}</figcaption>
+				</figure>
 			</div>
-			<p class="mono tl-note" aria-live="polite" data-note>{beats[0][2]}</p>
-			<figcaption class="mono tl-cap">
-				<span>{de ? 'Template' : 'Template'}: 11 Clips · 4 {de ? 'Grafik-Beats aus Tabelle' : 'graphic beats from sheet'}</span>
-				<span class="tl-keys">{de ? 'Ziehen oder' : 'Drag or'} <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd></span>
-			</figcaption>
-		</figure>
+		</div>
 	</section>
 
 	<section class="strip">
-		<div class="wrap strip-in">
-			<p class="mono">{de ? 'Geschnitten für' : 'Edited for'}</p>
+		<div class="wrap grid strip-in">
+			<p class="mono strip-k">{de ? 'Geschnitten für' : 'Edited for'}</p>
 			<ul>
 				<li>Carwow DE <span class="mono">{de ? '· 3 Review-Folgen, 2025' : '· 3 review episodes, 2025'}</span></li>
 				<li>Felix von der Laden <span class="mono">· 2 {de ? 'Langform-Dokus' : 'long-form docs'}</span></li>
@@ -173,312 +171,359 @@ const offerLd = {
 		</div>
 	</section>
 
-	<section id="system" class="sec wrap">
-		<div class="sec-h">
-			<p class="mono label">{de ? 'Das System' : 'The system'}</p>
-			<h2>{de ? 'Euer Format als System' : 'Your format as a system'}</h2>
-			<p>
+	<section id="system" class="sec">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">{de ? 'Das System' : 'The system'}</p>
+				<p class="mono idx" aria-hidden="true">{sec(1)}</p>
+				<h2>{de ? 'Euer Format als System' : 'Your format as a system'}</h2>
+				<p>
+					{
+						de
+							? 'Wer jede Woche dieselbe Show produziert, sollte nicht jede Woche dieselben Dinge neu bauen. Sechs Bausteine, die ich für euer Format aufsetze:'
+							: 'If you ship the same show every week, you should not rebuild the same things every week. Six building blocks I set up for your format:'
+					}
+				</p>
+			</div>
+			<ol class="parts">
 				{
-					de
-						? 'Wer jede Woche dieselbe Show produziert, sollte nicht jede Woche dieselben Dinge neu bauen. Sechs Bausteine, die ich für euer Format aufsetze:'
-						: 'If you ship the same show every week, you should not rebuild the same things every week. Six building blocks I set up for your format:'
-				}
-			</p>
-		</div>
-		<ol class="parts">
-			{
-				systemParts.map((s) => (
-					<li class="reveal">
-						<span class="mono n">{s.n}</span>
-						<h3>{s.title[lang]}</h3>
-						<p>{s.text[lang]}</p>
-					</li>
-				))
-			}
-		</ol>
-		<p class="ai mono">
-			{de ? 'KI hilft. Der Schnitt entscheidet. Keine generierten Moderatoren, kein Auto-Slop.' : 'AI assists. The edit decides. No generated presenters, no auto-slop.'}
-		</p>
-	</section>
-
-	<section id="demo" class="sec wrap">
-		<div class="sec-h">
-			<p class="mono label">{de ? 'Live-Demo' : 'Live demo'}</p>
-			<h2>{de ? 'Grafik aus der Tabelle. Probiert es aus.' : 'Graphics from a spreadsheet. Try it.'}</h2>
-			<p>
-				{
-					de
-						? 'So funktionieren datengetriebene Grafiken: Ihr pflegt Werte, das Template rendert – in 16:9 und 9:16. Ändert eine Zahl.'
-						: 'This is how data-driven graphics work: you maintain values, the template renders – in 16:9 and 9:16. Change a number.'
-				}
-			</p>
-		</div>
-		<SpecDemo lang={lang} />
-	</section>
-
-	<section id="ablauf" class="sec wrap">
-		<div class="sec-h">
-			<p class="mono label">{de ? 'Ablauf' : 'Process'}</p>
-			<h2>{de ? 'Klein anfangen, dann skalieren' : 'Start small, then scale'}</h2>
-		</div>
-		<ol class="steps">
-			{
-				steps.map(([n, h, p, s]) => (
-					<li class="reveal">
-						<span class="mono n">{n}</span>
-						<h3>{h}</h3>
-						<p>{p}</p>
-						<p class="mono s">{s}</p>
-					</li>
-				))
-			}
-		</ol>
-	</section>
-
-	<section id="rechner" class="sec wrap">
-		<div class="sec-h">
-			<p class="mono label">{de ? 'Rechner' : 'Calculator'}</p>
-			<h2>{de ? 'Was spart euch ein System?' : 'What would a system save you?'}</h2>
-			<p>{de ? 'Eure Zahlen rein, Schätzung raus – inklusive passendem Paket.' : 'Your numbers in, an estimate out – including the matching package.'}</p>
-		</div>
-		<Calculator lang={lang} />
-	</section>
-
-	<section id="pakete" class="sec wrap">
-		<div class="sec-h">
-			<p class="mono label">{de ? 'Pakete & Preise' : 'Packages & pricing'}</p>
-			<h2>{de ? 'Festpreise. Schriftlich. Vorab.' : 'Fixed prices. In writing. Upfront.'}</h2>
-			<p>
-				{
-					de
-						? 'Basis ist ein Tagessatz von 750 €. Pakete sind günstiger als Einzeltage, weil das System die Arbeit schneller macht – das ist der Punkt.'
-						: 'Base day rate is €750. Packages cost less than single days because the system makes the work faster – that is the point.'
-				}
-			</p>
-			<a class="mono calc-link" href="#rechner">{de ? 'Unsicher? Rechner nutzen ↑' : 'Not sure? Use the calculator ↑'}</a>
-		</div>
-		<div class="pk">
-			{
-				packages.map((p) => (
-					<article class:list={['pk-card', 'reveal', { hl: p.highlight }]}>
-						{p.highlight && <p class="mono pk-tag">{de ? 'Empfohlener Einstieg' : 'Recommended start'}</p>}
-						<h3>{p.name[lang]}</h3>
-						<p class="pk-price">
-							{p.price[lang]} <span class="mono">{p.unit[lang]}</span>
-						</p>
-						<p class="mono pk-days">{p.days[lang]}</p>
-						<ul>
-							{p.points.map((x) => (
-								<li>{x[lang]}</li>
-							))}
-						</ul>
-					</article>
-				))
-			}
-		</div>
-		<p class="mono pk-note">
-			{
-				de
-					? 'Alle Preise netto. Abrechnung über Micha Roessler LLC (USA); B2B-Kunden in der EU: Reverse-Charge, keine deutsche USt. auf der Rechnung. USD-Preise auf Anfrage.'
-					: 'All prices net. Invoiced by Micha Roessler LLC (USA); EU B2B clients: reverse charge. USD pricing on request.'
-			}
-		</p>
-	</section>
-
-	<section id="arbeiten" class="sec wrap">
-		<div class="sec-h">
-			<p class="mono label">{de ? 'Arbeiten' : 'Work'}</p>
-			<h2>{de ? 'Was ich gebaut und geschnitten habe' : 'What I have built and edited'}</h2>
-			<p>
-				{
-					de
-						? 'Ehrlich eingeordnet: Format-Schnitt für Marken ist ein junger Schwerpunkt bei mir, Workflows baue ich seit Jahren für meine eigenen Produktionen. Große Agentur-Logos habe ich nicht – deshalb startet jede Zusammenarbeit mit einem bezahlten Pilot statt mit Versprechen. Keine erfundenen Zahlen; Kunden ohne Freigabe bleiben anonym.'
-						: 'Honestly put: format editing for brands is a young focus for me; I have been building workflows for my own productions for years. I do not have big agency logos – which is why every engagement starts with a paid pilot instead of promises. No invented numbers; clients who have not approved being named stay anonymous.'
-				}
-			</p>
-		</div>
-		<div class="cases">
-			{
-				proof.map((c) => (
-					<article class="case reveal">
-						<p class="mono">{c.tag[lang]}</p>
-						<h3>{c.title[lang]}</h3>
-						<p>{c.text[lang]}</p>
-					</article>
-				))
-			}
-		</div>
-		<div class="tools">
-			<p class="mono label">{de ? 'Werkzeuge, die ich selbst baue und nutze' : 'Tools I build and use'}</p>
-			<dl>
-				{
-					tools.map((t) => (
-						<div class="reveal">
-							<dt>{t.name}</dt>
-							<dd>{t.text[lang]}</dd>
-						</div>
+					systemParts.map((s) => (
+						<li class="part grid reveal">
+							<span class="p-n">{s.n}</span>
+							<h3>{s.title[lang]}</h3>
+							<p>{s.text[lang]}</p>
+						</li>
 					))
 				}
-			</dl>
+			</ol>
+			<p class="ai mono label">
+				{de ? 'KI hilft. Der Schnitt entscheidet. Keine generierten Moderatoren, kein Auto-Slop.' : 'AI assists. The edit decides. No generated presenters, no auto-slop.'}
+			</p>
 		</div>
 	</section>
 
-	<section class="sec wrap about">
-		<div class="sec-h">
-			<p class="mono label">{de ? 'Wer dahinter steht' : 'Who is behind it'}</p>
-			<h2>{de ? 'Eine Person. Schnitt und System.' : 'One person. Edit and system.'}</h2>
+	<section id="demo" class="sec sec--tight">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">{de ? 'Live-Demo' : 'Live demo'}</p>
+				<p class="mono idx" aria-hidden="true">{sec(2)}</p>
+				<h2>{de ? 'Grafik aus der Tabelle. Probiert es aus.' : 'Graphics from a spreadsheet. Try it.'}</h2>
+				<p>
+					{
+						de
+							? 'So funktionieren datengetriebene Grafiken: Ihr pflegt Werte, das Template rendert – in 16:9 und 9:16. Ändert eine Zahl.'
+							: 'This is how data-driven graphics work: you maintain values, the template renders – in 16:9 and 9:16. Change a number.'
+					}
+				</p>
+			</div>
+			<SpecDemo lang={lang} />
 		</div>
-		<div class="about-grid">
-			<figure class="about-img">
-				<Image src={portrait} alt="Micha Rössler" widths={[300, 600, 900]} sizes="300px" />
-				<figcaption class="mono">Micha Rössler · Editor & {de ? 'Filmemacher' : 'filmmaker'}</figcaption>
-			</figure>
-			<p class="about-p">
+	</section>
+
+	<section id="ablauf" class="sec sec--ink">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">{de ? 'Ablauf' : 'Process'}</p>
+				<p class="mono idx" aria-hidden="true">{sec(3)}</p>
+				<h2 class="bw">
+					<span class="bw-txt">{de ? 'Klein anfangen, dann skalieren' : 'Start small, then scale'}</span>
+					<span class="bw-bars" aria-hidden="true"><i /><i /><i /><i /></span>
+				</h2>
+			</div>
+			<ol class="steps grid">
+				{
+					steps.map(([n, h, p, s]) => (
+						<li class="reveal">
+							<span class="st-n">{n}</span>
+							<h3>{h}</h3>
+							<p>{p}</p>
+							<p class="mono st-s">{s}</p>
+						</li>
+					))
+				}
+			</ol>
+		</div>
+	</section>
+
+	<section id="rechner" class="sec">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">{de ? 'Rechner' : 'Calculator'}</p>
+				<p class="mono idx" aria-hidden="true">{sec(4)}</p>
+				<h2>{de ? 'Was spart euch ein System?' : 'What would a system save you?'}</h2>
+				<p>{de ? 'Eure Zahlen rein, Schätzung raus – inklusive passendem Paket.' : 'Your numbers in, an estimate out – including the matching package.'}</p>
+			</div>
+			<Calculator lang={lang} />
+		</div>
+	</section>
+
+	<div class="rep-wrap">
+		<div class="rep" data-lang={lang} aria-hidden="true">
+			<div class="rep-rows">
+				{
+					[0, 1, 2, 3, 4].map((r) =>
+						r === 3 ? (
+							<div class="rep-row rep-inv">
+								<span class="wrap">
+									<span>{repWord} 01 <em>=</em></span> <span>{repWord} 52</span>
+								</span>
+							</div>
+						) : (
+							<div class="rep-row">
+								<span class="wrap">{Array.from({ length: 6 }, () => repWord).join(' ')}</span>
+							</div>
+						),
+					)
+				}
+			</div>
+		</div>
+		<p class="sr-only">{de ? 'Gleiche Qualität in jeder Folge: Folge 52 sieht so gut aus wie Folge 01.' : 'Consistent quality in every episode: episode 52 looks as good as episode 01.'}</p>
+	</div>
+
+	<section id="pakete" class="sec">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">{de ? 'Pakete & Preise' : 'Packages & pricing'}</p>
+				<p class="mono idx" aria-hidden="true">{sec(5)}</p>
+				<h2>{de ? 'Festpreise. Schriftlich. Vorab.' : 'Fixed prices. In writing. Upfront.'}</h2>
+				<div class="aside">
+					<p>
+						{
+							de
+								? 'Basis ist ein Tagessatz von 750 €. Pakete sind günstiger als Einzeltage, weil das System die Arbeit schneller macht – das ist der Punkt.'
+								: 'Base day rate is €750. Packages cost less than single days because the system makes the work faster – that is the point.'
+						}
+					</p>
+					<a class="mono calc-link" href="#rechner">{de ? 'Unsicher? Rechner nutzen ↑' : 'Not sure? Use the calculator ↑'}</a>
+				</div>
+			</div>
+			<div class="pk">
+				{
+					packages.map((p, i) => {
+						const m = p.price[lang].match(/^(ab|from)\s+(.+)$/);
+						return (
+							<article class:list={['pk-col', { hl: p.highlight }]}>
+								<p class="mono pk-top">
+									<span aria-hidden="true">P/{String(i + 1).padStart(2, '0')}</span>
+									{p.highlight && <span class="pk-tag">{de ? 'Empfohlener Einstieg' : 'Recommended start'}</span>}
+								</p>
+								<h3>{p.name[lang]}</h3>
+								<p class="pk-price">
+									{m ? (
+										<>
+											<span class="pk-pre">{m[1]}</span> {m[2]}
+										</>
+									) : (
+										p.price[lang]
+									)}{' '}
+									<span class="mono">{p.unit[lang]}</span>
+								</p>
+								<p class="mono pk-days">{p.days[lang]}</p>
+								<ul>
+									{p.points.map((x) => (
+										<li>{x[lang]}</li>
+									))}
+								</ul>
+							</article>
+						);
+					})
+				}
+			</div>
+			<p class="mono pk-note">
 				{
 					de
-						? 'Ich bin Micha Rössler, Editor und Filmemacher. Gelernt habe ich das Handwerk bei Langform-Dokus für YouTube – 1,2 und 1,4 Mio. Aufrufe für Felix von der Laden. Heute schneide ich Serienformate wie Auto-Reviews und baue die Systeme dahinter: Templates, Remotion-Grafiken und eigene Tools wie eine Offload-App für den Ingest. Wenn ich nicht im Schnitt sitze, drehe ich Expeditionsfilme.'
-						: 'I am Micha Rössler, editor and filmmaker. I learned the craft on long-form YouTube docs – 1.2M and 1.4M views for Felix von der Laden. Today I edit series formats like car reviews and build the systems behind them: templates, Remotion graphics and my own tools such as an offload app for ingest. When I am not editing, I shoot expedition films.'
+						? 'Alle Preise netto. Abrechnung über Micha Roessler LLC (USA); B2B-Kunden in der EU: Reverse-Charge, keine deutsche USt. auf der Rechnung. USD-Preise auf Anfrage.'
+						: 'All prices net. Invoiced by Micha Roessler LLC (USA); EU B2B clients: reverse charge. USD pricing on request.'
 				}
 			</p>
-			<a class="btn" href={de ? 'https://micharoessler.com/de/' : 'https://micharoessler.com/'}>micharoessler.com <span class="arr">↗</span></a>
 		</div>
 	</section>
 
-	<section id="faq" class="sec wrap">
-		<div class="sec-h">
-			<p class="mono label">FAQ</p>
-			<h2>{de ? 'Häufige Fragen' : 'Common questions'}</h2>
-		</div>
-		<div class="faq">
-			{
-				faq.map((f) => (
-					<details>
-						<summary>{f.q[lang]}</summary>
-						<p>{f.a[lang]}</p>
-					</details>
-				))
-			}
-		</div>
-	</section>
-
-	<section id="kontakt" class="contact">
-		<div class="wrap c-in">
-			<div class="c-txt">
-				<p class="mono label">{de ? 'Kontakt' : 'Contact'}</p>
-				<div class="c-who">
-					<Image src={portrait} alt="Micha Rössler" width={128} height={128} widths={[64, 128]} sizes="64px" class="c-avatar" />
-					<p><b>Micha Rössler</b><br /><span class="mono">{de ? 'antwortet persönlich' : 'replies personally'}</span></p>
-				</div>
-				<h2>{de ? 'Erzählt mir von eurem Format.' : 'Tell me about your format.'}</h2>
+	<section id="arbeiten" class="sec">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">{de ? 'Arbeiten' : 'Work'}</p>
+				<p class="mono idx" aria-hidden="true">{sec(6)}</p>
+				<h2>{de ? 'Was ich gebaut und geschnitten habe' : 'What I have built and edited'}</h2>
 				<p>
-					{de ? 'Antwort innerhalb von zwei Werktagen. Oder direkt: ' : 'Reply within two working days. Or directly: '}
-					<a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
+					{
+						de
+							? 'Ehrlich eingeordnet: Format-Schnitt für Marken ist ein junger Schwerpunkt bei mir, Workflows baue ich seit Jahren für meine eigenen Produktionen. Große Agentur-Logos habe ich nicht – deshalb startet jede Zusammenarbeit mit einem bezahlten Pilot statt mit Versprechen. Keine erfundenen Zahlen; Kunden ohne Freigabe bleiben anonym.'
+							: 'Honestly put: format editing for brands is a young focus for me; I have been building workflows for my own productions for years. I do not have big agency logos – which is why every engagement starts with a paid pilot instead of promises. No invented numbers; clients who have not approved being named stay anonymous.'
+					}
 				</p>
-				<ul class="trust">
-					<li>{de ? 'Ihr schreibt direkt mit mir – keine Agentur, kein Vertrieb, kein Subunternehmer.' : 'You talk to me directly – no agency, no sales team, no subcontractors.'}</li>
-					<li>{de ? 'Festpreis schriftlich vor Start. Überzeugt euch der Pilot nicht, endet die Zusammenarbeit dort – ohne Folgekosten.' : 'Fixed price in writing before we start. If the pilot does not convince you, it ends there – no follow-on costs.'}</li>
-					<li>{de ? 'Ich bin Deutscher, arbeite remote von unterwegs und rechne über meine US-Firma Micha Roessler LLC ab.' : 'I am German, work remotely while travelling and invoice through my US company, Micha Roessler LLC.'}</li>
-				</ul>
 			</div>
-			<form class="f" id="brief" data-subject={de ? 'Anfrage Formatschnitt' : 'Formatschnitt enquiry'}>
-				<fieldset>
-					<legend class="mono">01 · {de ? 'Ihr' : 'You'}</legend>
-					<label><span class="mono">{de ? 'Name' : 'Name'}</span><input name="Name" required autocomplete="name" /></label>
-					<label><span class="mono">{de ? 'Firma / Kanal' : 'Company / channel'}</span><input name={de ? 'Firma' : 'Company'} autocomplete="organization" /></label>
-				</fieldset>
-				<fieldset>
-					<legend class="mono">02 · {de ? 'Das Format' : 'The format'}</legend>
-					<label><span class="mono">{de ? 'Link zum Format' : 'Link to the format'}</span><input name={de ? 'Format-Link' : 'Format link'} type="url" placeholder="https://youtube.com/…" /></label>
-					<label><span class="mono">{de ? 'Folgen pro Monat' : 'Episodes per month'}</span><input name={de ? 'Folgen/Monat' : 'Episodes/month'} inputmode="numeric" /></label>
-				</fieldset>
-				<fieldset>
-					<legend class="mono">03 · {de ? 'Der Rahmen' : 'The frame'}</legend>
-					<div class="chips" role="radiogroup" aria-label={de ? 'Budget' : 'Budget'}>
+			<div class="cases">
+				{
+					proof.map((c, i) => (
+						<article class="case reveal">
+							<p class="mono case-k">
+								<span>{c.tag[lang]}</span>
+								<span aria-hidden="true">{String.fromCharCode(65 + i)}</span>
+							</p>
+							<h3>{c.title[lang]}</h3>
+							<p>{c.text[lang]}</p>
+						</article>
+					))
+				}
+			</div>
+			<div class="tools">
+				<p class="mono label">{de ? 'Werkzeuge, die ich selbst baue und nutze' : 'Tools I build and use'}</p>
+				<dl>
+					{
+						tools.map((t) => (
+							<div class="reveal">
+								<dt>{t.name}</dt>
+								<dd>{t.text[lang]}</dd>
+							</div>
+						))
+					}
+				</dl>
+			</div>
+		</div>
+	</section>
+
+	<section class="sec about">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">{de ? 'Wer dahinter steht' : 'Who is behind it'}</p>
+				<p class="mono idx" aria-hidden="true">{sec(7)}</p>
+				<h2>{de ? 'Eine Person. Schnitt und System.' : 'One person. Edit and system.'}</h2>
+			</div>
+			<div class="about-g grid">
+				<figure class="about-img">
+					<Image src={portrait} alt="Micha Rössler" widths={[360, 720, 1080]} sizes="(min-width: 1040px) 30vw, 100vw" />
+					<figcaption class="mono">Micha Rössler · Editor & {de ? 'Filmemacher' : 'filmmaker'}</figcaption>
+				</figure>
+				<div class="about-t">
+					<p class="about-p">
 						{
-							budgets.map((b, i) => (
-								<label class="chip">
-									<input type="radio" name="Budget" value={b} checked={i === 0} />
-									<span>{b}</span>
-								</label>
-							))
+							de
+								? 'Ich bin Micha Rössler, Editor und Filmemacher. Gelernt habe ich das Handwerk bei Langform-Dokus für YouTube – 1,2 und 1,4 Mio. Aufrufe für Felix von der Laden. Heute schneide ich Serienformate wie Auto-Reviews und baue die Systeme dahinter: Templates, Remotion-Grafiken und eigene Tools wie eine Offload-App für den Ingest. Wenn ich nicht im Schnitt sitze, drehe ich Expeditionsfilme.'
+								: 'I am Micha Rössler, editor and filmmaker. I learned the craft on long-form YouTube docs – 1.2M and 1.4M views for Felix von der Laden. Today I edit series formats like car reviews and build the systems behind them: templates, Remotion graphics and my own tools such as an offload app for ingest. When I am not editing, I shoot expedition films.'
 						}
-					</div>
-					<label><span class="mono">{de ? 'Start' : 'Start'}</span><input name="Start" placeholder={de ? 'z. B. Januar' : 'e.g. January'} /></label>
-					<label><span class="mono">{de ? 'Was soll besser werden?' : 'What should get better?'}</span><textarea name={de ? 'Ziel' : 'Goal'} rows="4"></textarea></label>
-				</fieldset>
-				<div class="f-send">
-					<button class="btn btn--ink" type="submit">{de ? 'E-Mail vorbereiten' : 'Prepare email'} <span class="arr">→</span></button>
-					<p class="mono f-note">{de ? 'Öffnet euer Mailprogramm. Auf dieser Seite wird nichts gespeichert.' : 'Opens your email app. Nothing is stored on this site.'}</p>
+					</p>
+					<a class="btn" href={de ? 'https://micharoessler.com/de/' : 'https://micharoessler.com/'}>micharoessler.com <span class="arr">↗</span></a>
 				</div>
-			</form>
+			</div>
+		</div>
+	</section>
+
+	<section id="faq" class="sec">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">FAQ</p>
+				<p class="mono idx" aria-hidden="true">{sec(8)}</p>
+				<h2>{de ? 'Häufige Fragen' : 'Common questions'}</h2>
+			</div>
+			<div class="faq">
+				{
+					faq.map((f, i) => (
+						<details name="faq">
+							<summary>
+								<span class="mono q-n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+								<span class="q-t">{f.q[lang]}</span>
+								<i class="q-x" aria-hidden="true" />
+							</summary>
+							<p>{f.a[lang]}</p>
+						</details>
+					))
+				}
+			</div>
+		</div>
+	</section>
+
+	<section id="kontakt" class="sec sec--ink contact">
+		<div class="wrap">
+			<div class="sec-h grid">
+				<p class="mono label">{de ? 'Kontakt' : 'Contact'}</p>
+				<p class="mono idx" aria-hidden="true">{sec(9)}</p>
+				<h2 class="bw">
+					<span class="bw-txt">{de ? 'Erzählt mir von eurem Format.' : 'Tell me about your format.'}</span>
+					<span class="bw-bars" aria-hidden="true"><i /><i /><i /><i /></span>
+				</h2>
+			</div>
+			<div class="grid c-in">
+				<div class="c-txt">
+					<div class="c-who">
+						<Image src={portrait} alt="Micha Rössler" width={128} height={128} widths={[64, 128]} sizes="64px" class="c-avatar" />
+						<p><b>Micha Rössler</b><br /><span class="mono">{de ? 'antwortet persönlich' : 'replies personally'}</span></p>
+					</div>
+					<p class="c-mail">
+						{de ? 'Antwort innerhalb von zwei Werktagen. Oder direkt: ' : 'Reply within two working days. Or directly: '}
+						<a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
+					</p>
+					<ul class="trust">
+						<li>{de ? 'Ihr schreibt direkt mit mir – keine Agentur, kein Vertrieb, kein Subunternehmer.' : 'You talk to me directly – no agency, no sales team, no subcontractors.'}</li>
+						<li>{de ? 'Festpreis schriftlich vor Start. Überzeugt euch der Pilot nicht, endet die Zusammenarbeit dort – ohne Folgekosten.' : 'Fixed price in writing before we start. If the pilot does not convince you, it ends there – no follow-on costs.'}</li>
+						<li>{de ? 'Ich bin Deutscher, arbeite remote von unterwegs und rechne über meine US-Firma Micha Roessler LLC ab.' : 'I am German, work remotely while travelling and invoice through my US company, Micha Roessler LLC.'}</li>
+					</ul>
+				</div>
+				<form class="f" id="brief" data-subject={de ? 'Anfrage Formatschnitt' : 'Formatschnitt enquiry'}>
+					<fieldset>
+						<legend class="mono">01 · {de ? 'Ihr' : 'You'}</legend>
+						<label><span class="mono">{de ? 'Name' : 'Name'}</span><input name="Name" required autocomplete="name" /></label>
+						<label><span class="mono">{de ? 'Firma / Kanal' : 'Company / channel'}</span><input name={de ? 'Firma' : 'Company'} autocomplete="organization" /></label>
+					</fieldset>
+					<fieldset>
+						<legend class="mono">02 · {de ? 'Das Format' : 'The format'}</legend>
+						<label><span class="mono">{de ? 'Link zum Format' : 'Link to the format'}</span><input name={de ? 'Format-Link' : 'Format link'} type="url" placeholder="https://youtube.com/…" /></label>
+						<label><span class="mono">{de ? 'Folgen pro Monat' : 'Episodes per month'}</span><input name={de ? 'Folgen/Monat' : 'Episodes/month'} inputmode="numeric" /></label>
+					</fieldset>
+					<fieldset>
+						<legend class="mono">03 · {de ? 'Der Rahmen' : 'The frame'}</legend>
+						<div class="chips" role="radiogroup" aria-label={de ? 'Budget' : 'Budget'}>
+							{
+								budgets.map((b, i) => (
+									<label class="chip">
+										<input type="radio" name="Budget" value={b} checked={i === 0} />
+										<span>{b}</span>
+									</label>
+								))
+							}
+						</div>
+						<label><span class="mono">{de ? 'Start' : 'Start'}</span><input name="Start" placeholder={de ? 'z. B. Januar' : 'e.g. January'} /></label>
+						<label><span class="mono">{de ? 'Was soll besser werden?' : 'What should get better?'}</span><textarea name={de ? 'Ziel' : 'Goal'} rows="4"></textarea></label>
+					</fieldset>
+					<div class="f-send">
+						<button class="btn btn--ink" type="submit">{de ? 'E-Mail vorbereiten' : 'Prepare email'} <span class="arr">→</span></button>
+						<p class="mono f-note">{de ? 'Öffnet euer Mailprogramm. Auf dieser Seite wird nichts gespeichert.' : 'Opens your email app. Nothing is stored on this site.'}</p>
+					</div>
+				</form>
+			</div>
 		</div>
 	</section>
 </Base>
 
 <script>
-	// Hero timeline: drag the playhead or use J/K/L like in an NLE.
-	const tl = document.querySelector<HTMLElement>('.tl');
-	if (tl) {
-		const beats: [number, number, string][] = JSON.parse(tl.dataset.beats ?? '[]');
-		const lanes = tl.querySelector<HTMLElement>('.tl-tracks')!;
-		const head = tl.querySelector<HTMLElement>('.playhead')!;
-		const tc = tl.querySelector<HTMLElement>('.tc')!;
-		const note = tl.querySelector<HTMLElement>('[data-note]')!;
-		const total = 12 * 60 + 48; // seconds in the mock episode
-		let p = 0;
-		let raf = 0;
-		const pad = (n: number) => String(Math.floor(n)).padStart(2, '0');
-		const set = (v: number) => {
-			p = Math.min(1, Math.max(0, v));
-			tl.classList.add('live');
-			head.style.setProperty('--p', String(p));
-			const t = p * total;
-			tc.textContent = `00:${pad(t / 60)}:${pad(t % 60)}:${pad((t % 1) * 25)}`;
-			const pct = p * 100;
-			const beat = beats.find(([a, b]) => pct >= a && pct < b) ?? beats[beats.length - 1];
-			if (beat && note.textContent !== beat[2]) note.textContent = beat[2];
-			tl.querySelectorAll<HTMLElement>('.clip').forEach((c) => {
-				const x = parseFloat(c.style.getPropertyValue('--x'));
-				const w = parseFloat(c.style.getPropertyValue('--w'));
-				c.classList.toggle('hot', pct >= x && pct < x + w && w < 100);
+	// Hero multiplier wall: Folgen × (1 + clips) = Inhalte. Tiles cut in on a 25 fps frame grid.
+	const mw = document.querySelector<HTMLElement>('[data-mw]');
+	if (mw) {
+		const de = mw.dataset.lang === 'de';
+		const per = Number(mw.dataset.per ?? 6);
+		const range = mw.querySelector<HTMLInputElement>('input[type=range]')!;
+		const slots = [...mw.querySelectorAll<HTMLElement>('.slot')];
+		const set = (k: string, t: string) => mw.querySelectorAll(`[data-o="${k}"]`).forEach((el) => (el.textContent = t));
+		const word = (n: number) => (de ? (n === 1 ? 'Folge' : 'Folgen') : n === 1 ? 'episode' : 'episodes');
+		let cur = Number(range.value);
+		const render = (n: number) => {
+			const total = n * (1 + per);
+			set('n', String(n));
+			set('t', String(total));
+			set('nl', word(n));
+			range.setAttribute('aria-valuetext', `${n} ${word(n)} → ${total} ${de ? 'Inhalte' : 'pieces of content'}`);
+			slots.forEach((s, i) => {
+				const on = i < n;
+				if (on !== s.classList.contains('on')) s.style.setProperty('--s', String(on ? i - cur : cur - 1 - i));
+				s.classList.toggle('on', on);
 			});
+			cur = n;
 		};
-		const fromPointer = (e: PointerEvent) => {
-			const lane = lanes.querySelector<HTMLElement>('.lane')!.getBoundingClientRect();
-			set((e.clientX - lane.left) / lane.width);
-		};
-		const stop = () => {
-			cancelAnimationFrame(raf);
-			raf = 0;
-		};
-		const play = (dir: number) => {
-			stop();
-			let last = performance.now();
-			const tick = (now: number) => {
-				set(p + ((now - last) / 9000) * dir);
-				last = now;
-				if ((dir > 0 && p < 1) || (dir < 0 && p > 0)) raf = requestAnimationFrame(tick);
-			};
-			raf = requestAnimationFrame(tick);
-		};
-		lanes.addEventListener('pointerdown', (e) => {
-			stop();
-			lanes.setPointerCapture(e.pointerId);
-			fromPointer(e);
-			const move = (ev: PointerEvent) => fromPointer(ev);
-			lanes.addEventListener('pointermove', move);
-			lanes.addEventListener('pointerup', () => lanes.removeEventListener('pointermove', move), { once: true });
+		range.addEventListener('input', () => {
+			mw.style.setProperty('--base', '0');
+			render(Number(range.value));
 		});
-		tl.addEventListener('keydown', (e) => {
-			const k = e.key.toLowerCase();
-			if (k === 'l') play(1);
-			else if (k === 'j') play(-1);
-			else if (k === 'k' || k === ' ') raf ? stop() : play(1);
-			else if (k === 'arrowright') set(p + 0.02);
-			else if (k === 'arrowleft') set(p - 0.02);
-			else return;
-			e.preventDefault();
-		});
+		render(cur);
 	}
 
 	const f = document.getElementById('brief') as HTMLFormElement;
@@ -490,593 +535,1020 @@ const offerLd = {
 </script>
 
 <style>
-	.hero {
-		display: grid;
-		gap: clamp(2.5rem, 5vw, 4rem);
-		padding-block: clamp(3.5rem, 8vw, 6.5rem) clamp(3.5rem, 7vw, 5.5rem);
+	/* ---------- hero ---------- */
+	.hero-in {
+		position: relative;
+		padding-block: clamp(32px, 4.5vw, 72px) clamp(64px, 8vw, 128px);
 	}
-	@media (min-width: 1040px) {
-		.hero {
-			grid-template-columns: 1.05fr 1fr;
-			align-items: center;
+	.guides {
+		position: absolute;
+		inset: 0 var(--margin);
+		pointer-events: none;
+	}
+	.guides span {
+		border-inline: 1px solid var(--guide-35);
+	}
+	@media (max-width: 719px) {
+		.guides span:nth-child(n + 5) {
+			display: none;
 		}
 	}
+	.hero-g {
+		position: relative;
+		align-items: start;
+	}
+	.hero-k,
 	h1 {
-		font-size: clamp(2.4rem, 4.6vw, 4.25rem);
-		margin: 1.25rem 0 1.5rem;
-		letter-spacing: -0.035em;
-		text-wrap: balance;
+		grid-column: 1 / -1;
+	}
+	h1 {
+		margin: clamp(20px, 3vw, 40px) 0 clamp(40px, 5vw, 80px);
+		hyphens: manual;
+	}
+	.hero-txt,
+	.mw {
+		grid-column: 1 / -1;
+	}
+	@media (min-width: 720px) and (max-width: 1039px) {
+		.hero-txt {
+			grid-column: 1 / span 9;
+		}
+	}
+	@media (min-width: 1040px) {
+		.hero-txt {
+			grid-column: 1 / span 5;
+		}
+		.mw {
+			grid-column: 7 / -1;
+		}
 	}
 	.hero-sub {
-		font-size: var(--s2);
-		line-height: 1.5;
-		color: var(--graphite);
-		max-width: 36rem;
+		font-size: var(--lead);
+		line-height: 1.45;
 	}
 	.hero-cta {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem;
-		margin-top: 2rem;
+		gap: 12px;
+		margin-top: 32px;
 	}
 	.spec {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-		margin: 2.5rem 0 0;
-		border-top: 1px solid var(--rule);
+		grid-template-columns: 1fr 1fr;
+		column-gap: var(--gutter);
+		margin: 48px 0 0;
 	}
 	.spec div {
-		padding: 0.9rem 0.75rem 0 0;
+		border-top: 1px solid var(--ink);
+		padding: 10px 0 18px;
 	}
 	.spec dd {
-		margin: 0.3rem 0 0;
-		font-weight: 520;
-		font-size: var(--s0);
+		margin: 4px 0 0;
+		font-weight: 650;
+		font-stretch: 105%;
 	}
 
-	/* timeline diagram */
-	.tl {
-		margin: 0;
-		background: var(--dark);
-		border-radius: 12px;
-		padding: 1rem 1rem 1.1rem;
-		color: #c9cac6;
-		box-shadow: 0 30px 60px -30px rgb(20 20 22 / 0.45);
+	/* ---------- multiplier wall ---------- */
+	.mw {
+		margin: 56px 0 0;
+		container-type: inline-size;
 	}
-	.tl .mono {
-		color: #8d8f96;
+	@media (min-width: 1040px) {
+		.mw {
+			margin-top: 6px;
+		}
 	}
-	.tl-head {
+	@container (max-width: 519px) {
+		.mw-head span:last-child {
+			display: none;
+		}
+	}
+	.mw-head {
 		display: flex;
 		justify-content: space-between;
-		gap: 1rem;
-		padding-bottom: 0.75rem;
-		border-bottom: 1px solid #26272b;
-		overflow: hidden;
-		white-space: nowrap;
+		gap: 16px;
+		padding-bottom: 10px;
+		border-bottom: 1px solid var(--ink);
+		margin-bottom: 16px;
+		color: var(--ink);
 	}
-	.tl-head .tc {
-		color: var(--clip-blue);
-	}
-	.tl-ruler {
-		display: flex;
-		justify-content: space-between;
-		margin: 0.6rem 0 0.4rem 2.6rem;
-		font-size: 0.625rem;
-	}
-	.tl-tracks {
-		position: relative;
+	.unit {
 		display: grid;
+		grid-template-columns: repeat(6, 1fr);
 		gap: 6px;
 	}
-	.track {
-		display: grid;
-		grid-template-columns: 2.2rem 1fr;
-		gap: 0.4rem;
-		align-items: center;
+	.unit .ep {
+		grid-column: 1 / -1;
+		aspect-ratio: 16 / 9;
 	}
-	.tn {
-		font-size: 0.625rem;
+	.unit .clip {
+		aspect-ratio: 9 / 16;
 	}
-	.lane {
-		position: relative;
-		height: 38px;
-		background: #1b1c1f;
-		border-radius: 4px;
-		overflow: hidden;
-	}
-	.clip {
-		position: absolute;
-		top: 3px;
-		bottom: 3px;
-		left: var(--x);
-		width: calc(var(--w) - 2px);
-		background: var(--c);
-		border-radius: 3px;
-		color: #141416;
-		font-family: var(--mono);
-		font-size: 0.625rem;
-		padding: 0.25rem 0.35rem;
-		white-space: nowrap;
-		overflow: hidden;
-		opacity: 0;
-		translate: -8px 0;
-	}
-	.tl.in .clip {
-		animation: clipIn 0.35s var(--ease) forwards;
-		animation-delay: var(--d);
-	}
-	@keyframes clipIn {
-		to {
-			opacity: 1;
-			translate: 0 0;
+	@container (min-width: 520px) {
+		/* widths proportional to 16:9 vs 9:16 at equal height (gaps sit outside the fr maths) */
+		.unit {
+			grid-template-columns: 3.16fr repeat(6, 1fr);
+			gap: 8px;
+		}
+		.unit .ep {
+			grid-column: auto;
 		}
 	}
-	.wave {
-		position: absolute;
-		inset: 3px 0;
-		width: 100%;
-		height: calc(100% - 6px);
-		opacity: 0.55;
+	.tile {
+		position: relative;
+		background: var(--ink);
 	}
-	.playhead {
+	.tile .mono {
 		position: absolute;
-		top: -6px;
-		bottom: -6px;
-		left: calc(2.6rem + 0%);
-		width: 2px;
-		background: var(--blue);
-		box-shadow: 0 0 0 1px rgb(47 91 224 / 0.25);
+		left: 8px;
+		top: 8px;
+		font-size: 10px;
+		line-height: 1.25;
+		color: var(--paper);
 	}
-	.playhead::before {
+	.tile .t-f {
+		top: auto;
+		bottom: 7px;
+		color: var(--muted-ink);
+	}
+	.clip::before {
+		/* the cut */
 		content: '';
 		position: absolute;
-		top: -4px;
-		left: -5px;
-		border: 6px solid transparent;
-		border-top-color: var(--blue);
-	}
-	.tl.in .playhead {
-		animation: play 3.6s 0.9s var(--ease) forwards;
-	}
-	@keyframes play {
-		to {
-			left: calc(2.6rem + (100% - 2.6rem) * 0.62);
-		}
+		inset: 0 0 auto;
+		height: 2px;
+		background: var(--signal);
 	}
 	.tl {
-		outline-offset: 4px;
+		position: absolute;
+		left: 8px;
+		right: 8px;
+		bottom: 30px;
+		height: 1px;
+		background: var(--rule-ink);
 	}
-	.tl-tracks {
-		cursor: ew-resize;
-		touch-action: pan-y;
-		user-select: none;
+	.tl i {
+		position: absolute;
+		left: var(--x);
+		bottom: -5px;
+		width: 2px;
+		height: 11px;
+		background: var(--signal);
 	}
-	.tl.live .playhead {
-		animation: none;
-		left: calc(2.6rem + (100% - 2.6rem) * var(--p, 0));
+	.js .unit .tile {
+		clip-path: inset(0 100% 0 0);
 	}
-	.clip {
-		transition:
-			filter 0.15s,
-			box-shadow 0.15s;
+	.js .tl i {
+		transform: scaleY(0);
 	}
-	.clip.hot {
-		filter: brightness(1.12);
-		box-shadow: 0 0 0 2px #fff inset;
+	.js .mw.in .unit .tile {
+		animation: cutIn var(--t-wipe) var(--ease) calc(var(--d) * var(--frame)) forwards;
 	}
-	.tl-note {
-		margin-top: 0.9rem;
-		min-height: 2.6em;
-		color: #e9e9e4 !important;
-		text-transform: none;
-		letter-spacing: 0;
-		font-size: 0.75rem;
+	.js .mw.in .tl i {
+		animation: cutIn 0s linear calc(var(--d) * var(--frame)) forwards;
 	}
-	.tl-keys kbd {
-		display: inline-block;
-		min-width: 1.5em;
-		margin-left: 0.25em;
-		padding: 0 0.3em;
-		border: 1px solid #3a3b42;
-		border-radius: 3px;
-		text-align: center;
-		font-family: var(--mono);
-		color: #c9cac6;
-	}
-	.tl-cap {
-		display: flex;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		margin-top: 0.9rem;
-		font-size: 0.68rem;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.clip {
-			opacity: 1;
-			translate: none;
+	@keyframes cutIn {
+		to {
+			clip-path: inset(0 0 0 0);
+			transform: none;
 		}
 	}
 
+	.wall {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px 16px;
+		margin-top: 20px;
+	}
+	@container (min-width: 520px) {
+		.wall {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+	.slot {
+		display: grid;
+		gap: 4px;
+	}
+	.s-n {
+		font-size: 10px;
+		line-height: 1;
+	}
+	.slot.on .s-n {
+		color: var(--ink);
+	}
+	.s-t {
+		display: grid;
+		grid-template-columns: 3.16fr repeat(6, 1fr);
+		gap: 3px;
+	}
+	.s-t i {
+		position: relative;
+		aspect-ratio: 9 / 16;
+		outline: 1px solid var(--guide);
+		outline-offset: -1px;
+	}
+	.s-t i:first-child {
+		aspect-ratio: 16 / 9;
+	}
+	.s-t i::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: var(--ink);
+		clip-path: inset(0 100% 0 0);
+		transition: clip-path var(--t-wipe) var(--ease);
+		transition-delay: calc((var(--base, 0) + var(--s, 0) * 3 + var(--k)) * var(--frame));
+	}
+	.s-t i:not(:first-child)::before {
+		content: '';
+		position: absolute;
+		inset: 0 0 auto;
+		height: 1px;
+		background: var(--signal);
+		z-index: 1;
+		transform: scaleX(0);
+		transition: transform 0s linear;
+		transition-delay: inherit;
+	}
+	html:not(.js) .slot.on i::after,
+	.mw.in .slot.on i::after {
+		clip-path: inset(0 0 0 0);
+	}
+	html:not(.js) .slot.on i::before,
+	.mw.in .slot.on i::before {
+		transform: none;
+		transition-delay: calc((var(--base, 0) + var(--s, 0) * 3 + var(--k) + 5) * var(--frame));
+	}
+
+	.mw-ctrl {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		align-items: center;
+		gap: 4px 16px;
+		margin-top: 28px;
+	}
+	.mw-ctrl label {
+		color: var(--ink);
+	}
+	.mw-v {
+		color: var(--ink);
+		font-size: 13px;
+	}
+	.mw-ctrl input {
+		grid-column: 1 / -1;
+	}
+	.mw-eq {
+		display: flex;
+		flex-wrap: nowrap;
+		align-items: flex-end;
+		gap: 8px clamp(16px, 3cqi, 32px);
+		margin-top: 20px;
+		padding-top: 20px;
+		border-top: 1px solid var(--ink);
+	}
+	.eq b {
+		display: block;
+		font-size: clamp(64px, 14cqi, 128px);
+		font-weight: 850;
+		font-stretch: 105%;
+		letter-spacing: -0.04em;
+		line-height: 0.84;
+	}
+	.eq .mono {
+		display: block;
+		margin-top: 10px;
+		color: var(--ink);
+	}
+	.eq-t {
+		flex: 1;
+		min-width: 0;
+	}
+	.eq-t b {
+		color: var(--signal);
+	}
+	.eq-arr {
+		font-size: clamp(36px, 7cqi, 64px);
+		line-height: 1;
+		font-weight: 300;
+		padding-bottom: 34px;
+	}
+	.mw-f {
+		margin-top: 14px;
+		text-transform: none;
+		letter-spacing: 0;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.js .unit .tile {
+			clip-path: none;
+		}
+		.js .tl i {
+			transform: none;
+		}
+	}
+
+	/* ---------- strip ---------- */
 	.strip {
-		border-top: 1px solid var(--rule);
-		border-bottom: 1px solid var(--rule);
-		background: var(--surface);
+		border-block: 1px solid var(--ink);
 	}
 	.strip-in {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.75rem 2rem;
-		padding-block: 1.4rem;
+		align-items: baseline;
+		row-gap: 12px;
+		padding-block: 22px;
+	}
+	.strip-k,
+	.strip ul,
+	.strip-n {
+		grid-column: 1 / -1;
+	}
+	@media (min-width: 1040px) {
+		.strip-k {
+			grid-column: 1 / span 2;
+		}
+		.strip ul {
+			grid-column: 3 / span 6;
+		}
+		.strip-n {
+			grid-column: 9 / -1;
+			justify-content: flex-end;
+		}
 	}
 	.strip ul {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem 1.75rem;
+		gap: 4px 32px;
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		font-weight: 560;
-		letter-spacing: -0.02em;
-		font-size: var(--s2);
-	}
-	.strip-n {
-		margin-left: auto;
-		display: flex;
-		gap: 1rem;
-		text-transform: none;
-	}
-	.strip-n a {
-		color: var(--blue);
-		text-decoration: none;
+		font-size: clamp(22px, 2vw, 30px);
+		line-height: 1.1;
+		font-weight: 750;
+		font-stretch: 105%;
+		letter-spacing: -0.03em;
 	}
 	.strip li .mono {
-		font-weight: 400;
-		letter-spacing: 0;
-		text-transform: none;
+		font-size: 11px;
+		letter-spacing: 0.02em;
+		font-stretch: 100%;
+	}
+	.strip-n {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px 20px;
+	}
+	.strip-n a {
+		color: var(--ink);
+		text-decoration-color: var(--signal);
+		text-decoration-thickness: 2px;
 	}
 
+	/* ---------- system rows ---------- */
 	.parts {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 1px;
-		background: var(--rule);
-		border: 1px solid var(--rule);
+		border-bottom: 1px solid var(--ink);
 	}
-	@media (min-width: 640px) {
-		.parts {
-			grid-template-columns: 1fr 1fr;
+	.part {
+		border-top: 1px solid var(--ink);
+		padding-block: 20px 40px;
+		row-gap: 12px;
+		align-items: start;
+	}
+	.p-n {
+		grid-column: 1 / span 1;
+		grid-row: 1 / span 2;
+		font-size: clamp(56px, 9vw, 152px);
+		font-weight: 850;
+		font-stretch: 100%;
+		letter-spacing: -0.05em;
+		line-height: 0.8;
+		color: var(--signal);
+	}
+	.part h3,
+	.part p {
+		grid-column: 2 / -1;
+	}
+	.part h3 {
+		font-size: var(--h3);
+		font-weight: 750;
+		line-height: 1;
+		letter-spacing: -0.025em;
+		font-stretch: 105%;
+	}
+	.part p {
+		color: var(--muted);
+		max-width: 38em;
+	}
+	@media (min-width: 720px) {
+		.p-n {
+			grid-column: 1 / span 3;
+		}
+		.part h3 {
+			grid-column: 4 / span 4;
+			padding-top: 6px;
+		}
+		.part p {
+			grid-column: 8 / -1;
+			padding-top: 8px;
+		}
+		.part h3,
+		.part p {
+			grid-row: 1;
 		}
 	}
-	@media (min-width: 1000px) {
-		.parts {
-			grid-template-columns: repeat(3, 1fr);
+	@media (min-width: 720px) and (max-width: 1039px) {
+		.part h3 {
+			grid-column: 4 / -1;
+		}
+		.part p {
+			grid-column: 4 / -1;
+			grid-row: 2;
+			padding-top: 0;
 		}
 	}
-	.parts li {
-		background: var(--paper);
-		padding: 1.75rem 1.5rem 2rem;
-	}
-	.parts h3,
-	.steps h3 {
-		font-size: var(--s3);
-		margin: 0.9rem 0 0.6rem;
-	}
-	.parts p,
-	.steps p {
-		color: var(--graphite);
-	}
-	.n {
-		color: var(--blue);
+	.ai::before {
+		margin-top: 4px;
 	}
 	.ai {
-		margin-top: 1.5rem;
+		align-items: flex-start;
+		margin-top: 32px;
+		text-transform: none;
+		letter-spacing: 0.01em;
 	}
 
+	/* ---------- process (ink) ---------- */
 	.steps {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-		gap: 2rem;
-		counter-reset: s;
+		row-gap: 48px;
 	}
 	.steps li {
-		border-top: 2px solid var(--ink);
-		padding-top: 1.1rem;
+		grid-column: span 4;
+		border-left: 1px solid var(--rule-ink);
+		padding: 0 0 8px 16px;
+		display: grid;
+		align-content: start;
+		gap: 12px;
 	}
-	.steps .s {
-		margin-top: 1rem;
-		color: var(--ink);
+	@media (min-width: 720px) {
+		.steps li {
+			grid-column: span 6;
+		}
+	}
+	@media (min-width: 1040px) {
+		.steps {
+			grid-template-rows: repeat(4, auto);
+		}
+		.steps li {
+			grid-column: span 3;
+			grid-row: span 4;
+			grid-template-rows: subgrid;
+		}
+	}
+	.st-n {
+		font-size: clamp(64px, 7vw, 120px);
+		font-weight: 850;
+		letter-spacing: -0.05em;
+		line-height: 0.8;
+		color: var(--signal);
+		margin-bottom: 20px;
+	}
+	.steps h3 {
+		font-size: var(--h3);
+		font-weight: 750;
+		font-stretch: 105%;
+		letter-spacing: -0.025em;
+	}
+	.steps p:not(.mono) {
+		color: var(--muted-ink);
+	}
+	.steps .st-s {
+		margin-top: 8px;
+		padding-top: 10px;
+		border-top: 1px solid var(--rule-ink);
+		color: var(--paper);
 	}
 
-	.calc-link {
-		color: var(--blue);
-		text-decoration: none;
+	/* ---------- repetition band ---------- */
+	.rep {
+		--rh: calc(var(--display) * 0.84);
+		height: calc(var(--rh) * 4.3);
+		overflow: hidden;
+		border-block: 1px solid var(--ink);
+		font-size: var(--display);
+		font-weight: 850;
+		font-stretch: 105%;
+		letter-spacing: -0.04em;
+		line-height: 0.84;
+		text-transform: uppercase;
+		white-space: nowrap;
 	}
-	.calc-link:hover {
+	.rep-rows {
+		transform: translateY(calc(var(--rh) * -0.35));
+	}
+	.rep-row {
+		height: var(--rh);
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+	}
+	.rep-row > .wrap {
+		display: block;
+		padding-top: 0.06em;
+	}
+	.rep-inv {
+		background: var(--ink);
+		color: var(--paper);
+		/* fits "FOLGE 01 = FOLGE 52" (≈10.1em) / "EPISODE 01 = EPISODE 52" (≈12.1em) inside the margins */
+		font-size: min(var(--display), calc((min(100vw, var(--max) + 2 * var(--margin)) - 2 * var(--margin)) / var(--fit, 10.4)));
+	}
+	.rep[data-lang='en'] .rep-inv {
+		--fit: 12.5;
+	}
+	.rep-inv em {
+		font-style: normal;
+		color: var(--signal);
+	}
+	@media (max-width: 719px) {
+		.rep {
+			height: calc(var(--rh) * 5.3);
+		}
+		.rep-inv {
+			height: calc(var(--rh) * 2);
+			font-size: calc((100vw - 2 * var(--margin)) / var(--fit, 5.6));
+		}
+		.rep[data-lang='en'] .rep-inv {
+			--fit: 6.9;
+		}
+		.rep-inv span span {
+			display: block;
+		}
+		.rep-inv .wrap {
+			line-height: 0.9;
+		}
+	}
+
+	/* ---------- packages ---------- */
+	.calc-link {
+		display: inline-block;
+		margin-top: 16px;
+		color: var(--ink);
 		text-decoration: underline;
+		text-decoration-color: var(--signal);
+		text-decoration-thickness: 2px;
 	}
 	.pk {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 228px), 1fr));
-		gap: 1rem;
+		grid-template-columns: 1fr;
+		border-top: 2px solid var(--ink);
 	}
-	.pk-card {
-		position: relative;
-		border: 1px solid var(--rule);
-		border-radius: 10px;
-		padding: 1.5rem;
-		background: #fbfbf9;
+	@media (min-width: 720px) {
+		.pk {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-rows: repeat(5, auto);
+			column-gap: 0;
+		}
+	}
+	@media (min-width: 1200px) {
+		.pk {
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+			grid-template-rows: auto auto auto auto 1fr;
+		}
+	}
+	.pk-col {
 		display: grid;
 		align-content: start;
-		gap: 0.4rem;
+		gap: 10px;
+		padding: 16px 16px 32px;
+		border-bottom: 1px solid var(--ink);
 	}
-	.pk-card.hl {
-		border-color: var(--ink);
+	@media (min-width: 720px) {
+		.pk-col {
+			grid-row: span 5;
+			grid-template-rows: subgrid;
+			gap: 0;
+			border-left: 1px solid var(--ink);
+		}
+		.pk-col:nth-child(2n + 1) {
+			border-left: 0;
+		}
+	}
+	@media (min-width: 1200px) {
+		.pk-col,
+		.pk-col:nth-child(2n + 1) {
+			border-left: 1px solid var(--ink);
+			border-bottom: 0;
+		}
+		.pk-col:first-child {
+			border-left: 0;
+		}
+	}
+	.pk-col.hl {
 		background: var(--ink);
 		color: var(--paper);
+		border-color: var(--ink);
 	}
-	.pk-card.hl .mono {
-		color: #a7a9b0;
+	.pk-col.hl .mono {
+		color: var(--muted-ink);
 	}
-	.pk-card.hl li::before {
-		color: var(--clip-blue);
+	.pk-top {
+		display: flex;
+		justify-content: space-between;
+		gap: 8px;
+		min-height: 18px;
 	}
-	.pk-tag {
-		color: var(--clip-blue) !important;
+	.pk-col.hl .pk-tag {
+		color: var(--signal);
 	}
-	.pk-card h3 {
-		font-size: var(--s2);
+	.pk-col h3 {
+		font-size: 22px;
+		line-height: 1.05;
+		font-weight: 750;
+		font-stretch: 105%;
+		letter-spacing: -0.02em;
+		padding-top: 40px;
+	}
+	@media (max-width: 719px) {
+		.pk-col:not(.hl) {
+			padding-inline: 0;
+		}
+		.pk-col h3 {
+			padding-top: 20px;
+		}
 	}
 	.pk-price {
-		font-size: var(--s4);
-		font-weight: 560;
-		letter-spacing: -0.03em;
-		margin-top: 0.4rem;
+		padding-top: 20px;
+		font-size: clamp(44px, 3.7vw, 64px);
+		font-weight: 850;
+		font-stretch: 100%;
+		letter-spacing: -0.045em;
+		line-height: 0.9;
+		white-space: nowrap;
+	}
+	.pk-pre {
+		font-size: 0.4em;
+		font-weight: 700;
+		letter-spacing: -0.01em;
 	}
 	.pk-price .mono {
-		font-size: var(--s-1);
-		letter-spacing: 0.02em;
+		display: block;
+		margin-top: 10px;
+		letter-spacing: 0.04em;
+		font-weight: 420;
+		white-space: normal;
 	}
-	.pk-card ul {
+	.pk-col.hl .pk-price .mono {
+		color: var(--paper);
+	}
+	.pk-days {
+		padding-top: 4px;
+	}
+	.pk-col ul {
 		list-style: none;
-		margin: 1rem 0 0;
-		padding: 0;
-		display: grid;
-		gap: 0.55rem;
-		font-size: var(--s0);
-	}
-	.pk-card li {
-		display: grid;
-		grid-template-columns: 1rem 1fr;
-	}
-	.pk-card li::before {
-		content: '▸';
-		color: var(--blue);
-	}
-	.pk-note {
-		margin-top: 1.5rem;
-		text-transform: none;
-		letter-spacing: 0;
-		max-width: 60rem;
-	}
-
-	.cases {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: 1rem;
-	}
-	.case {
-		border: 1px solid var(--rule);
-		border-radius: 10px;
-		padding: 1.5rem;
+		margin: 20px 0 0;
+		padding: 16px 0 0;
+		border-top: 1px solid currentColor;
 		display: grid;
 		align-content: start;
-		gap: 0.75rem;
+		gap: 10px;
+		font-size: 15px;
+		line-height: 22px;
 	}
-	.case h3 {
-		font-size: var(--s3);
-	}
-	.case p:last-child {
-		color: var(--graphite);
-	}
-	.tools {
-		margin-top: clamp(3rem, 6vw, 4.5rem);
-	}
-	.tools dl {
-		margin: 1.25rem 0 0;
+	.pk-col li {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-		border-top: 1px solid var(--rule);
+		grid-template-columns: 16px 1fr;
 	}
-	.tools div {
-		padding: 1.1rem 1.25rem 1.1rem 0;
-		border-bottom: 1px solid var(--rule);
+	.pk-col li::before {
+		content: '';
+		width: 6px;
+		height: 6px;
+		margin-top: 8px;
+		background: var(--signal);
 	}
-	.tools dt {
-		font-weight: 560;
-	}
-	.tools dd {
-		margin: 0.35rem 0 0;
-		color: var(--graphite);
-		font-size: var(--s0);
+	.pk-note {
+		margin-top: 24px;
+		max-width: 64em;
+		text-transform: none;
+		letter-spacing: 0.01em;
 	}
 
-	.about-grid {
+	/* ---------- work ---------- */
+	.cases {
 		display: grid;
-		gap: 2rem;
-		align-items: end;
+		gap: 56px var(--gutter);
 	}
 	@media (min-width: 900px) {
-		.about-grid {
-			grid-template-columns: 300px 1fr auto;
-			gap: 3.5rem;
+		.cases {
+			grid-template-columns: 1fr 1fr;
 		}
+	}
+	.case {
+		border-top: 2px solid var(--ink);
+		padding-top: 14px;
+		display: grid;
+		align-content: start;
+		gap: 16px;
+	}
+	.case-k {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+	}
+	.case-k span:last-child {
+		color: var(--ink);
+	}
+	.case h3 {
+		font-size: var(--h3);
+		font-weight: 750;
+		font-stretch: 105%;
+		line-height: 1;
+		letter-spacing: -0.025em;
+		max-width: 18em;
+	}
+	.case p:last-child {
+		color: var(--muted);
+		max-width: 38em;
+	}
+	.tools {
+		margin-top: clamp(64px, 8vw, 120px);
+	}
+	.tools dl {
+		margin: 20px 0 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+		border-top: 1px solid var(--ink);
+	}
+	.tools div {
+		padding: 16px 24px 20px 0;
+		border-bottom: 1px solid var(--ink);
+	}
+	.tools dt {
+		font-size: 20px;
+		font-weight: 750;
+		font-stretch: 105%;
+		letter-spacing: -0.02em;
+	}
+	.tools dd {
+		margin: 6px 0 0;
+		color: var(--muted);
+		font-size: 15px;
+		line-height: 22px;
+	}
+
+	/* ---------- about ---------- */
+	.about-g {
+		row-gap: 32px;
+		align-items: end;
+	}
+	.about-img,
+	.about-t {
+		grid-column: 1 / -1;
 	}
 	.about-img {
 		margin: 0;
-		max-width: 300px;
+		max-width: 420px;
+	}
+	@media (min-width: 1040px) {
+		.about-img {
+			grid-column: 1 / span 4;
+		}
+		.about-t {
+			grid-column: 6 / -1;
+		}
 	}
 	.about-img img {
 		width: 100%;
 		aspect-ratio: 4 / 5;
 		object-fit: cover;
 		object-position: 50% 18%;
-		border-radius: 10px;
+		filter: grayscale(1) contrast(1.05);
 	}
 	.about-img figcaption {
-		margin-top: 0.6rem;
-		text-transform: none;
+		margin-top: 10px;
+		padding-top: 8px;
+		border-top: 1px solid var(--ink);
 	}
 	.about-p {
-		font-size: var(--s3);
-		line-height: 1.4;
-		letter-spacing: -0.015em;
-		max-width: 46rem;
+		font-size: clamp(22px, 2.2vw, 34px);
+		line-height: 1.22;
+		font-weight: 480;
+		letter-spacing: -0.02em;
+		margin-bottom: 32px;
 	}
 
+	/* ---------- faq ---------- */
 	.faq {
-		border-top: 1px solid var(--rule);
-		max-width: 60rem;
+		border-top: 1px solid var(--ink);
 	}
 	details {
-		border-bottom: 1px solid var(--rule);
+		border-bottom: 1px solid var(--ink);
 	}
 	summary {
+		display: grid;
+		grid-template-columns: 48px 1fr 24px;
+		gap: 16px;
+		align-items: baseline;
 		cursor: pointer;
 		list-style: none;
-		padding: 1.25rem 2.5rem 1.25rem 0;
-		font-size: var(--s2);
-		font-weight: 520;
-		position: relative;
+		padding: 20px 0;
+		font-size: clamp(20px, 1.8vw, 26px);
+		line-height: 1.2;
+		font-weight: 700;
+		font-stretch: 105%;
+		letter-spacing: -0.02em;
+	}
+	@media (min-width: 1040px) {
+		summary {
+			grid-template-columns: calc((100% - 11 * var(--gutter)) / 12 * 3 + 2 * var(--gutter)) 1fr 24px;
+			gap: var(--gutter);
+		}
 	}
 	summary::-webkit-details-marker {
 		display: none;
 	}
-	summary::after {
-		content: '+';
-		position: absolute;
-		right: 0.25rem;
-		top: 1.1rem;
-		font-family: var(--mono);
-		color: var(--blue);
-		font-size: 1.25rem;
+	.q-x {
+		position: relative;
+		width: 18px;
+		height: 18px;
+		align-self: center;
 	}
-	details[open] summary::after {
-		content: '–';
+	.q-x::before,
+	.q-x::after {
+		content: '';
+		position: absolute;
+		background: var(--signal);
+		transition: transform var(--t-hover) var(--ease);
+	}
+	.q-x::before {
+		left: 0;
+		right: 0;
+		top: 8px;
+		height: 2px;
+	}
+	.q-x::after {
+		top: 0;
+		bottom: 0;
+		left: 8px;
+		width: 2px;
+	}
+	details[open] .q-x::after {
+		transform: scaleY(0);
+	}
+	summary:hover .q-t {
+		text-decoration: underline;
+		text-decoration-color: var(--signal);
+		text-decoration-thickness: 2px;
 	}
 	details p {
-		padding: 0 0 1.4rem;
-		color: var(--graphite);
-		max-width: 46rem;
+		padding: 0 0 28px;
+		color: var(--muted);
+		max-width: 44em;
+	}
+	@media (min-width: 1040px) {
+		details p {
+			margin-left: calc((100% - 11 * var(--gutter)) / 12 * 3 + 3 * var(--gutter));
+		}
+	}
+	@media (max-width: 719px) {
+		summary {
+			grid-template-columns: 32px 1fr 18px;
+			gap: 12px;
+		}
+		details p {
+			margin-left: 44px;
+		}
+	}
+	@supports (interpolate-size: allow-keywords) {
+		details {
+			interpolate-size: allow-keywords;
+		}
+		details::details-content {
+			block-size: 0;
+			overflow: clip;
+			transition:
+				block-size var(--t-wipe) var(--ease),
+				content-visibility var(--t-wipe) allow-discrete;
+		}
+		details[open]::details-content {
+			block-size: auto;
+		}
 	}
 
-	.contact {
-		background: var(--dark);
-		color: #ececE8;
-		padding-block: clamp(4.5rem, 10vw, 7rem);
-	}
-	.contact .mono {
-		color: #9a9ca3;
-	}
+	/* ---------- contact (ink) ---------- */
 	.c-in {
-		display: grid;
-		gap: 3rem;
+		row-gap: 56px;
 	}
-	@media (min-width: 1000px) {
-		.c-in {
-			grid-template-columns: 0.9fr 1.1fr;
+	.c-txt,
+	.f {
+		grid-column: 1 / -1;
+	}
+	@media (min-width: 1040px) {
+		.c-txt {
+			grid-column: 1 / span 5;
+		}
+		.f {
+			grid-column: 7 / -1;
 		}
 	}
 	.c-who {
 		display: flex;
 		align-items: center;
-		gap: 0.9rem;
-		margin-top: 1.25rem;
+		gap: 14px;
 	}
 	.c-who p {
-		color: #f2f2ee !important;
 		line-height: 1.35;
 	}
 	.c-avatar {
 		width: 64px;
 		height: 64px;
-		border-radius: 50%;
 		object-fit: cover;
 		object-position: 50% 18%;
-		border: 1px solid #3a3b42;
+		filter: grayscale(1) contrast(1.05);
 	}
-	.c-txt h2 {
-		font-size: var(--s5);
-		margin: 1rem 0 1.25rem;
+	.c-mail {
+		margin-top: 28px;
+		color: var(--muted-ink);
+		font-size: var(--lead);
+		line-height: 1.45;
 	}
-	.c-txt p {
-		color: #b9bab6;
+	.c-mail a {
+		color: var(--paper);
+		text-decoration-color: var(--signal);
+		text-decoration-thickness: 2px;
 	}
 	.trust {
 		list-style: none;
-		margin: 2rem 0 0;
-		padding: 1.5rem 0 0;
-		border-top: 1px solid #2a2b30;
-		display: grid;
-		gap: 0.85rem;
-		font-size: var(--s0);
-		color: #c9cac6;
+		margin: 40px 0 0;
+		padding: 0;
+		border-top: 1px solid var(--rule-ink);
 	}
 	.trust li {
 		display: grid;
-		grid-template-columns: 1.25rem 1fr;
+		grid-template-columns: 24px 1fr;
+		padding: 14px 0;
+		border-bottom: 1px solid var(--rule-ink);
+		font-size: 15px;
+		line-height: 22px;
 	}
 	.trust li::before {
-		content: '✓';
-		color: var(--clip-green);
+		content: '';
+		width: 8px;
+		height: 8px;
+		margin-top: 7px;
+		background: var(--signal);
 	}
 	.f {
 		display: grid;
-		gap: 1.5rem;
+		gap: 24px;
 	}
-	fieldset {
-		border: 1px solid #2a2b30;
-		border-radius: 10px;
-		padding: 1.25rem;
+	.f fieldset {
+		border: 0;
+		border-top: 1px solid var(--paper);
+		padding: 14px 0 0;
 		margin: 0;
 		display: grid;
-		gap: 1rem;
+		gap: 16px;
 	}
-	legend {
-		padding: 0 0.4rem;
-	}
-	label {
-		display: grid;
-		gap: 0.4rem;
-	}
-	input,
-	textarea {
-		font: inherit;
-		font-size: var(--s0);
-		color: #f2f2ee;
-		background: #1a1b1e;
-		border: 1px solid #2f3036;
-		border-radius: 6px;
-		padding: 0.75rem 0.9rem;
+	.f legend {
+		float: left;
 		width: 100%;
+		padding: 0;
+		margin-bottom: 4px;
+		color: var(--paper) !important;
 	}
-	input:focus,
-	textarea:focus {
+	.f label {
+		display: grid;
+		gap: 6px;
+	}
+	.f input,
+	.f textarea {
+		font: inherit;
+		font-size: 16px;
+		color: var(--paper);
+		background: transparent;
+		border: 1px solid var(--rule-ink);
+		padding: 12px 14px;
+		width: 100%;
+		transition: border-color var(--t-hover) var(--ease);
+	}
+	.f input::placeholder,
+	.f textarea::placeholder {
+		color: #8f8c85;
+	}
+	.f input:hover,
+	.f textarea:hover {
+		border-color: var(--muted-ink);
+	}
+	.f input:focus,
+	.f textarea:focus {
 		outline: none;
-		border-color: var(--clip-blue);
+		border-color: var(--signal);
 	}
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: 8px;
 	}
 	.chip {
 		display: block;
@@ -1088,38 +1560,49 @@ const offerLd = {
 	}
 	.chip span {
 		display: inline-block;
-		border: 1px solid #3a3b42;
-		border-radius: 999px;
-		padding: 0.45rem 0.9rem;
-		font-size: var(--s0);
+		border: 1px solid var(--rule-ink);
+		padding: 8px 14px;
+		font-size: 14px;
+		line-height: 20px;
 		cursor: pointer;
+		transition:
+			background-color var(--t-hover) var(--ease),
+			border-color var(--t-hover) var(--ease);
+	}
+	.chip span:hover {
+		border-color: var(--muted-ink);
 	}
 	.chip input:checked + span {
-		background: var(--clip-blue);
-		border-color: var(--clip-blue);
-		color: #141416;
+		background: var(--signal);
+		border-color: var(--signal);
+		color: var(--ink);
+		font-weight: 600;
 	}
 	.chip input:focus-visible + span {
-		outline: 2px solid var(--clip-blue);
+		outline: 2px solid var(--signal);
 		outline-offset: 2px;
 	}
 	.f-send {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 1rem 1.5rem;
+		gap: 16px 24px;
+		margin-top: 8px;
 	}
 	.contact .btn--ink {
-		background: #f2f2ee;
-		color: #141416;
-		border-color: #f2f2ee;
+		background: var(--paper);
+		color: var(--ink);
+		border-color: var(--paper);
 	}
 	.contact .btn--ink:hover {
-		background: var(--clip-blue);
-		border-color: var(--clip-blue);
+		background: var(--signal);
+		border-color: var(--signal);
 	}
 	.f-note {
 		text-transform: none;
-		letter-spacing: 0;
+		letter-spacing: 0.01em;
+	}
+	.sec--tight {
+		padding-bottom: clamp(80px, 8vw, 120px);
 	}
 </style>

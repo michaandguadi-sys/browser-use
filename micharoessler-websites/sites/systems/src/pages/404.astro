@@ -16,21 +16,27 @@ import Base from '../layouts/Base.astro';
 
 <style>
 	.nf {
-		padding-block: 7rem;
+		padding-block: clamp(56px, 7vw, 112px);
 		min-height: 60vh;
 	}
 	h1 {
-		font-size: var(--s5);
-		margin: 1rem 0 1.25rem;
-		max-width: 20ch;
+		font-size: var(--h2);
+		font-weight: 800;
+		letter-spacing: -0.035em;
+		line-height: 0.92;
+		margin: 24px 0 24px;
+		max-width: 16ch;
+		text-wrap: balance;
 	}
 	.nf-p {
-		color: var(--graphite);
+		color: var(--muted);
+		font-size: var(--lead);
+		line-height: 1.45;
 	}
 	.nf-links {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem;
-		margin-top: 2rem;
+		gap: 12px;
+		margin-top: 40px;
 	}
 </style>

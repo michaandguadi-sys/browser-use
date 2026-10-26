@@ -40,13 +40,13 @@ const inputs = [
 		<div class="bars">
 			<div class="bar">
 				<span class="mono">{de ? 'Heute' : 'Today'}</span>
-				<i data-bar="now"></i>
 				<b data-o="now"></b>
+				<i data-bar="now"></i>
 			</div>
 			<div class="bar sys">
 				<span class="mono">{de ? 'Mit System' : 'With system'}</span>
-				<i data-bar="sys"></i>
 				<b data-o="sys"></b>
+				<i data-bar="sys"></i>
 			</div>
 		</div>
 		<dl class="kpi">
@@ -59,6 +59,7 @@ const inputs = [
 				<dd data-o="worth"></dd>
 			</div>
 		</dl>
+		<p class="mono how"><span>{de ? 'Rechenweg' : 'How it is calculated'}</span><span data-o="how"></span><span>{de ? 'Beträge netto.' : 'Amounts net.'}</span></p>
 		<div class="rec">
 			<p class="mono">{de ? 'Passendes Paket' : 'Matching package'}</p>
 			<p class="rec-name" data-o="pkg"></p>
@@ -78,11 +79,20 @@ const inputs = [
 	for (const root of document.querySelectorAll<HTMLElement>('[data-calc]')) {
 		const de = root.dataset.lang === 'de';
 		const nf = new Intl.NumberFormat(de ? 'de-DE' : 'en-GB', { maximumFractionDigits: 0 });
+		const nf1 = new Intl.NumberFormat(de ? 'de-DE' : 'en-GB', { maximumFractionDigits: 1 });
+		const ranges = [...root.querySelectorAll<HTMLInputElement>('input[type=range]')];
 		const get = (n: string) => Number(root.querySelector<HTMLInputElement>(`input[name="${n}"]`)!.value);
 		const out = (k: string, t: string) => (root.querySelector(`[data-o="${k}"]`)!.textContent = t);
 
+		// Restore a shared estimate from the URL (?eps=4&hEp=16…), clamped to each slider's range.
+		const q = new URLSearchParams(location.search);
+		for (const i of ranges) {
+			const v = q.get(i.name);
+			if (v !== null && v.trim() !== '' && Number.isFinite(Number(v))) i.value = String(Math.min(Number(i.max), Math.max(Number(i.min), Number(v))));
+		}
+
 		const render = () => {
-			for (const i of root.querySelectorAll<HTMLInputElement>('input[type=range]')) {
+			for (const i of ranges) {
 				const v = Number(i.value).toLocaleString(de ? 'de-DE' : 'en-GB');
 				root.querySelector(`[data-show="${i.name}"]`)!.textContent = v + (i.dataset.unit ?? '');
 			}
@@ -94,6 +104,10 @@ const inputs = [
 			out('sys', `${nf.format(sys)} h`);
 			out('saved', `${nf.format(saved)} h`);
 			out('worth', de ? `≈ ${nf.format((saved / 8) * 750)} €` : `≈ €${nf.format((saved / 8) * 750)}`);
+			out(
+				'how',
+				`${eps} × (${nf1.format(get('hEp'))} h + ${get('shorts')} × ${nf1.format(get('hShort'))} h) = ${nf.format(now)} h · −${get('save')} % = ${nf.format(sys)} h · ${nf1.format(saved)} h ÷ 8 h × ${de ? '750 €' : '€750'} ≈ ${de ? `${nf.format((saved / 8) * 750)} €` : `€${nf.format((saved / 8) * 750)}`}`,
+			);
 			root.querySelector<HTMLElement>('[data-bar="now"]')!.style.setProperty('--w', '1');
 			root.querySelector<HTMLElement>('[data-bar="sys"]')!.style.setProperty('--w', String(now ? sys / now : 0));
 
@@ -111,7 +125,13 @@ const inputs = [
 			root.querySelector<HTMLAnchorElement>('[data-cta]')!.dataset.summary =
 				`${de ? 'Rechner' : 'Calculator'}: ${eps} ${de ? 'Folgen' : 'episodes'}/${de ? 'Monat' : 'month'}, ${nf.format(now)} h → ${nf.format(sys)} h. ${pkg}`;
 		};
-		root.addEventListener('input', render);
+		root.addEventListener('input', () => {
+			render();
+			// Keep the estimate shareable: the URL carries the current inputs.
+			const p = new URLSearchParams(location.search);
+			for (const i of ranges) p.set(i.name, i.value);
+			history.replaceState(history.state, '', `${location.pathname}?${p}${location.hash}`);
+		});
 		// Carry the estimate into the brief form so the enquiry starts with numbers.
 		root.querySelector('[data-cta]')?.addEventListener('click', (e) => {
 			const s = (e.currentTarget as HTMLElement).dataset.summary ?? '';
@@ -125,111 +145,150 @@ const inputs = [
 <style>
 	.calc {
 		display: grid;
-		gap: 1.5rem;
-		border: 1px solid var(--rule);
-		border-radius: 12px;
-		padding: clamp(1.25rem, 3vw, 2rem);
-		background: #fbfbf9;
+		gap: 56px var(--gutter);
+		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+		border-top: 1px solid var(--ink);
+		padding-top: 24px;
 	}
-	@media (min-width: 960px) {
-		.calc {
-			grid-template-columns: 1fr 1fr;
-			gap: 3rem;
+	.in,
+	.res {
+		grid-column: 1 / -1;
+	}
+	@media (min-width: 1040px) {
+		.in {
+			grid-column: 1 / span 6;
+		}
+		.res {
+			grid-column: 8 / -1;
 		}
 	}
 	.in {
 		display: grid;
-		gap: 1.4rem;
+		gap: 0;
+		align-content: start;
 	}
 	.row {
 		display: grid;
-		gap: 0.55rem;
+		gap: 6px;
+		padding: 12px 0 14px;
+		border-bottom: 1px solid var(--guide);
 	}
 	.lab {
 		display: flex;
 		justify-content: space-between;
-		gap: 1rem;
-		font-size: var(--s0);
+		align-items: baseline;
+		gap: 16px;
+		font-size: 16px;
+		line-height: 22px;
 	}
 	.lab output {
-		text-transform: none;
 		color: var(--ink);
-		font-size: var(--s0);
+		font-size: 13px;
+		text-transform: none;
+		white-space: nowrap;
 	}
 	.assume {
-		padding-top: 1.1rem;
-		border-top: 1px dashed var(--rule);
+		margin-top: 20px;
+		border-top: 2px solid var(--ink);
+		border-bottom: 0;
 	}
 	.assume .lab {
-		color: var(--graphite);
+		color: var(--muted);
 	}
-	input[type='range'] {
-		width: 100%;
-		accent-color: var(--blue);
-		height: 1.5rem;
+	.assume .lab::before {
+		content: '';
+		flex: none;
+		width: 8px;
+		height: 8px;
+		margin-top: 7px;
+		background: var(--signal);
+		align-self: flex-start;
+	}
+	.assume .lab {
+		justify-content: flex-start;
+	}
+	.assume output {
+		margin-left: auto;
 	}
 	.res {
 		display: grid;
-		gap: 1.25rem;
+		gap: 28px;
 		align-content: start;
 	}
 	.bars {
 		display: grid;
-		gap: 0.6rem;
+		gap: 16px;
 	}
 	.bar {
 		display: grid;
-		grid-template-columns: 6.5rem 1fr 4.5rem;
-		align-items: center;
-		gap: 0.75rem;
-	}
-	.bar i {
-		display: block;
-		height: 26px;
-		border-radius: 4px;
-		background: var(--clip-red);
-		transform-origin: left;
-		transform: scaleX(var(--w, 1));
-		transition: transform 0.35s var(--ease);
-	}
-	.bar.sys i {
-		background: var(--clip-green);
+		grid-template-columns: 1fr auto;
+		align-items: baseline;
+		row-gap: 6px;
 	}
 	.bar b {
-		font-family: var(--mono);
-		font-weight: 500;
-		text-align: right;
+		font-size: 22px;
+		font-weight: 750;
+		letter-spacing: -0.02em;
+	}
+	.bar i {
+		grid-column: 1 / -1;
+		display: block;
+		height: 28px;
+		background: var(--ink);
+		transform-origin: left;
+		transform: scaleX(var(--w, 1));
+		transition: transform var(--t-wipe) var(--ease);
+	}
+	.bar.sys i {
+		background: var(--signal);
 	}
 	.kpi {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
+		gap: var(--gutter);
 		margin: 0;
-		border-top: 1px solid var(--rule);
-		padding-top: 1rem;
+	}
+	.kpi div {
+		border-top: 1px solid var(--ink);
+		padding-top: 10px;
 	}
 	.kpi dd {
-		margin: 0.3rem 0 0;
-		font-size: var(--s4);
-		font-weight: 560;
-		letter-spacing: -0.03em;
+		margin: 12px 0 0;
+		font-size: clamp(36px, 4vw, 64px);
+		font-weight: 850;
+		letter-spacing: -0.04em;
+		line-height: 0.9;
+		white-space: nowrap;
+	}
+	.how {
+		display: grid;
+		gap: 4px;
+		text-transform: none;
+		letter-spacing: 0.01em;
+		font-size: 11px;
+	}
+	.how span:first-child {
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--ink);
 	}
 	.rec {
 		background: var(--ink);
 		color: var(--paper);
-		border-radius: 10px;
-		padding: 1.25rem;
+		padding: 20px;
 		display: grid;
-		gap: 0.5rem;
+		gap: 8px;
 		justify-items: start;
 	}
 	.rec .mono {
-		color: #a7a9b0;
+		color: var(--muted-ink);
 	}
 	.rec-name {
-		font-size: var(--s2);
-		font-weight: 520;
-		margin-bottom: 0.5rem;
+		font-size: 22px;
+		line-height: 1.15;
+		font-weight: 750;
+		letter-spacing: -0.02em;
+		margin-bottom: 12px;
 	}
 	.rec .btn--ink {
 		background: var(--paper);
@@ -237,11 +296,11 @@ const inputs = [
 		border-color: var(--paper);
 	}
 	.rec .btn--ink:hover {
-		background: var(--clip-blue);
-		border-color: var(--clip-blue);
+		background: var(--signal);
+		border-color: var(--signal);
 	}
 	.note {
 		text-transform: none;
-		letter-spacing: 0;
+		letter-spacing: 0.01em;
 	}
 </style>
