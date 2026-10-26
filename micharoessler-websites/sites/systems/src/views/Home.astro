@@ -95,13 +95,13 @@ const offerLd = {
 		<div class="hero-txt">
 			<p class="mono label">{de ? 'Freelance-Cutter · Workflow · Retainer' : 'Freelance editor · Workflow · Retainer'}</p>
 			<h1>
-				{de ? 'Mehr Folgen und Shorts aus eurem Format – ohne mehr Schnittstunden.' : 'More episodes and shorts from your format – without more edit hours.'}
+				{de ? 'Euer YouTube-Format als Schnitt-System.' : 'Your YouTube format as an edit system.'}
 			</h1>
 			<p class="hero-sub">
 				{
 					de
-						? 'Ich mache aus eurem wiederkehrenden YouTube-Format ein Schnitt-System: Templates, datengetriebene Grafiken, eine Shorts-Pipeline und eine saubere Review-Schleife. Dann schneide ich es für euch im Retainer – oder übergebe es an euer Team.'
-						: 'I turn your recurring YouTube format into an edit system: templates, data-driven graphics, a shorts pipeline and a clean review loop. Then I edit it for you on retainer – or hand it to your team.'
+						? 'Weniger Handarbeit pro Folge, mehr Shorts aus jedem Dreh. Ich baue für euer wiederkehrendes Format Templates, datengetriebene Grafiken, eine Shorts-Pipeline und eine saubere Review-Schleife – und schneide darauf im Retainer oder übergebe alles an euer Team.'
+						: 'Less manual work per episode, more shorts from every shoot. I build templates, data-driven graphics, a shorts pipeline and a clean review loop for your recurring format – then edit on it for you on retainer, or hand it all to your team.'
 				}
 			</p>
 			<div class="hero-cta">
@@ -158,15 +158,16 @@ const offerLd = {
 
 	<section class="strip">
 		<div class="wrap strip-in">
-			<p class="mono">{de ? 'Gearbeitet mit' : 'Worked with'}</p>
+			<p class="mono">{de ? 'Geschnitten für' : 'Edited for'}</p>
 			<ul>
-				<li>Carwow</li>
-				<li>Autohero</li>
-				<li>Felix von der Laden</li>
-				<li>AEVOR</li>
-				<li>Red Bull Germany</li>
+				<li>Carwow DE <span class="mono">{de ? '· 3 Review-Folgen, 2025' : '· 3 review episodes, 2025'}</span></li>
+				<li>Felix von der Laden <span class="mono">· 2 {de ? 'Langform-Dokus' : 'long-form docs'}</span></li>
 			</ul>
-			<p class="mono strip-n">{de ? '2,6 Mio.+ Aufrufe auf zwei geschnittenen Langform-Dokus' : '2.6M+ views on two long-form docs I edited'}</p>
+			<p class="mono strip-n">
+				{de ? 'Selbst prüfen:' : 'Check for yourself:'}
+				<a href="https://www.youtube.com/watch?v=7Kt9NFOXqF4" rel="noopener">Drivers Eye ↗</a>
+				<a href="https://www.youtube.com/watch?v=ER8HBwDKMGw" rel="noopener">Hotrodtour ↗</a>
+			</p>
 		</div>
 	</section>
 
@@ -289,8 +290,8 @@ const offerLd = {
 			<p>
 				{
 					de
-						? 'Ohne erfundene Zahlen. Kunden ohne Freigabe nenne ich nicht beim Namen.'
-						: 'No invented numbers. Clients who have not approved being named stay anonymous.'
+						? 'Ehrlich eingeordnet: Format-Schnitt für Marken ist ein junger Schwerpunkt bei mir, Workflows baue ich seit Jahren für meine eigenen Produktionen. Große Agentur-Logos habe ich nicht – deshalb startet jede Zusammenarbeit mit einem bezahlten Pilot statt mit Versprechen. Keine erfundenen Zahlen; Kunden ohne Freigabe bleiben anonym.'
+						: 'Honestly put: format editing for brands is a young focus for me; I have been building workflows for my own productions for years. I do not have big agency logos – which is why every engagement starts with a paid pilot instead of promises. No invented numbers; clients who have not approved being named stay anonymous.'
 				}
 			</p>
 		</div>
@@ -363,6 +364,11 @@ const offerLd = {
 					{de ? 'Antwort innerhalb von zwei Werktagen. Oder direkt: ' : 'Reply within two working days. Or directly: '}
 					<a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
 				</p>
+				<ul class="trust">
+					<li>{de ? 'Ihr schreibt direkt mit mir – keine Agentur, kein Vertrieb, kein Subunternehmer.' : 'You talk to me directly – no agency, no sales team, no subcontractors.'}</li>
+					<li>{de ? 'Festpreis schriftlich vor Start. Überzeugt euch der Pilot nicht, endet die Zusammenarbeit dort – ohne Folgekosten.' : 'Fixed price in writing before we start. If the pilot does not convince you, it ends there – no follow-on costs.'}</li>
+					<li>{de ? 'Ich bin Deutscher, arbeite remote von unterwegs und rechne über meine US-Firma Micha Roessler LLC ab.' : 'I am German, work remotely while travelling and invoice through my US company, Micha Roessler LLC.'}</li>
+				</ul>
 			</div>
 			<form class="f" id="brief" data-subject={de ? 'Anfrage Formatschnitt' : 'Formatschnitt enquiry'}>
 				<fieldset>
@@ -486,7 +492,7 @@ const offerLd = {
 		}
 	}
 	h1 {
-		font-size: var(--s6);
+		font-size: clamp(2.4rem, 4.6vw, 4.25rem);
 		margin: 1.25rem 0 1.5rem;
 		letter-spacing: -0.035em;
 		text-wrap: balance;
@@ -708,6 +714,18 @@ const offerLd = {
 	}
 	.strip-n {
 		margin-left: auto;
+		display: flex;
+		gap: 1rem;
+		text-transform: none;
+	}
+	.strip-n a {
+		color: var(--blue);
+		text-decoration: none;
+	}
+	.strip li .mono {
+		font-weight: 400;
+		letter-spacing: 0;
+		text-transform: none;
 	}
 
 	.parts {
@@ -957,6 +975,24 @@ const offerLd = {
 	}
 	.c-txt p {
 		color: #b9bab6;
+	}
+	.trust {
+		list-style: none;
+		margin: 2rem 0 0;
+		padding: 1.5rem 0 0;
+		border-top: 1px solid #2a2b30;
+		display: grid;
+		gap: 0.85rem;
+		font-size: var(--s0);
+		color: #c9cac6;
+	}
+	.trust li {
+		display: grid;
+		grid-template-columns: 1.25rem 1fr;
+	}
+	.trust li::before {
+		content: '✓';
+		color: var(--clip-green);
 	}
 	.f {
 		display: grid;

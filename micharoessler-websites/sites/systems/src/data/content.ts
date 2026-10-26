@@ -142,8 +142,8 @@ export const proof: { title: L; tag: L; text: L; named?: boolean }[] = [
 		title: { de: 'D2C-Produktmarke – modulare Ad-Library', en: 'D2C product brand – modular ad library' },
 		tag: { de: 'Dreh + Schnitt · 2026', en: 'Shoot + edit · 2026' },
 		text: {
-			de: 'Ein Drehtag, geplant als Baukasten: Hook-Bank, Vorher/Nachher mit identischem Framing und Installations-Clips für 50+ Ads, 4 YouTube-Anleitungen und ein Founder-Q&A.',
-			en: 'One shoot day planned as a kit: hook bank, before/after with matched framing and installation clips for 50+ ads, 4 YouTube how-tos and a founder Q&A.',
+			de: 'Dreh geplant als Baukasten: Hook-Bank, Vorher/Nachher mit identischem Framing, Installations-Clips. Ziel des Kunden: Material für 50+ Ads, 4 YouTube-Anleitungen und ein Founder-Q&A aus einem Dreh.',
+			en: 'Shoot planned as a kit: hook bank, before/after with matched framing, installation clips. The client’s goal: material for 50+ ads, 4 YouTube how-tos and a founder Q&A from one shoot.',
 		},
 	},
 	{
@@ -197,6 +197,13 @@ export const tools: { name: string; text: L }[] = [
 ];
 
 export const faq: { q: L; a: L }[] = [
+	{
+		q: { de: 'Wie viele Formate hast du schon systematisiert?', en: 'How many formats have you systemised so far?' },
+		a: {
+			de: 'Ehrliche Antwort: wenige. Ich habe Auto-Review-Folgen im bestehenden Carwow-Format geschnitten, einen Podcast-Workflow in DaVinci aufgesetzt und einen Produkt-Dreh als Ad-Baukasten geplant und geschnitten. Meine eigenen Produktionen laufen seit Jahren auf Templates und selbst gebauten Tools. Genau deshalb biete ich den Pilot zum Festpreis an: Ihr seht das Ergebnis, bevor ihr euch bindet.',
+			en: 'Honest answer: a few. I edited car-review episodes inside the existing Carwow format, set up a DaVinci podcast workflow and planned and edited a product shoot as an ad kit. My own productions have run on templates and self-built tools for years. That is exactly why I offer the fixed-price pilot: you see the result before you commit.',
+		},
+	},
 	{
 		q: { de: 'Ersetzt ihr unseren Editor durch KI?', en: 'Are you replacing our editor with AI?' },
 		a: {

@@ -21,7 +21,7 @@ const rows = [
 <div class="demo" data-demo data-lang={lang}>
 	<div class="sheet">
 		<div class="sheet-bar mono">
-			<span>episode_042_specs.csv</span>
+			<span>episode_042_specs.csv <em>· {de ? 'fiktive Beispieldaten' : 'fictional sample data'}</em></span>
 			<span class="live"><i></i>{de ? 'live' : 'live'}</span>
 		</div>
 		<table>
@@ -153,6 +153,10 @@ const rows = [
 		padding: 0.7rem 1rem;
 		border-bottom: 1px solid var(--rule);
 		text-transform: none;
+	}
+	.sheet-bar em {
+		font-style: normal;
+		color: #9a9ca3;
 	}
 	.live {
 		color: var(--clip-green);
