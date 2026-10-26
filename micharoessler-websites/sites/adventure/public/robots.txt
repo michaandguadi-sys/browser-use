@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://micharoessler.com/sitemap-index.xml
