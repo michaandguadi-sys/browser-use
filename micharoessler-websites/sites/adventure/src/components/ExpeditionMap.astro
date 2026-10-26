@@ -1,0 +1,270 @@
+---
+// Dotted world map rendered at build time (no map library shipped to the browser).
+// Pins are plain HTML links on top of the SVG, so they stay accessible and crawlable.
+import { geoNaturalEarth1, geoPath } from 'd3-geo';
+import { feature } from 'topojson-client';
+import land110 from 'world-atlas/land-110m.json';
+import { href, type Lang } from '../i18n';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const en = lang === 'en';
+
+const W = 1000;
+const H = 470;
+const STEP = 7;
+const topo = land110 as unknown as Parameters<typeof feature>[0];
+const land = feature(topo, (topo as any).objects.land) as any;
+const projection = geoNaturalEarth1()
+	.rotate([-10, 0])
+	.fitExtent(
+		[
+			[0, 0],
+			[W, H],
+		],
+		{ type: 'Sphere' },
+	)
+	.translate([W / 2, H / 2 + 38])
+	.scale(205);
+
+// Land outline as a clip mask over a dot pattern: dots and pins share one projection,
+// so nothing can drift (point-in-polygon sampling dropped parts of Europe).
+const landPath = geoPath(projection).digits(1)(land) ?? '';
+
+type Pin = { name: { en: string; de: string }; lonlat: [number, number]; when: string; slug?: string; planned?: boolean };
+const pins: Pin[] = [
+	{ name: { en: 'Andes Expedition, Bolivia', de: 'Anden-Expedition, Bolivien' }, lonlat: [-68.88, -18.1], when: '2024', slug: 'bolivia-andes' },
+	{ name: { en: 'Kilimanjaro, 5,895 m', de: 'Kilimandscharo, 5.895 m' }, lonlat: [37.35, -3.07], when: '2023', slug: 'kilimanjaro' },
+	{ name: { en: '24 Hours in the Sahara', de: '24 Stunden in der Sahara' }, lonlat: [-4.0, 31.1], when: '2023', slug: 'moroccan-sahara' },
+	{ name: { en: 'Drivers Eye – Nürburgring', de: 'Drivers Eye – Nürburgring' }, lonlat: [6.95, 50.33], when: '2021', slug: 'drivers-eye-24h-nurburgring' },
+	{ name: { en: 'Hotrodtour – Cologne to Ibiza', de: 'Hotrodtour – Köln bis Ibiza' }, lonlat: [1.43, 38.98], when: '', slug: 'hotrodtour-cologne-ibiza' },
+	{ name: { en: 'Großvenediger glacier tour, 3,660 m', de: 'Großvenediger-Gletschertour, 3.660 m' }, lonlat: [12.35, 47.1], when: '2023' },
+	{ name: { en: 'Trolltunga winter hike', de: 'Trolltunga im Winter' }, lonlat: [6.74, 60.12], when: '2023' },
+	{ name: { en: 'Laponia ski traverse + Lyngen Alps', de: 'Laponia-Skidurchquerung + Lyngen-Alpen' }, lonlat: [20.2, 68.2], when: 'Feb 2027', planned: true },
+	{ name: { en: 'Arctic Circle Trail, Greenland', de: 'Arctic Circle Trail, Grönland' }, lonlat: [-51.0, 66.9], when: 'Jul 2027', planned: true },
+];
+const placed = pins.map((p) => {
+	const [x, y] = projection(p.lonlat)!;
+	return { ...p, x: (x / W) * 100, y: (y / H) * 100 };
+});
+const [cx, cy] = projection([6.96, 50.94])!;
+const [ix, iy] = projection([1.43, 38.98])!;
+---
+
+<div class="map" data-map>
+	<svg viewBox={`0 0 ${W} ${H}`} aria-hidden="true" class="map-svg">
+		<defs>
+			<pattern id="dotgrid" width={STEP} height={STEP} patternUnits="userSpaceOnUse">
+				<rect x={STEP / 2 - 1.3} y={STEP / 2 - 1.3} width="2.6" height="2.6" class="land"></rect>
+			</pattern>
+			<clipPath id="landclip"><path d={landPath}></path></clipPath>
+		</defs>
+		<rect width={W} height={H} fill="url(#dotgrid)" clip-path="url(#landclip)"></rect>
+		<path d={`M${cx} ${cy} Q ${(cx + ix) / 2 - 40} ${(cy + iy) / 2} ${ix} ${iy}`} class="route"></path>
+	</svg>
+	<ul class="pins">
+		{
+			placed.map((p) => (
+				<li class:list={['pin', { planned: p.planned, minor: !p.slug && !p.planned }]} style={`--x:${p.x}%;--y:${p.y}%`}>
+					{p.slug ? (
+						<a href={href(lang, p.slug)} class="dot" aria-describedby={`pin-${p.lonlat.join('')}`}>
+							<span class="sr-only">{p.name[lang]}</span>
+						</a>
+					) : (
+						<button type="button" class="dot" aria-describedby={`pin-${p.lonlat.join('')}`}>
+							<span class="sr-only">{p.name[lang]}</span>
+						</button>
+					)}
+					<span class="tip" role="tooltip" id={`pin-${p.lonlat.join('')}`}>
+						<span class="meta">{p.planned ? (en ? 'Planned' : 'Geplant') : en ? 'Filmed' : 'Gedreht'}{p.when && ` · ${p.when}`}</span>
+						<span class="tip-name">{p.name[lang]}</span>
+						{p.slug && <span class="meta tip-go">{en ? 'Open project →' : 'Projekt öffnen →'}</span>}
+					</span>
+				</li>
+			))
+		}
+	</ul>
+	<p class="legend meta">
+		<span><i class="lg-dot"></i>{en ? 'Filmed' : 'Gedreht'}</span>
+		<span><i class="lg-dot lg-minor"></i>{en ? 'Field experience' : 'Bergerfahrung'}</span>
+		<span><i class="lg-dot lg-planned"></i>{en ? 'Planned 2027' : 'Geplant 2027'}</span>
+	</p>
+</div>
+
+<style>
+	.map {
+		position: relative;
+		margin-top: 2rem;
+	}
+	.map-svg {
+		width: 100%;
+		height: auto;
+		display: block;
+	}
+	.land {
+		fill: #4d5149;
+	}
+	.route {
+		fill: none;
+		stroke: var(--signal);
+		stroke-width: 1.5;
+		stroke-dasharray: 4 5;
+		opacity: 0.8;
+	}
+	.pins {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		position: absolute;
+		inset: 0 0 auto 0;
+		aspect-ratio: 1000 / 470;
+	}
+	.pin {
+		position: absolute;
+		left: var(--x);
+		top: var(--y);
+	}
+	.dot {
+		position: absolute;
+		left: 0;
+		top: 0;
+		translate: -50% -50%;
+		width: 26px;
+		height: 26px;
+		padding: 0;
+		border: 0;
+		background: none;
+		cursor: pointer;
+		display: grid;
+		place-items: center;
+	}
+	.dot::before {
+		content: '';
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: var(--signal);
+		box-shadow: 0 0 0 4px rgb(217 84 30 / 0.25);
+		transition: scale 0.25s var(--ease);
+	}
+	.dot::after {
+		content: '';
+		position: absolute;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		border: 1px solid var(--signal);
+		animation: ping 2.4s var(--ease) infinite;
+	}
+	.minor .dot::before {
+		width: 8px;
+		height: 8px;
+		background: var(--firn);
+		box-shadow: none;
+	}
+	.minor .dot::after,
+	.planned .dot::after {
+		display: none;
+	}
+	.planned .dot::before {
+		background: transparent;
+		border: 2px dashed var(--glacier);
+		box-shadow: none;
+	}
+	@keyframes ping {
+		0% {
+			scale: 1;
+			opacity: 0.9;
+		}
+		100% {
+			scale: 3.2;
+			opacity: 0;
+		}
+	}
+	.dot:hover::before,
+	.dot:focus-visible::before {
+		scale: 1.35;
+	}
+	.tip {
+		position: absolute;
+		left: 0;
+		bottom: 18px;
+		translate: -50% 0;
+		display: grid;
+		gap: 0.2rem;
+		min-width: 190px;
+		padding: 0.7rem 0.85rem;
+		background: var(--firn);
+		color: var(--basalt);
+		border-radius: 6px;
+		pointer-events: none;
+		opacity: 0;
+		transform: translateY(6px);
+		transition:
+			opacity 0.2s var(--ease),
+			transform 0.2s var(--ease);
+		z-index: 5;
+	}
+	.tip .meta {
+		color: #5d625a;
+	}
+	.tip-name {
+		font-weight: 700;
+		font-stretch: 75%;
+		text-transform: uppercase;
+		line-height: 1.05;
+	}
+	.tip-go {
+		color: var(--signal) !important;
+	}
+	.pin:hover .tip,
+	.pin:focus-within .tip {
+		opacity: 1;
+		transform: none;
+	}
+	.pin:hover,
+	.pin:focus-within {
+		z-index: 6;
+	}
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.5rem;
+		margin-top: 1rem;
+	}
+	.lg-dot {
+		display: inline-block;
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: var(--signal);
+		margin-right: 0.5rem;
+		vertical-align: 0;
+	}
+	.lg-minor {
+		background: var(--firn);
+		width: 7px;
+		height: 7px;
+	}
+	.lg-planned {
+		background: transparent;
+		border: 2px dashed var(--glacier);
+	}
+	@media (max-width: 700px) {
+		.tip {
+			min-width: 150px;
+			font-size: 0.85rem;
+		}
+		.dot::before {
+			width: 9px;
+			height: 9px;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.dot::after {
+			animation: none;
+		}
+	}
+</style>

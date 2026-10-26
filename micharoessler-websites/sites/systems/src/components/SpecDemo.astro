@@ -1,0 +1,362 @@
+---
+// Live demo of the "graphics from a spreadsheet" idea: edit cells, the spec card re-renders.
+// Fictional models on purpose – no client data, no trademarks.
+import { type Lang } from '../i18n';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const de = lang === 'de';
+
+const rows = [
+	{ key: 'name', label: de ? 'Modell' : 'Model', a: 'Volta GT', b: 'Kestrel E', unit: '' },
+	{ key: 'power', label: de ? 'Leistung' : 'Power', a: '340', b: '408', unit: 'PS' },
+	{ key: 'sprint', label: '0–100', a: '5.1', b: '4.4', unit: 's' },
+	{ key: 'range', label: de ? 'Reichweite' : 'Range', a: '512', b: '455', unit: 'km' },
+	{ key: 'price', label: de ? 'Preis' : 'Price', a: '54900', b: '61500', unit: '€' },
+];
+---
+
+<div class="demo" data-demo data-lang={lang}>
+	<div class="sheet">
+		<div class="sheet-bar mono">
+			<span>episode_042_specs.csv</span>
+			<span class="live"><i></i>{de ? 'live' : 'live'}</span>
+		</div>
+		<table>
+			<thead>
+				<tr>
+					<th class="mono"></th>
+					<th class="mono">A</th>
+					<th class="mono">B</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					rows.map((r) => (
+						<tr>
+							<th class="mono" scope="row">
+								{r.label}
+								{r.unit && <span> ({r.unit})</span>}
+							</th>
+							<td>
+								<input data-k={`${r.key}-a`} value={r.a} aria-label={`${r.label} A`} inputmode={r.key === 'name' ? 'text' : 'decimal'} />
+							</td>
+							<td>
+								<input data-k={`${r.key}-b`} value={r.b} aria-label={`${r.label} B`} inputmode={r.key === 'name' ? 'text' : 'decimal'} />
+							</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+		<p class="mono hint">{de ? '↑ Werte ändern – die Grafik rendert mit.' : '↑ Change a value – the graphic re-renders.'}</p>
+	</div>
+
+	<div class="out">
+		<div class="fmt mono" role="radiogroup" aria-label={de ? 'Format' : 'Format'}>
+			<label><input type="radio" name="fmt" value="wide" checked /><span>16:9</span></label>
+			<label><input type="radio" name="fmt" value="tall" /><span>9:16</span></label>
+		</div>
+		<div class="frame" data-frame="wide" aria-live="polite">
+			<div class="card">
+				<p class="mono c-kicker">{de ? 'Vergleich' : 'Head to head'}</p>
+				<div class="c-names">
+					<span data-o="name-a"></span>
+					<span class="vs mono">vs</span>
+					<span data-o="name-b"></span>
+				</div>
+				<ul class="c-bars">
+					{
+						rows.slice(1).map((r) => (
+							<li data-row={r.key}>
+								<span class="mono c-l">{r.label}</span>
+								<span class="c-v" data-o={`${r.key}-a`} />
+								<span class="c-track">
+									<i class="bar-a" />
+									<i class="bar-b" />
+								</span>
+								<span class="c-v" data-o={`${r.key}-b`} />
+							</li>
+						))
+					}
+				</ul>
+				<p class="c-verdict"><span class="mono">Verdict</span> <b data-o="verdict"></b></p>
+			</div>
+		</div>
+		<p class="mono hint">{de ? 'Im echten Setup: Remotion- oder MoGRT-Template, befüllt aus eurer Tabelle.' : 'In production: a Remotion or MoGRT template filled from your sheet.'}</p>
+	</div>
+</div>
+
+<script>
+	// Lower is better for 0–100 and price; higher is better for the rest.
+	const lowerWins = new Set(['sprint', 'price']);
+	for (const root of document.querySelectorAll<HTMLElement>('[data-demo]')) {
+		const de = root.dataset.lang === 'de';
+		const nf = new Intl.NumberFormat(de ? 'de-DE' : 'en-GB');
+		const units: Record<string, string> = { power: ' PS', sprint: ' s', range: ' km', price: ' €' };
+		const val = (k: string) => (root.querySelector<HTMLInputElement>(`[data-k="${k}"]`)?.value ?? '').trim();
+		const num = (k: string) => parseFloat(val(k).replace(',', '.')) || 0;
+		const set = (k: string, t: string) => root.querySelectorAll(`[data-o="${k}"]`).forEach((el) => (el.textContent = t));
+
+		const render = () => {
+			set('name-a', val('name-a') || 'A');
+			set('name-b', val('name-b') || 'B');
+			let score = 0;
+			for (const li of root.querySelectorAll<HTMLElement>('[data-row]')) {
+				const k = li.dataset.row!;
+				const a = num(`${k}-a`);
+				const b = num(`${k}-b`);
+				const fmt = (n: number) => (k === 'price' ? nf.format(n) : n.toString().replace('.', de ? ',' : '.')) + units[k];
+				set(`${k}-a`, fmt(a));
+				set(`${k}-b`, fmt(b));
+				const max = Math.max(a, b) || 1;
+				li.style.setProperty('--a', String(a / max));
+				li.style.setProperty('--b', String(b / max));
+				const aWins = lowerWins.has(k) ? a < b : a > b;
+				li.dataset.win = a === b ? '' : aWins ? 'a' : 'b';
+				score += a === b ? 0 : aWins ? 1 : -1;
+			}
+			set('verdict', score === 0 ? (de ? 'Unentschieden' : 'Draw') : score > 0 ? val('name-a') || 'A' : val('name-b') || 'B');
+		};
+		root.addEventListener('input', (e) => {
+			const t = e.target as HTMLInputElement;
+			if (t.name === 'fmt') root.querySelector<HTMLElement>('[data-frame]')!.dataset.frame = t.value;
+			render();
+		});
+		render();
+	}
+</script>
+
+<style>
+	.demo {
+		display: grid;
+		gap: 1.5rem;
+		align-items: start;
+	}
+	@media (min-width: 960px) {
+		.demo {
+			grid-template-columns: 0.85fr 1.15fr;
+			gap: 2.5rem;
+		}
+	}
+	.sheet {
+		border: 1px solid var(--rule);
+		border-radius: 10px;
+		background: #fbfbf9;
+		overflow: hidden;
+	}
+	.sheet-bar {
+		display: flex;
+		justify-content: space-between;
+		padding: 0.7rem 1rem;
+		border-bottom: 1px solid var(--rule);
+		text-transform: none;
+	}
+	.live {
+		color: var(--clip-green);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.live i {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #3a9a47;
+		animation: pulse 1.6s infinite;
+	}
+	@keyframes pulse {
+		50% {
+			opacity: 0.25;
+		}
+	}
+	table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	th,
+	td {
+		border-bottom: 1px solid var(--rule);
+		padding: 0;
+		text-align: left;
+	}
+	thead th {
+		padding: 0.45rem 0.75rem;
+		background: var(--surface);
+	}
+	tbody th {
+		padding: 0 0.75rem;
+		white-space: nowrap;
+		width: 1%;
+	}
+	tbody th span {
+		color: #9a9ca3;
+	}
+	td + td {
+		border-left: 1px solid var(--rule);
+	}
+	input:not([type='radio']) {
+		width: 100%;
+		font: inherit;
+		font-family: var(--mono);
+		font-size: var(--s0);
+		border: 0;
+		background: transparent;
+		padding: 0.7rem 0.75rem;
+		color: var(--ink);
+	}
+	input:not([type='radio']):focus {
+		outline: 2px solid var(--blue);
+		outline-offset: -2px;
+		background: #fff;
+	}
+	.hint {
+		padding: 0.75rem 1rem;
+		text-transform: none;
+	}
+	.out .hint {
+		padding: 0.75rem 0 0;
+	}
+	.fmt {
+		display: inline-flex;
+		border: 1px solid var(--rule);
+		border-radius: 999px;
+		padding: 3px;
+		margin-bottom: 0.9rem;
+	}
+	.fmt input {
+		position: absolute;
+		opacity: 0;
+	}
+	.fmt span {
+		display: block;
+		padding: 0.3rem 0.85rem;
+		border-radius: 999px;
+		cursor: pointer;
+	}
+	.fmt input:checked + span {
+		background: var(--ink);
+		color: var(--paper);
+	}
+	.fmt input:focus-visible + span {
+		outline: 2px solid var(--blue);
+	}
+	.frame {
+		background: var(--dark);
+		border-radius: 10px;
+		padding: clamp(1rem, 3vw, 1.75rem);
+		aspect-ratio: 16 / 9;
+		display: grid;
+		transition:
+			aspect-ratio 0.35s var(--ease),
+			max-width 0.35s var(--ease);
+		max-width: 100%;
+		container-type: inline-size;
+		overflow: hidden;
+	}
+	.frame[data-frame='tall'] {
+		aspect-ratio: 9 / 16;
+		max-width: 340px;
+	}
+	.card {
+		display: grid;
+		align-content: center;
+		gap: 4cqi;
+		color: #f2f2ee;
+	}
+	.c-kicker {
+		color: var(--clip-yellow);
+		font-size: max(10px, 2.2cqi);
+	}
+	.c-names {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.3em 0.6em;
+		font-size: max(18px, 5.4cqi);
+		font-weight: 600;
+		letter-spacing: -0.03em;
+		line-height: 1;
+	}
+	.vs {
+		font-size: 0.45em;
+		color: #8d8f96;
+	}
+	.c-bars {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 2.2cqi;
+	}
+	.c-bars li {
+		display: grid;
+		grid-template-columns: 7em 6.5em 1fr 6.5em;
+		align-items: center;
+		gap: 0.75em;
+		font-size: max(10px, 2.1cqi);
+	}
+	.frame[data-frame='tall'] .c-bars li {
+		grid-template-columns: 1fr 1fr;
+		row-gap: 0.35em;
+	}
+	.frame[data-frame='tall'] .c-l {
+		grid-column: 1 / -1;
+	}
+	.frame[data-frame='tall'] .c-track {
+		grid-column: 1 / -1;
+		grid-row: 3;
+	}
+	.frame[data-frame='tall'] .c-v:last-child {
+		text-align: right;
+	}
+	.c-l {
+		color: #8d8f96;
+	}
+	.c-v {
+		font-family: var(--mono);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+	.c-track {
+		display: grid;
+		gap: 3px;
+	}
+	.c-track i {
+		display: block;
+		height: max(5px, 1.1cqi);
+		border-radius: 2px;
+		background: #3a3b42;
+		transform-origin: left;
+		transition: transform 0.4s var(--ease);
+	}
+	.bar-a {
+		transform: scaleX(var(--a, 0));
+	}
+	.bar-b {
+		transform: scaleX(var(--b, 0));
+	}
+	[data-win='a'] .bar-a,
+	[data-win='b'] .bar-b {
+		background: var(--clip-blue);
+	}
+	.c-verdict {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75em;
+		font-size: max(13px, 3cqi);
+		border-top: 1px solid #2a2b30;
+		padding-top: 2cqi;
+	}
+	.c-verdict .mono {
+		color: var(--clip-green);
+		font-size: 0.6em;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.live i {
+			animation: none;
+		}
+	}
+</style>

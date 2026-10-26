@@ -24,6 +24,7 @@ export type Project = {
 	gallery: string[];
 	youtube?: string;
 	featured?: boolean;
+	peak?: string; // shown at the top of the altitude rail
 };
 
 // Facts only from micharoessler.com (2024), Notion work pages and Drive briefings.
@@ -56,6 +57,7 @@ export const projects: Project[] = [
 			{ label: { en: 'Altitude', de: 'Höhe' }, value: { en: 'High Andes, 4,000 m+', de: 'Hochanden, 4.000 m+' } },
 			{ label: { en: 'Deliverables', de: 'Lieferumfang' }, value: { en: 'Doc footage, reels, stills', de: 'Doku-Material, Reels, Fotos' } },
 		],
+		peak: '4,000 m+',
 		cover: 'bolivia-twin-volcanoes',
 		gallery: [
 			'bolivia-ridge-climbers',
@@ -149,6 +151,7 @@ export const projects: Project[] = [
 			{ label: { en: 'Shooting days', de: 'Drehtage' }, value: { en: '7', de: '7' } },
 			{ label: { en: 'Summit', de: 'Gipfel' }, value: { en: 'Uhuru Peak, 5,895 m', de: 'Uhuru Peak, 5.895 m' } },
 		],
+		peak: '5,895 m',
 		cover: 'kilimanjaro-ridge',
 		gallery: [],
 	},

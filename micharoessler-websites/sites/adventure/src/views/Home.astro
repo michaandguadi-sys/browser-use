@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import { href, ui, type Lang } from '../i18n';
 import { projects, brands, creators, pic } from '../data/projects';
+import ExpeditionMap from '../components/ExpeditionMap.astro';
 
 interface Props {
 	lang: Lang;
@@ -126,11 +127,14 @@ const description = en
 
 	<section class="intro wrap">
 		<p class="meta reveal">{en ? 'What I do' : 'Was ich mache'}</p>
-		<p class="intro-lead reveal">
+		<p class="intro-lead">
 			{
-				en
+				(en
 					? 'I film people at the edge of what they can do – on mountains, in snow, on multi-day journeys – and edit it into stories that are honest about what it took.'
 					: 'Ich filme Menschen an der Grenze ihrer Möglichkeiten – am Berg, im Schnee, auf mehrtägigen Touren – und schneide daraus Geschichten, die ehrlich zeigen, was es gekostet hat.'
+				)
+					.split(' ')
+					.map((w) => <span class="w">{w} </span>)
 			}
 		</p>
 		<ol class="services">
@@ -156,7 +160,7 @@ const description = en
 				projects.map((p, i) => (
 					<li class:list={['card', 'reveal', { wide: i === 0 || (i === projects.length - 1 && projects.length % 2 === 0) }]}>
 						<a href={href(lang, p.slug)}>
-							<div class="card-img">
+							<div class="card-img" style={`view-transition-name: p-${p.slug}`}>
 								<Image
 									src={pic(p.cover)}
 									alt={p.title[lang]}
@@ -181,6 +185,15 @@ const description = en
 				))
 			}
 		</ul>
+		<span class="pill" aria-hidden="true">{t.viewFilm} →</span>
+	</section>
+
+	<section class="wrap mapsec" aria-labelledby="map-h">
+		<div class="sec-head">
+			<h2 id="map-h">{en ? 'Where I have filmed' : 'Wo ich gedreht habe'}</h2>
+			<p class="meta">{en ? 'Hover or tap a pin' : 'Pin antippen oder überfahren'}</p>
+		</div>
+		<ExpeditionMap lang={lang} />
 	</section>
 
 	<section class="field" aria-labelledby="field-h">
@@ -238,6 +251,30 @@ const description = en
 		<a class="btn btn--signal" href={href(lang, 'contact')}>{en ? 'Partner on a film' : 'Film unterstützen'}</a>
 	</section>
 </Base>
+
+<script>
+	// "View project" pill follows the cursor over work cards (fine pointers only).
+	if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+		const pill = document.querySelector<HTMLElement>('.pill');
+		const cards = document.querySelectorAll<HTMLElement>('.card a');
+		if (pill) {
+			let x = 0, y = 0, raf = 0;
+			const move = () => {
+				pill.style.transform = `translate(${x + 14}px, ${y + 14}px)`;
+				raf = 0;
+			};
+			cards.forEach((c) => {
+				c.addEventListener('pointerenter', () => pill.classList.add('on'));
+				c.addEventListener('pointerleave', () => pill.classList.remove('on'));
+				c.addEventListener('pointermove', (e) => {
+					x = e.clientX;
+					y = e.clientY;
+					if (!raf) raf = requestAnimationFrame(move);
+				});
+			});
+		}
+	}
+</script>
 
 <style>
 	.hero {
@@ -443,6 +480,56 @@ const description = en
 	}
 	.card-role {
 		margin-top: 0.9rem;
+	}
+
+	/* Scroll-driven word reveal (progressive: without support the text is simply fully visible). */
+	@supports (animation-timeline: view()) {
+		@media (prefers-reduced-motion: no-preference) {
+			.intro-lead .w {
+				animation: word linear both;
+				animation-timeline: view();
+				animation-range: entry 10% cover 38%;
+			}
+		}
+	}
+	@keyframes word {
+		from {
+			opacity: 0.16;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	.pill {
+		position: fixed;
+		left: 0;
+		top: 0;
+		z-index: 40;
+		padding: 0.7em 1.1em;
+		border-radius: 999px;
+		background: var(--signal);
+		color: #fff;
+		font-weight: 650;
+		font-stretch: 90%;
+		font-size: var(--step--1);
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		pointer-events: none;
+		opacity: 0;
+		scale: 0.6;
+		transition:
+			opacity 0.2s var(--ease),
+			scale 0.2s var(--ease);
+		white-space: nowrap;
+	}
+	.pill.on {
+		opacity: 1;
+		scale: 1;
+	}
+
+	.mapsec {
+		padding-top: clamp(5rem, 12vw, 9rem);
 	}
 
 	.field {

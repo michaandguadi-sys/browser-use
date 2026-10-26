@@ -1,0 +1,247 @@
+---
+// Effort calculator: current monthly edit hours vs. with a format system.
+// The saving rate is an explicit, editable assumption – the site never promises it.
+import { type Lang } from '../i18n';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const de = lang === 'de';
+
+const inputs = [
+	{ id: 'eps', label: de ? 'Langform-Folgen pro Monat' : 'Long-form episodes per month', min: 1, max: 12, step: 1, value: 4, unit: '' },
+	{ id: 'hEp', label: de ? 'Schnittstunden pro Folge (heute)' : 'Edit hours per episode (today)', min: 4, max: 40, step: 1, value: 16, unit: 'h' },
+	{ id: 'shorts', label: de ? 'Shorts pro Folge' : 'Shorts per episode', min: 0, max: 8, step: 1, value: 3, unit: '' },
+	{ id: 'hShort', label: de ? 'Stunden pro Short (heute)' : 'Hours per short (today)', min: 0.5, max: 4, step: 0.5, value: 1.5, unit: 'h' },
+	{ id: 'save', label: de ? 'Annahme: Zeitersparnis durch System' : 'Assumption: time saved by the system', min: 10, max: 40, step: 5, value: 25, unit: '%' },
+];
+---
+
+<div class="calc" data-calc data-lang={lang}>
+	<div class="in">
+		{
+			inputs.map((i) => (
+				<label class:list={['row', { assume: i.id === 'save' }]}>
+					<span class="lab">
+						{i.label}
+						<output class="mono" data-show={i.id}>
+							{i.value}
+							{i.unit}
+						</output>
+					</span>
+					<input type="range" name={i.id} min={i.min} max={i.max} step={i.step} value={i.value} data-unit={i.unit} />
+				</label>
+			))
+		}
+	</div>
+
+	<div class="res" aria-live="polite">
+		<div class="bars">
+			<div class="bar">
+				<span class="mono">{de ? 'Heute' : 'Today'}</span>
+				<i data-bar="now"></i>
+				<b data-o="now"></b>
+			</div>
+			<div class="bar sys">
+				<span class="mono">{de ? 'Mit System' : 'With system'}</span>
+				<i data-bar="sys"></i>
+				<b data-o="sys"></b>
+			</div>
+		</div>
+		<dl class="kpi">
+			<div>
+				<dt class="mono">{de ? 'Gesparte Stunden / Monat' : 'Hours saved / month'}</dt>
+				<dd data-o="saved"></dd>
+			</div>
+			<div>
+				<dt class="mono">{de ? 'Gegenwert bei 750 € / Tag' : 'Worth at €750 / day'}</dt>
+				<dd data-o="worth"></dd>
+			</div>
+		</dl>
+		<div class="rec">
+			<p class="mono">{de ? 'Passendes Paket' : 'Matching package'}</p>
+			<p class="rec-name" data-o="pkg"></p>
+			<a class="btn btn--ink" href="#kontakt" data-cta>{de ? 'Damit anfragen' : 'Enquire with this'} <span class="arr">→</span></a>
+		</div>
+		<p class="mono note">
+			{
+				de
+					? 'Schätzung, keine Garantie. Die Ersparnis hängt von eurem Format ab – genau das klärt der Pilot.'
+					: 'An estimate, not a promise. The saving depends on your format – which is exactly what the pilot measures.'
+			}
+		</p>
+	</div>
+</div>
+
+<script>
+	for (const root of document.querySelectorAll<HTMLElement>('[data-calc]')) {
+		const de = root.dataset.lang === 'de';
+		const nf = new Intl.NumberFormat(de ? 'de-DE' : 'en-GB', { maximumFractionDigits: 0 });
+		const get = (n: string) => Number(root.querySelector<HTMLInputElement>(`input[name="${n}"]`)!.value);
+		const out = (k: string, t: string) => (root.querySelector(`[data-o="${k}"]`)!.textContent = t);
+
+		const render = () => {
+			for (const i of root.querySelectorAll<HTMLInputElement>('input[type=range]')) {
+				const v = Number(i.value).toLocaleString(de ? 'de-DE' : 'en-GB');
+				root.querySelector(`[data-show="${i.name}"]`)!.textContent = v + (i.dataset.unit ?? '');
+			}
+			const eps = get('eps');
+			const now = eps * (get('hEp') + get('shorts') * get('hShort'));
+			const sys = now * (1 - get('save') / 100);
+			const saved = now - sys;
+			out('now', `${nf.format(now)} h`);
+			out('sys', `${nf.format(sys)} h`);
+			out('saved', `${nf.format(saved)} h`);
+			out('worth', de ? `≈ ${nf.format((saved / 8) * 750)} €` : `≈ €${nf.format((saved / 8) * 750)}`);
+			root.querySelector<HTMLElement>('[data-bar="now"]')!.style.setProperty('--w', '1');
+			root.querySelector<HTMLElement>('[data-bar="sys"]')!.style.setProperty('--w', String(now ? sys / now : 0));
+
+			// Retainer S = 6 days, M = 10 days (8 h each), see packages.
+			const days = sys / 8;
+			const pkg =
+				days <= 3
+					? de ? 'Pilot, dann Setup (3.500 €) – euer Team schneidet selbst' : 'Pilot, then setup (€3,500) – your team edits'
+					: days <= 6
+						? de ? 'Format-Retainer S · 4.200 € / Monat' : 'Format retainer S · €4,200 / month'
+						: days <= 10
+							? de ? 'Format-Retainer M · 6.750 € / Monat' : 'Format retainer M · €6,750 / month'
+							: de ? 'Individuelles Angebot (über 10 Tage / Monat)' : 'Custom quote (over 10 days / month)';
+			out('pkg', pkg);
+			root.querySelector<HTMLAnchorElement>('[data-cta]')!.dataset.summary =
+				`${de ? 'Rechner' : 'Calculator'}: ${eps} ${de ? 'Folgen' : 'episodes'}/${de ? 'Monat' : 'month'}, ${nf.format(now)} h → ${nf.format(sys)} h. ${pkg}`;
+		};
+		root.addEventListener('input', render);
+		// Carry the estimate into the brief form so the enquiry starts with numbers.
+		root.querySelector('[data-cta]')?.addEventListener('click', (e) => {
+			const s = (e.currentTarget as HTMLElement).dataset.summary ?? '';
+			const goal = document.querySelector<HTMLTextAreaElement>('#brief textarea');
+			if (goal && !goal.value.includes(s)) goal.value = (goal.value ? goal.value + '\n' : '') + s;
+		});
+		render();
+	}
+</script>
+
+<style>
+	.calc {
+		display: grid;
+		gap: 1.5rem;
+		border: 1px solid var(--rule);
+		border-radius: 12px;
+		padding: clamp(1.25rem, 3vw, 2rem);
+		background: #fbfbf9;
+	}
+	@media (min-width: 960px) {
+		.calc {
+			grid-template-columns: 1fr 1fr;
+			gap: 3rem;
+		}
+	}
+	.in {
+		display: grid;
+		gap: 1.4rem;
+	}
+	.row {
+		display: grid;
+		gap: 0.55rem;
+	}
+	.lab {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		font-size: var(--s0);
+	}
+	.lab output {
+		text-transform: none;
+		color: var(--ink);
+		font-size: var(--s0);
+	}
+	.assume {
+		padding-top: 1.1rem;
+		border-top: 1px dashed var(--rule);
+	}
+	.assume .lab {
+		color: var(--graphite);
+	}
+	input[type='range'] {
+		width: 100%;
+		accent-color: var(--blue);
+		height: 1.5rem;
+	}
+	.res {
+		display: grid;
+		gap: 1.25rem;
+		align-content: start;
+	}
+	.bars {
+		display: grid;
+		gap: 0.6rem;
+	}
+	.bar {
+		display: grid;
+		grid-template-columns: 6.5rem 1fr 4.5rem;
+		align-items: center;
+		gap: 0.75rem;
+	}
+	.bar i {
+		display: block;
+		height: 26px;
+		border-radius: 4px;
+		background: var(--clip-red);
+		transform-origin: left;
+		transform: scaleX(var(--w, 1));
+		transition: transform 0.35s var(--ease);
+	}
+	.bar.sys i {
+		background: var(--clip-green);
+	}
+	.bar b {
+		font-family: var(--mono);
+		font-weight: 500;
+		text-align: right;
+	}
+	.kpi {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+		margin: 0;
+		border-top: 1px solid var(--rule);
+		padding-top: 1rem;
+	}
+	.kpi dd {
+		margin: 0.3rem 0 0;
+		font-size: var(--s4);
+		font-weight: 560;
+		letter-spacing: -0.03em;
+	}
+	.rec {
+		background: var(--ink);
+		color: var(--paper);
+		border-radius: 10px;
+		padding: 1.25rem;
+		display: grid;
+		gap: 0.5rem;
+		justify-items: start;
+	}
+	.rec .mono {
+		color: #a7a9b0;
+	}
+	.rec-name {
+		font-size: var(--s2);
+		font-weight: 520;
+		margin-bottom: 0.5rem;
+	}
+	.rec .btn--ink {
+		background: var(--paper);
+		color: var(--ink);
+		border-color: var(--paper);
+	}
+	.rec .btn--ink:hover {
+		background: var(--clip-blue);
+		border-color: var(--clip-blue);
+	}
+	.note {
+		text-transform: none;
+		letter-spacing: 0;
+	}
+</style>

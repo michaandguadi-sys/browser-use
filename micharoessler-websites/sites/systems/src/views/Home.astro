@@ -2,6 +2,8 @@
 import Base from '../layouts/Base.astro';
 import { type Lang } from '../i18n';
 import { packages, systemParts, proof, tools, faq } from '../data/content';
+import SpecDemo from '../components/SpecDemo.astro';
+import Calculator from '../components/Calculator.astro';
 
 interface Props {
 	lang: Lang;
@@ -31,6 +33,25 @@ const clips: [number, number, number, string, string][] = [
 	[2, 0, 100, 'var(--clip-green)', ''],
 ];
 const tracks = ['V1', 'GFX', 'A1'];
+
+// What the system automates at each beat – shown when the playhead crosses it.
+const beats: [number, number, string][] = de
+	? [
+			[0, 9, 'Hook · aus der Hook-Bank, 3 Varianten pro Folge vorbereitet'],
+			[9, 20, 'Intro · Template mit Titelkarte aus der Tabelle'],
+			[20, 44, 'Test A · Spec-Card automatisch befüllt'],
+			[44, 68, 'Test B · gleiche Grafik, neue Daten – kein Neu-Animieren'],
+			[68, 88, 'Verdict · Score-Overlay aus der Tabelle'],
+			[88, 100, 'Endscreen · Export-Preset + 3–6 Shorts aus Transkript-Selects'],
+		]
+	: [
+			[0, 9, 'Hook · from the hook bank, 3 variants prepared per episode'],
+			[9, 20, 'Intro · template with title card from the sheet'],
+			[20, 44, 'Segment A · spec card filled automatically'],
+			[44, 68, 'Segment B · same graphic, new data – no re-animating'],
+			[68, 88, 'Verdict · score overlay from the sheet'],
+			[88, 100, 'End screen · export preset + 3–6 shorts from transcript selects'],
+		];
 
 const steps = de
 	? [
@@ -95,7 +116,7 @@ const offerLd = {
 			</dl>
 		</div>
 
-		<figure class="tl" aria-label={de ? 'Schema einer Format-Timeline: Hook, Intro, Segmente, Verdict, Endscreen mit Grafik-Spur' : 'Diagram of a format timeline: hook, intro, segments, verdict, end screen with graphics track'}>
+		<figure class="tl" tabindex="0" data-beats={JSON.stringify(beats)} aria-label={de ? 'Schema einer Format-Timeline: Hook, Intro, Segmente, Verdict, Endscreen mit Grafik-Spur' : 'Diagram of a format timeline: hook, intro, segments, verdict, end screen with graphics track'}>
 			<div class="tl-head mono">
 				<span>EP_042_{de ? 'Vergleichstest' : 'comparison'}.prproj</span>
 				<span class="tc">00:12:48:16</span>
@@ -127,9 +148,10 @@ const offerLd = {
 				}
 				<span class="playhead"></span>
 			</div>
+			<p class="mono tl-note" aria-live="polite" data-note>{beats[0][2]}</p>
 			<figcaption class="mono tl-cap">
 				<span>{de ? 'Template' : 'Template'}: 11 Clips · 4 {de ? 'Grafik-Beats aus Tabelle' : 'graphic beats from sheet'}</span>
-				<span>→ 3–6 Shorts</span>
+				<span class="tl-keys">{de ? 'Ziehen oder' : 'Drag or'} <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd></span>
 			</figcaption>
 		</figure>
 	</section>
@@ -176,6 +198,21 @@ const offerLd = {
 		</p>
 	</section>
 
+	<section id="demo" class="sec wrap">
+		<div class="sec-h">
+			<p class="mono label">{de ? 'Live-Demo' : 'Live demo'}</p>
+			<h2>{de ? 'Grafik aus der Tabelle. Probiert es aus.' : 'Graphics from a spreadsheet. Try it.'}</h2>
+			<p>
+				{
+					de
+						? 'So funktionieren datengetriebene Grafiken: Ihr pflegt Werte, das Template rendert – in 16:9 und 9:16. Ändert eine Zahl.'
+						: 'This is how data-driven graphics work: you maintain values, the template renders – in 16:9 and 9:16. Change a number.'
+				}
+			</p>
+		</div>
+		<SpecDemo lang={lang} />
+	</section>
+
 	<section id="ablauf" class="sec wrap">
 		<div class="sec-h">
 			<p class="mono label">{de ? 'Ablauf' : 'Process'}</p>
@@ -195,6 +232,15 @@ const offerLd = {
 		</ol>
 	</section>
 
+	<section id="rechner" class="sec wrap">
+		<div class="sec-h">
+			<p class="mono label">{de ? 'Rechner' : 'Calculator'}</p>
+			<h2>{de ? 'Was spart euch ein System?' : 'What would a system save you?'}</h2>
+			<p>{de ? 'Eure Zahlen rein, Schätzung raus – inklusive passendem Paket.' : 'Your numbers in, an estimate out – including the matching package.'}</p>
+		</div>
+		<Calculator lang={lang} />
+	</section>
+
 	<section id="pakete" class="sec wrap">
 		<div class="sec-h">
 			<p class="mono label">{de ? 'Pakete & Preise' : 'Packages & pricing'}</p>
@@ -206,6 +252,7 @@ const offerLd = {
 						: 'Base day rate is €750. Packages cost less than single days because the system makes the work faster – that is the point.'
 				}
 			</p>
+			<a class="mono calc-link" href="#rechner">{de ? 'Unsicher? Rechner nutzen ↑' : 'Not sure? Use the calculator ↑'}</a>
 		</div>
 		<div class="pk">
 			{
@@ -353,6 +400,71 @@ const offerLd = {
 </Base>
 
 <script>
+	// Hero timeline: drag the playhead or use J/K/L like in an NLE.
+	const tl = document.querySelector<HTMLElement>('.tl');
+	if (tl) {
+		const beats: [number, number, string][] = JSON.parse(tl.dataset.beats ?? '[]');
+		const lanes = tl.querySelector<HTMLElement>('.tl-tracks')!;
+		const head = tl.querySelector<HTMLElement>('.playhead')!;
+		const tc = tl.querySelector<HTMLElement>('.tc')!;
+		const note = tl.querySelector<HTMLElement>('[data-note]')!;
+		const total = 12 * 60 + 48; // seconds in the mock episode
+		let p = 0;
+		let raf = 0;
+		const pad = (n: number) => String(Math.floor(n)).padStart(2, '0');
+		const set = (v: number) => {
+			p = Math.min(1, Math.max(0, v));
+			tl.classList.add('live');
+			head.style.setProperty('--p', String(p));
+			const t = p * total;
+			tc.textContent = `00:${pad(t / 60)}:${pad(t % 60)}:${pad((t % 1) * 25)}`;
+			const pct = p * 100;
+			const beat = beats.find(([a, b]) => pct >= a && pct < b) ?? beats[beats.length - 1];
+			if (beat && note.textContent !== beat[2]) note.textContent = beat[2];
+			tl.querySelectorAll<HTMLElement>('.clip').forEach((c) => {
+				const x = parseFloat(c.style.getPropertyValue('--x'));
+				const w = parseFloat(c.style.getPropertyValue('--w'));
+				c.classList.toggle('hot', pct >= x && pct < x + w && w < 100);
+			});
+		};
+		const fromPointer = (e: PointerEvent) => {
+			const lane = lanes.querySelector<HTMLElement>('.lane')!.getBoundingClientRect();
+			set((e.clientX - lane.left) / lane.width);
+		};
+		const stop = () => {
+			cancelAnimationFrame(raf);
+			raf = 0;
+		};
+		const play = (dir: number) => {
+			stop();
+			let last = performance.now();
+			const tick = (now: number) => {
+				set(p + ((now - last) / 9000) * dir);
+				last = now;
+				if ((dir > 0 && p < 1) || (dir < 0 && p > 0)) raf = requestAnimationFrame(tick);
+			};
+			raf = requestAnimationFrame(tick);
+		};
+		lanes.addEventListener('pointerdown', (e) => {
+			stop();
+			lanes.setPointerCapture(e.pointerId);
+			fromPointer(e);
+			const move = (ev: PointerEvent) => fromPointer(ev);
+			lanes.addEventListener('pointermove', move);
+			lanes.addEventListener('pointerup', () => lanes.removeEventListener('pointermove', move), { once: true });
+		});
+		tl.addEventListener('keydown', (e) => {
+			const k = e.key.toLowerCase();
+			if (k === 'l') play(1);
+			else if (k === 'j') play(-1);
+			else if (k === 'k' || k === ' ') raf ? stop() : play(1);
+			else if (k === 'arrowright') set(p + 0.02);
+			else if (k === 'arrowleft') set(p - 0.02);
+			else return;
+			e.preventDefault();
+		});
+	}
+
 	const f = document.getElementById('brief') as HTMLFormElement;
 	f?.addEventListener('submit', (e) => {
 		e.preventDefault();
@@ -516,6 +628,46 @@ const offerLd = {
 			left: calc(2.6rem + (100% - 2.6rem) * 0.62);
 		}
 	}
+	.tl {
+		outline-offset: 4px;
+	}
+	.tl-tracks {
+		cursor: ew-resize;
+		touch-action: pan-y;
+		user-select: none;
+	}
+	.tl.live .playhead {
+		animation: none;
+		left: calc(2.6rem + (100% - 2.6rem) * var(--p, 0));
+	}
+	.clip {
+		transition:
+			filter 0.15s,
+			box-shadow 0.15s;
+	}
+	.clip.hot {
+		filter: brightness(1.12);
+		box-shadow: 0 0 0 2px #fff inset;
+	}
+	.tl-note {
+		margin-top: 0.9rem;
+		min-height: 2.6em;
+		color: #e9e9e4 !important;
+		text-transform: none;
+		letter-spacing: 0;
+		font-size: 0.75rem;
+	}
+	.tl-keys kbd {
+		display: inline-block;
+		min-width: 1.5em;
+		margin-left: 0.25em;
+		padding: 0 0.3em;
+		border: 1px solid #3a3b42;
+		border-radius: 3px;
+		text-align: center;
+		font-family: var(--mono);
+		color: #c9cac6;
+	}
 	.tl-cap {
 		display: flex;
 		justify-content: space-between;
@@ -616,6 +768,13 @@ const offerLd = {
 		color: var(--ink);
 	}
 
+	.calc-link {
+		color: var(--blue);
+		text-decoration: none;
+	}
+	.calc-link:hover {
+		text-decoration: underline;
+	}
 	.pk {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(min(100%, 228px), 1fr));
