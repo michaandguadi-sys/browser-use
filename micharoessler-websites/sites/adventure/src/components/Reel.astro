@@ -1,0 +1,289 @@
+---
+// Hero reel block: near-full-width still that widens to edge-to-edge while scrolling
+// (CSS scroll-driven animation; static inset where unsupported). Rotating badge:
+// "Selected films" → scrolls to the film strip, or "Showreel" → plays the showreel inline once one is set in data.
+import { showreel } from '../data/site';
+import type { Lang } from '../i18n';
+import type { Art } from '../lib/img';
+
+interface Props {
+	lang: Lang;
+	art: Art; // art-directed LCP image (built in the page so Base can preload the same files)
+	alt: string;
+	caption: string;
+	link?: { href: string; label: string };
+	films?: string; // anchor of the film strip
+}
+const { lang, art, alt, caption, link, films = '#films' } = Astro.props;
+const de = lang === 'de';
+const reel = showreel && (showreel.video || showreel.youtube) ? showreel : null;
+const word = reel ? 'Showreel' : de ? 'Ausgewählte Filme' : 'Selected films';
+const ring = `${word} · ${word} · `;
+const label = reel ? (de ? 'Showreel abspielen' : 'Play showreel') : word;
+---
+
+<div class="reel-wrap">
+	<div class="reel" data-reel>
+		<picture>
+			{
+				art.sources.map((s) => (
+					<>
+						<source type="image/avif" srcset={s.avif} sizes={s.sizes} media={s.media} />
+						<source type="image/webp" srcset={s.webp} sizes={s.sizes} media={s.media} />
+					</>
+				))
+			}
+			<img
+				class="reel-img"
+				src={art.fallback.src}
+				width={art.fallback.width}
+				height={art.fallback.height}
+				alt={alt}
+				loading="eager"
+				decoding="sync"
+				fetchpriority="high"
+			/>
+		</picture>
+		{
+			reel ? (
+				<button type="button" class="badge" data-video={reel.video} data-yt={reel.youtube}>
+					<span class="sr-only">{label}</span>
+					<svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+						<defs>
+							<path id="reel-ring" d="M50 50m-38 0a38 38 0 1 1 76 0a38 38 0 1 1-76 0" />
+						</defs>
+						<text>
+							<textPath href="#reel-ring" textLength="236" lengthAdjust="spacing">
+								{ring}
+							</textPath>
+						</text>
+					</svg>
+					<svg class="play" viewBox="0 0 24 24" aria-hidden="true">
+						<path d="M8 5.5v13l10.5-6.5Z" />
+					</svg>
+				</button>
+			) : (
+				<a class="badge" href={films}>
+					<span class="sr-only">{label}</span>
+					<svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+						<defs>
+							<path id="reel-ring" d="M50 50m-38 0a38 38 0 1 1 76 0a38 38 0 1 1-76 0" />
+						</defs>
+						<text>
+							<textPath href="#reel-ring" textLength="236" lengthAdjust="spacing">
+								{ring}
+							</textPath>
+						</text>
+					</svg>
+					<svg class="play down" viewBox="0 0 24 24" aria-hidden="true">
+						<path d="M12 5v14M6 13l6 6 6-6" />
+					</svg>
+				</a>
+			)
+		}
+		<div class="reel-cap">
+			<span>{caption}</span>
+			{link && <a href={link.href}>{link.label} →</a>}
+		</div>
+	</div>
+</div>
+
+{
+	reel && (
+		<script>
+			const b = document.querySelector<HTMLButtonElement>('.reel .badge');
+			b?.addEventListener(
+				'click',
+				() => {
+					const host = b.closest('.reel')!;
+					let el: HTMLElement;
+					if (b.dataset.video) {
+						const v = document.createElement('video');
+						v.src = b.dataset.video;
+						v.controls = true;
+						v.autoplay = true;
+						v.playsInline = true;
+						el = v;
+					} else {
+						const f = document.createElement('iframe');
+						f.src = `https://www.youtube-nocookie.com/embed/${b.dataset.yt}?autoplay=1&rel=0`;
+						f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+						f.allowFullscreen = true;
+						f.title = 'Showreel';
+						el = f;
+					}
+					el.className = 'reel-play';
+					host.append(el);
+					host.classList.add('playing');
+				},
+				{ once: true },
+			);
+		</script>
+	)
+}
+
+<style>
+	@property --g {
+		syntax: '<length>';
+		inherits: true;
+		initial-value: 48px;
+	}
+	@property --r {
+		syntax: '<length>';
+		inherits: true;
+		initial-value: 6px;
+	}
+	.reel-wrap {
+		margin-top: clamp(36px, 4vw, 56px);
+	}
+	.reel {
+		--g0: max(var(--gut), calc((100vw - var(--max)) / 2 + var(--gut)));
+		--g: var(--g0);
+		--r: 6px;
+		position: relative;
+		height: min(78vh, 760px);
+		min-height: 420px;
+		overflow: hidden;
+		background: #111;
+		clip-path: inset(0 var(--g) round var(--r));
+	}
+	@supports (animation-timeline: view()) {
+		@media (prefers-reduced-motion: no-preference) {
+			.reel {
+				animation: widen linear both;
+				animation-timeline: view();
+				animation-range: cover 30% cover 56%;
+			}
+		}
+	}
+	@keyframes widen {
+		from {
+			--g: var(--g0);
+			--r: 6px;
+		}
+		to {
+			--g: 0px;
+			--r: 0px;
+		}
+	}
+	.reel picture,
+	.reel-img {
+		position: absolute;
+		inset: 0;
+	}
+	.reel-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: 50% 58%;
+	}
+	.reel::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: linear-gradient(180deg, rgb(0 0 0 / 0.12), rgb(0 0 0 / 0) 40%, rgb(0 0 0 / 0.45));
+	}
+	.badge {
+		position: absolute;
+		right: calc(var(--g) + clamp(20px, 5vw, 80px));
+		top: clamp(20px, 4vw, 56px);
+		z-index: 3;
+		width: clamp(110px, 10vw, 150px);
+		aspect-ratio: 1;
+		display: grid;
+		place-items: center;
+		padding: 0;
+		border-radius: 50%;
+		background: rgb(80 140 170 / 0.28);
+		backdrop-filter: blur(10px) saturate(1.2);
+		border: 1px solid rgb(255 255 255 / 0.25);
+		cursor: pointer;
+		transition: transform 0.4s var(--ease);
+	}
+	.badge:hover {
+		transform: scale(1.04);
+	}
+	.ring {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		animation: spin 14s linear infinite;
+	}
+	.badge:hover .ring,
+	.badge:focus-visible .ring {
+		animation-play-state: paused;
+	}
+	.ring text {
+		fill: #fff;
+		font-family: var(--mono);
+		font-size: 9.5px;
+		letter-spacing: 1px;
+		text-transform: uppercase;
+	}
+	.play {
+		width: 28%;
+		height: 28%;
+		fill: none;
+		stroke: #fff;
+		stroke-width: 1.4;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	.reel-cap {
+		position: absolute;
+		left: calc(var(--g) + 18px);
+		right: calc(var(--g) + 18px);
+		bottom: 16px;
+		z-index: 2;
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: #ece8e1;
+	}
+	.reel-cap a {
+		border-bottom: 1px solid rgb(255 255 255 / 0.35);
+	}
+	.reel-cap a:hover {
+		border-color: #fff;
+	}
+	.reel :global(.reel-play) {
+		position: absolute;
+		inset: 0 var(--g);
+		z-index: 4;
+		width: calc(100% - 2 * var(--g));
+		height: 100%;
+		border: 0;
+		background: #000;
+	}
+	.playing .badge,
+	.playing .reel-cap {
+		display: none;
+	}
+	@media (max-width: 700px) {
+		.reel {
+			--g0: 16px;
+			height: auto;
+			aspect-ratio: 4 / 5;
+			min-height: 0;
+		}
+		.badge {
+			top: auto;
+			bottom: 74px;
+			width: 104px;
+		}
+		.reel-cap {
+			flex-direction: column;
+			gap: 4px;
+		}
+	}
+</style>

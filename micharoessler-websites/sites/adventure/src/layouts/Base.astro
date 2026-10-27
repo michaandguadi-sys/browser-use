@@ -1,12 +1,11 @@
 ---
 import '../styles/global.css';
 import { getImage } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
 import { href, other, ui, type Lang } from '../i18n';
 import { pic } from '../data/projects';
+import { audio } from '../data/site';
 import portrait from '../assets/micha-portrait.jpg';
-import monoFont from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
-import sansFont from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url';
+import monoFont from '@fontsource-variable/inconsolata/files/inconsolata-latin-wdth-normal.woff2?url';
 import Icon from '../components/Icon.astro';
 
 interface Props {
@@ -16,11 +15,12 @@ interface Props {
 	alt: Record<Lang, string>; // same page in both languages, for hreflang + switcher
 	ogImage?: string;
 	jsonLd?: Record<string, unknown>[];
-	hero?: { src: ImageMetadata; widths: number[]; sizes: string }; // LCP image to preload (AVIF)
+	preload?: { srcset: string; sizes: string; media?: string }[]; // LCP image candidates (AVIF)
 	terrainCredit?: boolean; // page shows real-terrain contours
+	cta?: boolean; // big e-mail call to action above the footer
 }
 
-const { lang, title, description, alt, ogImage = 'bolivia-ridge-climbers', jsonLd = [], hero, terrainCredit = false } = Astro.props;
+const { lang, title, description, alt, ogImage = 'bolivia-ridge-climbers', jsonLd = [], preload = [], terrainCredit = false, cta = true } = Astro.props;
 const t = ui[lang];
 const en = lang === 'en';
 const site = Astro.site!;
@@ -28,7 +28,6 @@ const canonical = new URL(alt[lang], site).href;
 const og = await getImage({ src: pic(ogImage), width: 1200, height: 630, fit: 'cover', format: 'jpg' });
 const ogUrl = new URL(og.src, site).href;
 const face = await getImage({ src: portrait, width: 800, format: 'jpg' });
-const heroPre = hero ? await getImage({ src: hero.src, widths: hero.widths, format: 'avif', quality: 78 }) : null;
 
 const person = {
 	'@context': 'https://schema.org',
@@ -56,8 +55,7 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 		<title>{title}</title>
 		<script is:inline>document.documentElement.classList.add('js');</script>
 		<link rel="preload" href={monoFont} as="font" type="font/woff2" crossorigin />
-		<link rel="preload" href={sansFont} as="font" type="font/woff2" crossorigin />
-		{heroPre && <link rel="preload" as="image" type="image/avif" imagesrcset={heroPre.srcSet.attribute} imagesizes={hero!.sizes} fetchpriority="high" />}
+		{preload.map((p) => <link rel="preload" as="image" type="image/avif" imagesrcset={p.srcset} imagesizes={p.sizes} media={p.media} fetchpriority="high" />)}
 		<meta name="description" content={description} />
 		<link rel="canonical" href={canonical} />
 		<link rel="alternate" hreflang="en" href={new URL(alt.en, site).href} />
@@ -85,19 +83,34 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 		<a class="skip" href="#main">{t.skip}</a>
 
 		<header class="site-header">
-			<div class="wrap bar">
-				<a class="brand" href={href(lang, 'home')}>Micha Rössler</a>
+			<div class="wrap nav">
+				<a class="logo" href={href(lang, 'home')}>Micha Rössler<span> /film</span></a>
 				<nav aria-label={en ? 'Main' : 'Hauptnavigation'}>
 					<ul>
-						<li><a href={href(lang, 'work')} aria-current={current('work')}>{t.nav.work}</a></li>
-						<li><a href={href(lang, 'about')} aria-current={current('about')}>{t.nav.about}</a></li>
+						<li class="hide-s"><a href={href(lang, 'work')} aria-current={current('work')}>{t.nav.work}</a></li>
+						<li class="hide-s"><a href={href(lang, 'about')} aria-current={current('about')}>{t.nav.about}</a></li>
+						{
+							audio && (
+								<li class="hide-s">
+									<button type="button" class="snd" aria-pressed="false" data-on={en ? 'Sound on' : 'Ton an'} data-off={en ? 'Sound off' : 'Ton aus'}>
+										<span class="eq" aria-hidden="true">
+											<b />
+											<b />
+											<b />
+											<b />
+										</span>
+										<span class="snd-l">{en ? 'Sound off' : 'Ton aus'}</span>
+									</button>
+									<audio src={audio} loop preload="none" />
+								</li>
+							)
+						}
 						<li>
 							<a class="lang" href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>
 								{other(lang).toUpperCase()}<span class="sr-only"> – {t.switch}</span>
 							</a>
 						</li>
-						<li class="nav-rule" aria-hidden="true"></li>
-						<li><a class="nav-cta" href={href(lang, 'contact')} aria-current={current('contact')}>{t.nav.contact}</a></li>
+						<li><a class="btn nav-cta" href={href(lang, 'contact')} aria-current={current('contact')}>{t.nav.contact}</a></li>
 					</ul>
 				</nav>
 			</div>
@@ -107,52 +120,61 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 			<slot />
 		</main>
 
-		<footer class="site-footer">
-			<div class="wrap">
-				<ul class="socials">
-					<li>
-						<a href="https://www.instagram.com/michaaroessler/" rel="me noopener"><Icon name="instagram" />Instagram</a>
-					</li>
-					<li aria-hidden="true" class="rule"></li>
-					<li>
-						<a href="https://www.youtube.com/@GuadiandMicha" rel="me noopener"><Icon name="youtube" />YouTube · Guadi &amp; Micha</a>
-					</li>
-					<li aria-hidden="true" class="rule"></li>
-					<li>
-						<a href="https://formatschnitt.de/" rel="me">{en ? 'Format editing & workflow → formatschnitt.de' : 'Format-Schnitt & Workflow → formatschnitt.de'}</a>
-					</li>
-				</ul>
-			</div>
-			<div class="foot">
-				<div class="wrap foot-bar">
-					<div class="foot-id">
-						<a class="brand" href={href(lang, 'home')}>Micha Rössler</a>
-						<span class="rule" aria-hidden="true"></span>
-						<a class="foot-mail" href="mailto:hello@micharoessler.com"><Icon name="mail" />hello@micharoessler.com</a>
-					</div>
-					<ul class="foot-nav">
-						<li><a href={href(lang, 'work')}>{t.nav.work}</a></li>
-						<li><a href={href(lang, 'about')}>{t.nav.about}</a></li>
-						<li><a href={href(lang, 'contact')}>{t.nav.contact}</a></li>
-					</ul>
-				</div>
-				<div class="wrap foot-legal">
-					<p class="meta">{en ? 'Available worldwide · based on the road' : 'Weltweit verfügbar · zuhause unterwegs'}</p>
-					<p class="meta">© {new Date().getFullYear()} Micha Roessler LLC</p>
-					<p class="meta foot-links">
-						<a href={href(lang, 'imprint')}>{t.imprint}</a>
-						<a href={href(lang, 'privacy')}>{t.privacy}</a>
+		{
+			cta && (
+				<section class="wrap cta-big" id="contact" aria-labelledby="cta-h">
+					<p id="cta-h" class="k">
+						{en ? 'Planning an expedition or campaign?' : 'Expedition oder Kampagne geplant?'}
 					</p>
-					{
-						terrainCredit && (
-							<p class="meta foot-terrain">
-								{en
-									? 'Terrain: AWS Terrain Tiles (Mapzen) · SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey'
-									: 'Gelände: AWS Terrain Tiles (Mapzen) · SRTM- und GMTED2010-Geländedaten mit freundlicher Genehmigung des U.S. Geological Survey'}
-							</p>
-						)
-					}
-				</div>
+					<a class="mail" href="mailto:hello@micharoessler.com">
+						hello@micharoessler.com
+					</a>
+				</section>
+			)
+		}
+
+		<div class="wrap soc-wrap">
+			<ul class="soc">
+				<li>
+					<a href="https://www.instagram.com/michaaroessler/" rel="me noopener"><Icon name="instagram" />Instagram</a>
+				</li>
+				<li class="rule" aria-hidden="true"></li>
+				<li>
+					<a href="https://www.youtube.com/@GuadiandMicha" rel="me noopener"><Icon name="youtube" />YouTube · Guadi &amp; Micha</a>
+				</li>
+				<li class="rule" aria-hidden="true"></li>
+				<li>
+					<a href="https://formatschnitt.de/" rel="me">{en ? 'Format editing & workflow → formatschnitt.de' : 'Format-Schnitt & Workflow → formatschnitt.de'}</a>
+				</li>
+			</ul>
+		</div>
+
+		<footer class="wrap f">
+			<div class="f-top">
+				<a class="logo" href={href(lang, 'home')}>Micha Rössler<span> /film</span></a>
+				<p class="k">{en ? 'Available worldwide · based on the road' : 'Weltweit verfügbar · zuhause unterwegs'}</p>
+				<nav class="k f-nav" aria-label={en ? 'Footer' : 'Fußzeile'}>
+					<a href={href(lang, 'work')}>{t.nav.work}</a>
+					<a href={href(lang, 'about')}>{t.nav.about}</a>
+					<a href={href(lang, 'contact')}>{t.nav.contact}</a>
+				</nav>
+			</div>
+			<div class="f-box">
+				<span>© {new Date().getFullYear()} Micha Roessler LLC</span>
+				<nav aria-label={en ? 'Legal' : 'Rechtliches'}>
+					<a href={href(lang, 'imprint')}>{t.imprint}</a>
+					<a href={href(lang, 'privacy')}>{t.privacy}</a>
+					<a href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>{t.switch}</a>
+				</nav>
+				{
+					terrainCredit && (
+						<p class="f-terrain">
+							{en
+								? 'Terrain: AWS Terrain Tiles (Mapzen) · SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey'
+								: 'Gelände: AWS Terrain Tiles (Mapzen) · SRTM- und GMTED2010-Geländedaten mit freundlicher Genehmigung des U.S. Geological Survey'}
+						</p>
+					)
+				}
 			</div>
 		</footer>
 
@@ -165,219 +187,232 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 							io.unobserve(e.target);
 						}
 					}),
-				{ rootMargin: '0px 0px -6% 0px' },
+				{ rootMargin: '0px 0px -8% 0px' },
 			);
 			document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+			const snd = document.querySelector<HTMLButtonElement>('.snd');
+			if (snd) {
+				const a = snd.nextElementSibling as HTMLAudioElement;
+				snd.addEventListener('click', () => {
+					const on = snd.getAttribute('aria-pressed') !== 'true';
+					snd.setAttribute('aria-pressed', String(on));
+					snd.querySelector('.snd-l')!.textContent = on ? snd.dataset.on! : snd.dataset.off!;
+					if (on) a.play().catch(() => {});
+					else a.pause();
+				});
+			}
 		</script>
 
 		<style>
 			.site-header {
-				position: relative;
-				z-index: 20;
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				background: linear-gradient(var(--bg) 55%, rgb(15 15 15 / 0));
 			}
-			.bar {
+			.nav {
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				gap: 1rem;
-				height: clamp(76px, 8vw, 120px);
+				gap: 16px;
+				height: 88px;
 			}
-			.brand {
-				font-family: var(--mono);
-				font-size: 16px;
-				font-weight: 500;
+			.logo {
+				font-weight: 700;
+				font-size: 20px;
 				letter-spacing: -0.01em;
-				text-decoration: none;
+				font-variation-settings: 'wdth' 90;
 				white-space: nowrap;
+			}
+			.logo span {
+				color: var(--muted);
+				font-weight: 400;
 			}
 			nav ul {
 				display: flex;
 				align-items: center;
-				gap: clamp(14px, 2.4vw, 32px);
-				margin: 0;
-				padding: 0;
-				list-style: none;
+				gap: 30px;
+				font-size: 13px;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
 			}
-			nav a {
+			nav ul a:not(.btn) {
 				display: inline-flex;
 				align-items: center;
 				min-height: 44px;
-				font-family: var(--mono);
-				font-size: 13px;
-				letter-spacing: 0.04em;
-				text-transform: uppercase;
-				text-decoration: none;
+				transition: color 0.2s;
 			}
-			nav a:hover,
-			nav a[aria-current='page'] {
-				text-decoration: underline;
-				text-underline-offset: 0.45em;
-			}
-			.lang {
+			nav ul a:not(.btn):hover,
+			nav ul a[aria-current='page']:not(.btn) {
 				color: var(--muted);
 			}
-			.nav-rule {
-				width: 48px;
-				height: 1px;
-				background: var(--line-2);
-			}
-			.nav-cta {
-				min-height: 40px !important;
-				padding: 0 18px;
-				border-radius: 6px;
-				background: var(--ink);
-				color: var(--bg);
-				transition:
-					background 0.3s var(--ease),
-					color 0.3s var(--ease);
-			}
-			.nav-cta:hover,
 			.nav-cta[aria-current='page'] {
-				text-decoration: none !important;
 				background: transparent;
 				color: var(--ink);
-				box-shadow: inset 0 0 0 1px var(--ink);
 			}
-			@media (max-width: 640px) {
-				.brand {
-					font-size: 14px;
+			.snd {
+				display: inline-flex;
+				align-items: center;
+				gap: 9px;
+				min-height: 44px;
+				padding: 0;
+				border: 0;
+				background: none;
+				color: var(--ink-2);
+				letter-spacing: inherit;
+				text-transform: inherit;
+				cursor: pointer;
+			}
+			.eq {
+				display: inline-flex;
+				gap: 2px;
+				align-items: flex-end;
+				height: 12px;
+			}
+			.eq b {
+				width: 2px;
+				height: 3px;
+				background: currentColor;
+			}
+			.eq b:nth-child(2) {
+				height: 7px;
+			}
+			.eq b:nth-child(3) {
+				height: 5px;
+			}
+			.eq b:nth-child(4) {
+				height: 9px;
+			}
+			@media (max-width: 700px) {
+				.nav {
+					height: 68px;
 				}
 				nav ul {
-					gap: 12px;
+					gap: 18px;
 				}
-				nav a {
-					font-size: 11px;
-					letter-spacing: 0.02em;
-				}
-				.nav-rule {
+				.hide-s {
 					display: none;
 				}
-				.nav-cta {
-					padding: 0;
-					background: none;
-					color: var(--ink);
+			}
+			@media (max-width: 400px) {
+				.logo {
+					font-size: 18px;
 				}
-				.nav-cta:hover,
-				.nav-cta[aria-current='page'] {
-					box-shadow: none;
-					text-decoration: underline !important;
+				.logo span {
+					display: none;
 				}
 			}
 
-			.site-footer {
-				margin-top: var(--section);
+			.cta-big {
+				padding: clamp(96px, 12vw, 180px) 0 0;
+				text-align: center;
 			}
-			.socials {
+			.mail {
+				display: inline-block;
+				margin-top: 26px;
+				font-size: clamp(26px, 6.4vw, 104px);
+				letter-spacing: -0.04em;
+				line-height: 1;
+				font-variation-settings: 'wdth' 80;
+				font-weight: 500;
+				border-bottom: 2px solid var(--line-2);
+				padding-bottom: 12px;
+				overflow-wrap: anywhere;
+				transition: border-color 0.3s;
+			}
+			.mail:hover {
+				border-color: var(--ink);
+			}
+			.soc-wrap {
+				padding-top: clamp(56px, 6vw, 88px);
+			}
+			.soc {
 				display: flex;
 				flex-wrap: wrap;
 				justify-content: center;
 				align-items: center;
-				gap: 0.5rem 2rem;
-				margin: 0;
-				padding: 0 0 var(--section);
-				list-style: none;
-				font-family: var(--mono);
+				gap: 14px 28px;
 				font-size: 14px;
+				color: var(--ink-2);
 			}
-			.socials a {
+			.soc a {
 				display: inline-flex;
 				align-items: center;
-				gap: 0.7em;
+				gap: 10px;
 				min-height: 44px;
-				text-decoration: none;
 			}
-			.socials a:hover {
-				text-decoration: underline;
-			}
-			.rule {
-				display: block;
-				width: 48px;
-				height: 1px;
-				background: var(--line-2);
-			}
-			.foot {
-				background: var(--bg-2);
-				padding-block: clamp(48px, 6vw, 80px) 40px;
-			}
-			.foot-bar {
-				display: flex;
-				flex-wrap: wrap;
-				align-items: center;
-				justify-content: space-between;
-				gap: 1.5rem 2rem;
-			}
-			.foot-id {
-				display: flex;
-				flex-wrap: wrap;
-				align-items: center;
-				gap: 0.75rem 2rem;
-			}
-			.foot-mail {
-				display: inline-flex;
-				align-items: center;
-				gap: 0.7em;
-				min-height: 44px;
-				font-family: var(--mono);
-				font-size: 14px;
-				text-decoration: none;
-			}
-			.foot-mail:hover {
-				text-decoration: underline;
-			}
-			.foot-nav {
-				display: flex;
-				gap: 2rem;
-				margin: 0;
-				padding: 0;
-				list-style: none;
-			}
-			.foot-nav a,
-			.foot-links a {
-				display: inline-flex;
-				align-items: center;
-				min-height: 44px;
-				font-family: var(--mono);
-				font-size: 13px;
-				letter-spacing: 0.04em;
-				text-transform: uppercase;
-				text-decoration: none;
+			.soc a:hover {
 				color: var(--ink);
 			}
-			.foot-nav a:hover,
-			.foot-links a:hover {
-				text-decoration: underline;
+			.f {
+				margin-top: 40px;
+				padding-bottom: 30px;
 			}
-			.foot-legal {
+			.f-top {
 				display: flex;
-				flex-wrap: wrap;
-				align-items: center;
 				justify-content: space-between;
-				gap: 0.5rem 2rem;
-				margin-top: clamp(32px, 4vw, 56px);
-				padding-top: 1.25rem;
+				align-items: center;
+				flex-wrap: wrap;
+				gap: 16px;
+				padding: 34px 0;
 				border-top: 1px solid var(--line);
-				font-size: 13px;
 			}
-			.foot-links {
+			.f-nav {
 				display: flex;
-				gap: 1.75rem;
+				gap: 24px;
+				color: var(--ink-2);
 			}
-			.foot-terrain {
-				flex-basis: 100%;
+			.f-nav a,
+			.f-box nav a {
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
+			}
+			.f-nav a:hover,
+			.f-box nav a:hover {
+				color: var(--ink);
+			}
+			.f-box {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				flex-wrap: wrap;
+				gap: 8px 16px;
+				padding: 20px 30px;
+				border-radius: 6px;
+				background: var(--bg-3);
 				font-size: 12px;
+				letter-spacing: 0.06em;
+				color: var(--muted);
 			}
-			@media (max-width: 640px) {
-				.socials {
+			.f-box nav {
+				display: flex;
+				gap: 24px;
+				text-transform: uppercase;
+				letter-spacing: 0.14em;
+				color: var(--ink-2);
+			}
+			.f-terrain {
+				flex-basis: 100%;
+				font-size: 11px;
+				letter-spacing: 0.04em;
+				padding-bottom: 8px;
+			}
+			@media (max-width: 700px) {
+				.soc {
 					flex-direction: column;
-					gap: 0.25rem;
-					text-align: center;
+					gap: 4px;
 				}
-				.socials .rule {
-					width: 1px;
-					height: 20px;
-				}
-				.foot-id .rule {
+				.soc .rule {
 					display: none;
+				}
+				.mail {
+					font-size: clamp(24px, 8vw, 40px);
+				}
+				.f-box {
+					flex-direction: column;
+					align-items: flex-start;
 				}
 			}
 		</style>

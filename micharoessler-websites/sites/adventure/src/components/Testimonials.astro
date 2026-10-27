@@ -1,0 +1,75 @@
+---
+// Real quotes only: renders nothing until src/data/site.ts → testimonials has entries.
+import { testimonials } from '../data/site';
+import type { Lang } from '../i18n';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const en = lang === 'en';
+---
+
+{
+	testimonials.length > 0 && (
+		<section class="wrap sec" aria-labelledby="quotes-h">
+			<div class="head">
+				<h2 id="quotes-h" class="h2">
+					{en ? 'Hear it from people I’ve filmed with' : 'Das sagen Menschen, mit denen ich gedreht habe'}
+				</h2>
+			</div>
+			<div class="quotes">
+				{testimonials.map((q) => (
+					<figure class="q">
+						<blockquote>{q.quote[lang]}</blockquote>
+						<figcaption>
+							{q.name} · {q.role[lang]}
+							{q.company && <> · {q.company}</>}
+						</figcaption>
+					</figure>
+				))}
+			</div>
+		</section>
+	)
+}
+
+<style>
+	.quotes {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: clamp(16px, 2vw, 28px);
+	}
+	.q {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 28px;
+		min-height: 280px;
+		padding: 30px 28px;
+		border: 1px solid var(--line-2);
+		border-radius: 6px;
+		background: var(--bg-2);
+	}
+	blockquote {
+		font-size: 19px;
+		line-height: 1.5;
+		color: var(--ink-2);
+	}
+	blockquote::before {
+		content: '“';
+		display: block;
+		margin-bottom: 18px;
+		font-size: 64px;
+		line-height: 0.6;
+		color: var(--line-2);
+	}
+	figcaption {
+		font-size: 13px;
+		color: var(--muted);
+	}
+	@media (max-width: 1000px) {
+		.quotes {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

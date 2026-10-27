@@ -1,8 +1,8 @@
 ---
-// Click-to-load YouTube facade: the poster is a local image, nothing is requested from Google
-// until the visitor presses play (GDPR + speed). Optional rotating "watch the film" badge.
-import { Picture } from 'astro:assets';
+// Click-to-load YouTube facade: the poster is a local image; nothing is requested from Google
+// until the visitor presses play (GDPR + speed).
 import type { ImageMetadata } from 'astro';
+import Photo from './Photo.astro';
 
 interface Props {
 	id: string;
@@ -10,74 +10,23 @@ interface Props {
 	lang: 'en' | 'de';
 	poster: ImageMetadata;
 	alt?: string;
-	badge?: boolean;
 	eager?: boolean;
 	widths?: number[];
 	sizes?: string;
+	position?: string; // crop anchor when the poster is not 16:9
 }
-const {
-	id,
-	title,
-	lang,
-	poster,
-	alt = '',
-	badge = false,
-	eager = false,
-	widths = [640, 960, 1280, 1920, 2560],
-	sizes = '(min-width: 1440px) 1280px, 92vw',
-} = Astro.props;
+const { id, title, lang, poster, alt = '', eager = false, widths = [640, 960, 1280, 1920, 2560], sizes = '(min-width: 1520px) 1424px, 94vw', position } = Astro.props;
 const de = lang === 'de';
-const label = badge
-	? de
-		? `Film ansehen: ${title}`
-		: `Watch the film: ${title}`
-	: de
-		? `Video abspielen: ${title}`
-		: `Play video: ${title}`;
+const label = de ? `Video abspielen: ${title}` : `Play video: ${title}`;
 const note = de ? 'Beim Abspielen wird YouTube (Google) geladen.' : 'Playing loads YouTube (Google).';
-const ring = de ? 'FILM ANSEHEN • FILM ANSEHEN • FILM ANSEHEN • ' : 'WATCH THE FILM • WATCH THE FILM • WATCH THE FILM • ';
-const usable = widths.filter((w) => w <= poster.width);
-if (!usable.includes(poster.width) && poster.width < Math.max(...widths)) usable.push(poster.width);
 ---
 
-<div class="yt media" data-yt={id} data-title={title}>
+<div class="yt" data-yt={id} data-title={title}>
 	<button type="button" class="yt-btn" aria-label={label}>
-		<Picture
-			src={poster}
-			alt={alt}
-			formats={['avif', 'webp']}
-			quality={78}
-			widths={usable}
-			sizes={sizes}
-			loading={eager ? 'eager' : 'lazy'}
-			decoding={eager ? 'sync' : 'async'}
-			fetchpriority={eager ? 'high' : 'auto'}
-		/>
-		{
-			badge ? (
-				<span class="badge" aria-hidden="true">
-					<svg class="badge-ring" viewBox="0 0 120 120">
-						<defs>
-							<path id={`ring-${id}`} d="M60 60m-46 0a46 46 0 1 1 92 0a46 46 0 1 1-92 0" />
-						</defs>
-						<text>
-							<textPath href={`#ring-${id}`} textLength="286">
-								{ring}
-							</textPath>
-						</text>
-					</svg>
-					<svg class="badge-play" viewBox="0 0 16 16" width="16" height="16">
-						<path d="M5 3.5v9l7.5-4.5Z" fill="currentColor" />
-					</svg>
-				</span>
-			) : (
-				<span class="play" aria-hidden="true">
-					<svg viewBox="0 0 16 16" width="18" height="18">
-						<path d="M5 3.5v9l7.5-4.5Z" fill="currentColor" />
-					</svg>
-				</span>
-			)
-		}
+		<Photo src={poster} alt={alt} widths={widths} sizes={sizes} eager={eager} crop={{ ratio: 16 / 9, position }} />
+		<span class="plb" aria-hidden="true">
+			<svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5Z"></path></svg>
+		</span>
 	</button>
 	<p class="yt-note">{note}</p>
 </div>
@@ -101,7 +50,11 @@ if (!usable.includes(poster.width) && poster.width < Math.max(...widths)) usable
 
 <style>
 	.yt {
+		position: relative;
 		aspect-ratio: 16 / 9;
+		overflow: hidden;
+		border-radius: 3px;
+		background: #151515;
 	}
 	.yt :global(iframe),
 	.yt-btn,
@@ -116,104 +69,51 @@ if (!usable.includes(poster.width) && poster.width < Math.max(...widths)) usable
 		padding: 0;
 		cursor: pointer;
 		background: none;
-		color: var(--ink);
 	}
 	.yt-btn :global(picture) {
 		display: contents;
 	}
 	.yt-btn :global(img) {
 		object-fit: cover;
-		transition: scale 0.6s var(--ease);
+		filter: saturate(0.85) contrast(1.05);
+		transition:
+			transform 1s var(--ease),
+			filter 0.6s;
 	}
 	.yt-btn:hover :global(img) {
-		scale: 1.015;
+		transform: scale(1.04);
+		filter: none;
 	}
-	.yt-btn::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: rgb(15 15 15 / 0.18);
-		transition: background 0.4s var(--ease);
-	}
-	.yt-btn:hover::after {
-		background: rgb(15 15 15 / 0.08);
-	}
-
-	/* Rotating circular text badge; pauses on hover/focus and under reduced motion. */
-	.badge {
+	.plb {
 		position: absolute;
 		left: 50%;
 		top: 50%;
-		z-index: 2;
-		translate: -50% -50%;
-		width: clamp(92px, 11vw, 148px);
-		aspect-ratio: 1;
+		width: 64px;
+		height: 64px;
+		margin: -32px 0 0 -32px;
+		border-radius: 50%;
 		display: grid;
 		place-items: center;
-		border-radius: 50%;
-		background: rgb(15 15 15 / 0.32);
-		box-shadow: inset 0 0 0 1px rgb(242 240 235 / 0.35);
+		background: rgb(255 255 255 / 0.14);
+		backdrop-filter: blur(8px);
+		border: 1px solid rgb(255 255 255 / 0.35);
+		transition: transform 0.4s var(--ease);
 	}
-	.badge-ring {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		animation: spin 18s linear infinite;
+	.yt-btn:hover .plb {
+		transform: scale(1.08);
 	}
-	.badge-ring text {
-		font-family: var(--mono);
-		font-size: 10.5px;
-		letter-spacing: 0.08em;
-		fill: var(--ink);
-	}
-	.badge-play {
-		width: 18px;
-		height: 18px;
-		margin-left: 3px;
-	}
-	.yt-btn:hover .badge-ring,
-	.yt-btn:focus-visible .badge-ring {
-		animation-play-state: paused;
-	}
-	@keyframes spin {
-		to {
-			rotate: 360deg;
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.badge-ring {
-			animation: none;
-		}
-	}
-	.play {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		z-index: 2;
-		translate: -50% -50%;
-		display: grid;
-		place-items: center;
-		width: 72px;
-		height: 72px;
-		border-radius: 50%;
-		box-shadow: inset 0 0 0 1px rgb(242 240 235 / 0.6);
-		background: rgb(15 15 15 / 0.35);
-	}
-	@media (max-width: 640px) {
-		.badge-ring text {
-			font-size: 11.5px;
-		}
+	.plb svg {
+		width: 22px;
+		fill: #fff;
 	}
 	.yt-note {
 		position: absolute;
-		right: 12px;
+		right: 10px;
 		bottom: 8px;
-		z-index: 2;
 		margin: 0;
-		font-family: var(--mono);
 		font-size: 11px;
-		color: rgb(242 240 235 / 0.8);
+		letter-spacing: 0.04em;
+		color: rgb(242 239 233 / 0.85);
 		pointer-events: none;
 	}
 </style>

@@ -1,79 +1,149 @@
 ---
-// Two-column staggered work grid: image + hairline meta rows (title / client or type / year).
-import Photo from './Photo.astro';
+// Staggered two-column work grid (right column offset): media + fact tag + hairline meta rows.
+import Media from './Media.astro';
 import { href, type Lang } from '../i18n';
 import type { Project } from '../data/projects';
 
 interface Props {
 	lang: Lang;
 	items: Project[];
-	headingLevel?: 'h2' | 'h3';
 	eagerFirst?: boolean; // first row is above the fold (Work index)
 }
-const { lang, items, headingLevel = 'h3', eagerFirst = false } = Astro.props;
-const H = headingLevel;
+const { lang, items, eagerFirst = false } = Astro.props;
+const en = lang === 'en';
+const cols = [items.filter((_, i) => i % 2 === 0), items.filter((_, i) => i % 2 === 1)];
 ---
 
-<ul class="work-grid">
+<div class="grid">
 	{
-		items.map((p, i) => (
-			<li>
-				<a href={href(lang, p.slug)}>
-					<div class:list={['media card-img', { reveal: !(eagerFirst && i < 2) }]} style={`view-transition-name: p-${p.slug}`}>
-						<Photo eager={eagerFirst && i < 2} src={p.cover} alt={p.title[lang]} widths={[480, 640, 800, 1200, 1600]} sizes="(min-width: 1440px) 620px, (min-width: 760px) 44vw, 92vw" />
-					</div>
-					<ul class="rows card-rows">
-						<li>
-							<H class="card-title">{p.title[lang]}</H>
-						</li>
-						<li class="meta">{p.client ?? p.kicker[lang]}</li>
-						<li class="meta">{p.year || p.location[lang]}</li>
-					</ul>
-				</a>
-			</li>
+		cols.map((col, c) => (
+			<div class="col">
+				{col.map((p, r) => {
+					const eager = eagerFirst && r === 0;
+					return (
+						<a class:list={['card', { reveal: !eager }]} href={href(lang, p.slug)}>
+							<div class="m" style={`view-transition-name: p-${p.slug}`}>
+								<Media
+									src={p.cover}
+									alt={p.title[lang]}
+									video={p.video}
+									widths={[480, 720, 960, 1280, 1600]}
+									sizes="(min-width: 1520px) 680px, (min-width: 700px) 45vw, 92vw"
+									crop={{ ratio: 16 / 11 }}
+									eager={eager}
+								/>
+								{p.tag && <span class="tag">{p.tag[lang]}</span>}
+								{!p.tag && p.galleryCredit && (
+									<span class="credit">
+										{en ? 'Photo' : 'Foto'}: {p.galleryCredit}
+									</span>
+								)}
+							</div>
+							<div class="rows">
+								<div>
+									<span class="t">{p.title[lang]}</span>
+									<span class="kk">{p.kicker[lang]}</span>
+								</div>
+								<div>
+									<span>{p.client ?? p.facts[p.facts.length - 1].value[lang]}</span>
+									<span>{p.roles[lang]}</span>
+								</div>
+								<div>
+									<span>{p.location[lang]}</span>
+									{p.year && <span>{p.year}</span>}
+								</div>
+							</div>
+						</a>
+					);
+				})}
+			</div>
 		))
 	}
-</ul>
+</div>
 
 <style>
-	.work-grid {
-		list-style: none;
-		margin: 0;
-		padding: 0;
+	.grid {
 		display: grid;
-		grid-template-columns: 1fr;
-		gap: clamp(48px, 6vw, 72px) clamp(24px, 4.5vw, 64px);
+		grid-template-columns: 1fr 1fr;
+		column-gap: clamp(24px, 4vw, 64px);
 	}
-	@media (min-width: 760px) {
-		.work-grid {
-			grid-template-columns: 1fr 1fr;
-		}
-		.work-grid > li:nth-child(even) {
-			margin-top: clamp(48px, 7vw, 112px);
-		}
+	.col {
+		display: grid;
+		gap: clamp(56px, 6vw, 96px);
+		align-content: start;
 	}
-	a {
+	.col:nth-child(2) {
+		padding-top: clamp(80px, 10vw, 170px);
+	}
+	.card {
 		display: block;
-		text-decoration: none;
 	}
-	.card-img {
-		aspect-ratio: 16 / 10;
+	.card .m {
+		aspect-ratio: 16 / 11;
 	}
-	.card-img :global(img) {
-		transition: scale 0.6s var(--ease);
+	.card .m :global(img) {
+		transition: transform 1.2s var(--ease);
 	}
-	a:hover .card-img :global(img) {
-		scale: 1.03;
+	.card:hover .m :global(img) {
+		transform: scale(1.05);
 	}
-	.card-rows {
-		margin-top: 18px;
+	.tag {
+		position: absolute;
+		right: 14px;
+		bottom: 14px;
+		z-index: 2;
+		padding: 5px 9px;
+		border-radius: 3px;
+		background: var(--ink);
+		color: #0f0f0f;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.06em;
 	}
-	.card-rows > li:first-child {
-		padding-top: 0;
+	.credit {
+		position: absolute;
+		left: 14px;
+		bottom: 12px;
+		z-index: 2;
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		color: #ece8e1;
+		text-shadow: 0 1px 6px rgb(0 0 0 / 0.6);
 	}
-	.card-title {
-		font-size: var(--t-title);
-		line-height: 1.35;
-		letter-spacing: -0.01em;
+	.rows {
+		margin-top: 16px;
+	}
+	.rows div {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 11px 0;
+		border-bottom: 1px solid var(--line);
+		font-size: 13px;
+		color: var(--muted);
+	}
+	.rows div:first-child {
+		padding-top: 2px;
+		font-size: 18px;
+		color: var(--ink);
+	}
+	.rows .kk {
+		align-self: center;
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--muted);
+		text-align: right;
+	}
+	.rows span:last-child:not(:first-child) {
+		text-align: right;
+	}
+	@media (max-width: 700px) {
+		.grid {
+			grid-template-columns: 1fr;
+		}
+		.col:nth-child(2) {
+			padding-top: 56px;
+		}
 	}
 </style>

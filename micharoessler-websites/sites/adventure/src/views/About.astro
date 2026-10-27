@@ -3,6 +3,8 @@ import Base from '../layouts/Base.astro';
 import { href, type Lang } from '../i18n';
 import Photo from '../components/Photo.astro';
 import ExpeditionMap from '../components/ExpeditionMap.astro';
+import { timelineOf } from '../data/timeline';
+import Icon from '../components/Icon.astro';
 import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
@@ -11,21 +13,7 @@ interface Props {
 const { lang } = Astro.props;
 const en = lang === 'en';
 
-const timeline = en
-	? [
-			['2021', 'Drivers Eye – 24h Nürburgring documentary for Felix von der Laden: camera, edit, direction. 1.4M views.'],
-			['2023', 'Winter hike to Trolltunga, Norway. Kilimanjaro via the Rongai route. Glacier tour on the Großvenediger (3,660 m). Sahara shoot with Fabian Baggeler.'],
-			['2024', 'Four weeks in the Bolivian Andes for an upcoming documentary, with brand partner Hydraid. Start of full-time life on the road.'],
-			['2025–26', 'Travel films with Guada as Guadi & Micha across Asia and the Americas. Format editing for brands like Carwow.'],
-			['2027', 'Planned: Laponia midwinter ski traverse, Lyngen Alps, Arctic Circle Trail.'],
-		]
-	: [
-			['2021', 'Drivers Eye – 24h-Nürburgring-Doku für Felix von der Laden: Kamera, Schnitt, Regie. 1,4 Mio. Aufrufe.'],
-			['2023', 'Winterwanderung zur Trolltunga, Norwegen. Kilimandscharo über die Rongai-Route. Gletschertour am Großvenediger (3.660 m). Sahara-Dreh mit Fabian Baggeler.'],
-			['2024', 'Vier Wochen in den bolivianischen Anden für eine kommende Doku, mit Markenpartner Hydraid. Beginn des Lebens auf Reisen.'],
-			['2025–26', 'Reisefilme mit Guada als Guadi & Micha in Asien und Amerika. Format-Schnitt für Marken wie Carwow.'],
-			['2027', 'Geplant: Laponia-Skidurchquerung im Hochwinter, Lyngen-Alpen, Arctic Circle Trail.'],
-		];
+const timeline = timelineOf(lang);
 ---
 
 <Base
@@ -40,7 +28,7 @@ const timeline = en
 	<div class="wrap a">
 		<div class="a-grid">
 			<div class="a-main">
-				<p class="label">{en ? 'About' : 'Über mich'}</p>
+				<p class="k">{en ? 'About' : 'Über mich'}</p>
 				<h1>{en ? 'Still looking for the next hard, honest story' : 'Immer auf der Suche nach der nächsten harten, ehrlichen Geschichte'}</h1>
 				<div class="prose a-prose">
 					{
@@ -63,18 +51,18 @@ const timeline = en
 				</div>
 			</div>
 			<figure class="a-fig">
-				<div class="media a-img">
+				<div class="m a-img">
 					<Photo src={portrait} alt="Micha Rössler" widths={[480, 800, 1200, 1600]} sizes="(min-width: 960px) 36vw, 92vw" eager />
 				</div>
-				<figcaption class="meta">Micha Rössler · {en ? 'filmmaker & editor' : 'Filmemacher & Cutter'}</figcaption>
+				<figcaption class="k">Micha Rössler · {en ? 'filmmaker & editor' : 'Filmemacher & Cutter'}</figcaption>
 			</figure>
 		</div>
 
-		<section class="section tl" aria-labelledby="tl-h">
+		<section class="sec tl" aria-labelledby="tl-h">
 			<div class="head">
 				<h2 id="tl-h" class="h2">{en ? 'Timeline' : 'Stationen'}</h2>
 			</div>
-			<ol class="rows">
+			<ol>
 				{
 					timeline.map(([y, txt]) => (
 						<li>
@@ -86,83 +74,82 @@ const timeline = en
 			</ol>
 		</section>
 
-		<section class="section" aria-labelledby="map-h">
+		<section class="sec" aria-labelledby="map-h">
 			<div class="head">
 				<h2 id="map-h" class="h2">{en ? 'Where I have filmed' : 'Wo ich gedreht habe'}</h2>
-				<p class="meta">{en ? 'Hover or tap a pin' : 'Pin antippen oder überfahren'}</p>
+				<p class="k">{en ? 'Hover or tap a pin' : 'Pin antippen oder überfahren'}</p>
 			</div>
 			<ExpeditionMap lang={lang} />
 		</section>
 
-		<section class="section also">
-			<p class="label">{en ? 'Also' : 'Außerdem'}</p>
+		<section class="sec also">
+			<p class="k">{en ? 'Also' : 'Außerdem'}</p>
 			<p class="prose also-p">
 					{en ? 'I build edit systems for recurring video formats – templates, data-driven graphics and shorts pipelines – at ' : 'Für wiederkehrende Videoformate baue ich Schnitt-Systeme – Templates, datengetriebene Grafiken und Shorts-Pipelines – bei '}
 					<a href={en ? 'https://formatschnitt.de/en/' : 'https://formatschnitt.de/'}>formatschnitt.de</a>.
 				</p>
-			<a class="btn" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}</a>
+			<a class="btn" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}<Icon name="arrow" /></a>
 		</section>
 	</div>
 </Base>
 
 <style>
 	.a {
-		padding-top: clamp(24px, 4vw, 56px);
+		padding-top: clamp(16px, 3vw, 40px);
 	}
 	.a-grid {
 		display: grid;
-		gap: 56px clamp(24px, 6vw, 96px);
-	}
-	@media (min-width: 960px) {
-		.a-grid {
-			grid-template-columns: 7fr 5fr;
-			align-items: start;
-		}
-		.a-fig {
-			position: sticky;
-			top: 32px;
-		}
-	}
-	h1 {
-		margin: 14px 0 clamp(32px, 4vw, 48px);
-		font-size: clamp(30px, 2.4vw + 14px, 52px);
-		line-height: 1.18;
-		letter-spacing: -0.025em;
-		max-width: 22ch;
-	}
-	.a-prose {
-		font-size: clamp(17px, 0.4vw + 15px, 19px);
+		grid-template-columns: 1.4fr 1fr;
+		gap: 56px clamp(32px, 6vw, 110px);
+		align-items: start;
 	}
 	.a-fig {
-		margin: 0;
+		position: sticky;
+		top: 112px;
+	}
+	h1 {
+		margin: 22px 0 clamp(32px, 4vw, 48px);
+		font-size: clamp(34px, 4.4vw, 68px);
+		line-height: 1.08;
+		letter-spacing: -0.03em;
+		font-variation-settings: 'wdth' 86;
+		max-width: 20ch;
+	}
+	.a-prose {
+		font-size: clamp(17px, 1.3vw, 20px);
 	}
 	.a-img {
 		aspect-ratio: 4 / 5;
+		border-radius: 6px;
 	}
 	.a-img :global(img) {
 		object-position: 50% 20%;
 	}
 	.a-fig figcaption {
-		margin-top: 12px;
-		font-size: 13px;
+		margin-top: 14px;
 	}
 	.tl li {
 		display: grid;
-		grid-template-columns: 9rem 1fr;
-		gap: 1rem;
-		padding-block: 20px;
+		grid-template-columns: 120px 1fr;
+		gap: 18px;
+		padding: 20px 0;
+		border-bottom: 1px solid var(--line);
 		align-items: baseline;
 	}
-	.tl ol {
+	.tl li:first-child {
 		border-top: 1px solid var(--line);
 	}
 	.tl-y {
-		font-family: var(--mono);
-		font-size: var(--t-title);
+		font-weight: 600;
+		font-size: 18px;
+	}
+	.tl li:last-child .tl-y {
+		color: var(--signal);
 	}
 	.tl p {
-		color: #cfcdc7;
-		max-width: 64ch;
+		color: var(--ink-2);
+		max-width: 70ch;
+		line-height: 1.6;
 	}
 	.also {
 		display: grid;
@@ -170,7 +157,22 @@ const timeline = en
 		gap: 20px;
 	}
 	.also-p {
-		font-size: clamp(17px, 0.4vw + 15px, 19px);
+		font-size: clamp(17px, 1.3vw, 20px);
+	}
+	.also-p a {
+		border-bottom: 1px solid var(--line-2);
+	}
+	.also-p a:hover {
+		border-color: var(--ink);
+	}
+	@media (max-width: 1000px) {
+		.a-grid {
+			grid-template-columns: 1fr;
+		}
+		.a-fig {
+			position: static;
+			max-width: 520px;
+		}
 	}
 	@media (max-width: 560px) {
 		.tl li {

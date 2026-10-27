@@ -1,6 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
 import Photo from '../components/Photo.astro';
+import Media from '../components/Media.astro';
+import Icon from '../components/Icon.astro';
+import { preloadFor } from '../lib/img';
 import YouTube from '../components/YouTube.astro';
 import Terrain from '../components/Terrain.astro';
 import { terrainFor } from '../data/terrain';
@@ -52,10 +55,10 @@ const jsonLd: Record<string, unknown>[] = [
 const area = terrainFor[p.slug];
 const peakFact = p.facts.find((f) => /\d.*m\b/.test(f.value[lang]) && f.value[lang].includes(' m'));
 const cover = pic(p.cover);
-const heroWidths = [640, 960, 1280, 1920, 2560];
-const heroSizes = '(min-width: 1440px) 1280px, 92vw';
-// Same candidate list as <Photo>/<YouTube> build, so the preload and the <picture> pick identical files.
-const coverWidths = [...new Set([...heroWidths.filter((w) => w < cover.width), Math.min(cover.width, Math.max(...heroWidths))])];
+const pad = (n: number) => String(n).padStart(2, '0');
+const heroWidths = [640, 960, 1280, 1600, 1920, 2560];
+const heroSizes = '(min-width: 1520px) 1424px, calc(100vw - 2 * clamp(16px, 3.3vw, 48px))';
+const pre = await preloadFor(cover, heroWidths, heroSizes, { ratio: 16 / 9 });
 ---
 
 <Base
@@ -65,25 +68,21 @@ const coverWidths = [...new Set([...heroWidths.filter((w) => w < cover.width), M
 	alt={{ en: href('en', p.slug), de: href('de', p.slug) }}
 	ogImage={p.cover}
 	jsonLd={jsonLd}
-	hero={{ src: cover, widths: coverWidths, sizes: heroSizes }}
+	preload={[pre]}
 	terrainCredit={!!area}
 >
 	<article>
 		<header class="wrap p-head">
-			<a class="link back" href={href(lang, 'work')}>← {t.allWork}</a>
-			<p class="label">{p.kicker[lang]}</p>
-			<h1>{p.title[lang]}</h1>
-			<p class="p-sum">{p.summary[lang]}</p>
-			<dl class="credits">
-				{
-					credits.map(([k, v]) => (
-						<div>
-							<dt class="label">{k}</dt>
-							<dd>{v}</dd>
-						</div>
-					))
-				}
-			</dl>
+			<p class="eyebrow k">
+				<a class="back" href={href(lang, 'work')}>← {t.allWork}</a>
+				<span class="rule" aria-hidden="true"></span>
+				<span>{p.kicker[lang]}</span>
+				<span class="hide-m">{pad(idx + 1)} / {pad(projects.length)}</span>
+			</p>
+			<div class="p-grid">
+				<h1>{p.title[lang]}</h1>
+				<p class="lead p-sum">{p.summary[lang]}</p>
+			</div>
 		</header>
 
 		<div class="wrap p-media">
@@ -91,29 +90,45 @@ const coverWidths = [...new Set([...heroWidths.filter((w) => w < cover.width), M
 				p.youtube ? (
 					<div style={`view-transition-name: p-${p.slug}`}>
 						<YouTube id={p.youtube} title={p.title[lang]} lang={lang} poster={cover} alt={p.title[lang]} eager widths={heroWidths} sizes={heroSizes} />
-						<a class="link yt-link" href={`https://www.youtube.com/watch?v=${p.youtube}`} rel="noopener">
-							{en ? 'Watch on YouTube – check the views yourself ↗' : 'Auf YouTube ansehen – Aufrufe selbst prüfen ↗'}
-						</a>
 					</div>
 				) : (
-					<div class="media hero-img" style={`view-transition-name: p-${p.slug}`}>
-						<Photo src={cover} alt={p.title[lang]} widths={heroWidths} sizes={heroSizes} eager />
+					<div class="m hero-img" style={`view-transition-name: p-${p.slug}`}>
+						<Media src={cover} alt={p.title[lang]} video={p.video} widths={heroWidths} sizes={heroSizes} crop={{ ratio: 16 / 9 }} eager />
+						{p.tag && <span class="tag">{p.tag[lang]}</span>}
 					</div>
+				)
+			}
+			<div class="rows credits">
+				{
+					credits.map(([k, v]) => (
+						<div>
+							<span class="k">{k}</span>
+							<span>{v}</span>
+						</div>
+					))
+				}
+			</div>
+			{
+				p.youtube && (
+					<a class="lnk yt-link" href={`https://www.youtube.com/watch?v=${p.youtube}`} rel="noopener">
+						{en ? 'Watch on YouTube – check the views yourself ↗' : 'Auf YouTube ansehen – Aufrufe selbst prüfen ↗'}
+					</a>
 				)
 			}
 		</div>
 
-		<section class="wrap section p-text">
+		<section class="wrap sec p-text">
 			<div class="prose p-body">
 				{p.body.map((b) => <p>{b[lang]}</p>)}
 			</div>
-			<aside aria-labelledby="log-h">
-				<p class="label" id="log-h">{en ? 'Field log' : 'Drehprotokoll'}</p>
-				<dl class="rows facts">
+			<aside class="slate" aria-labelledby="log-h">
+				<div class="slate-top" aria-hidden="true"></div>
+				<p class="slate-h"><span id="log-h">{en ? 'Field log' : 'Drehprotokoll'}</span><span>{p.year || '—'}</span></p>
+				<dl>
 					{
 						p.facts.map((f) => (
 							<div>
-								<dt class="meta">{f.label[lang]}</dt>
+								<dt>{f.label[lang]}</dt>
 								<dd>{f.value[lang]}</dd>
 							</div>
 						))
@@ -124,29 +139,24 @@ const coverWidths = [...new Set([...heroWidths.filter((w) => w < cover.width), M
 
 		{
 			area && (
-				<section class="wrap section p-terrain" aria-label={en ? 'Terrain' : 'Gelände'}>
-					<Terrain id={area} lang={lang} name={peakFact && area === 'kilimanjaro' ? peakFact.value[lang] : undefined} />
+				<section class="wrap sec" aria-label={en ? 'Terrain' : 'Gelände'}>
+					<Terrain id={area} lang={lang} side section name={peakFact && area === 'kilimanjaro' ? peakFact.value[lang] : undefined} />
 				</section>
 			)
 		}
 
 		{
 			p.gallery.length > 0 && (
-				<section class="wrap section" aria-label={en ? 'Stills' : 'Standbilder'}>
+				<section class="wrap sec" aria-label={en ? 'Stills' : 'Standbilder'}>
 					<div class="gallery">
 						{p.gallery.map((g) => (
-							<figure class="media reveal">
-								<Photo
-									src={g}
-									alt={`${p.title[lang]} – ${en ? 'still' : 'Standbild'}`}
-									widths={[480, 640, 800, 1200, 1600]}
-									sizes="(min-width: 1440px) 620px, (min-width: 760px) 44vw, 92vw"
-								/>
+							<figure class="m reveal">
+								<Photo src={g} alt={`${p.title[lang]} – ${en ? 'still' : 'Standbild'}`} widths={[480, 640, 800, 1200, 1600]} sizes="(min-width: 1520px) 700px, (min-width: 700px) 46vw, 92vw" />
 							</figure>
 						))}
 					</div>
 					{p.galleryCredit && (
-						<p class="meta credit">
+						<p class="k credit">
 							{en ? 'Photos' : 'Fotos'}: {p.galleryCredit}
 						</p>
 					)}
@@ -154,148 +164,185 @@ const coverWidths = [...new Set([...heroWidths.filter((w) => w < cover.width), M
 			)
 		}
 
-		<nav class="wrap section p-next" aria-label={t.next}>
-			<a href={href(lang, nxt.slug)} class="p-next-link">
-				<span class="label">{t.next}</span>
+		<nav class="wrap sec" aria-label={t.next}>
+			<a href={href(lang, nxt.slug)} class="p-next">
+				<span class="k">{t.next}</span>
 				<span class="p-next-title">{nxt.title[lang]}</span>
 				<span class="p-next-arrow" aria-hidden="true">→</span>
 			</a>
 		</nav>
 
-		<section class="wrap section p-cta">
+		<section class="wrap sec p-cta">
 			<h2 class="h2">{en ? 'Have a project like this?' : 'Ein ähnliches Projekt geplant?'}</h2>
-			<a class="btn" href={href(lang, 'contact')}>{t.cta}</a>
+			<a class="btn" href={href(lang, 'contact')}>{t.cta}<Icon name="arrow" /></a>
 		</section>
 	</article>
 </Base>
 
 <style>
 	.p-head {
-		padding-top: clamp(24px, 4vw, 56px);
+		padding-top: clamp(16px, 3vw, 40px);
+	}
+	.eyebrow {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px 14px;
+		margin-bottom: 28px;
 	}
 	.back {
-		margin-bottom: clamp(32px, 5vw, 64px);
-		color: var(--muted);
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		color: var(--ink-2);
+	}
+	.back:hover {
+		color: var(--ink);
+	}
+	.eyebrow .hide-m {
+		margin-left: auto;
+	}
+	.p-grid {
+		display: grid;
+		grid-template-columns: 1.5fr 1fr;
+		gap: 24px clamp(32px, 6vw, 120px);
+		align-items: end;
 	}
 	h1 {
-		margin: 14px 0 22px;
-		font-size: clamp(32px, 3.6vw + 12px, 64px);
-		line-height: 1.12;
-		letter-spacing: -0.025em;
-		max-width: 20ch;
+		font-size: clamp(36px, 5.2vw, 84px);
+		line-height: 1.04;
+		letter-spacing: -0.03em;
+		font-variation-settings: 'wdth' 86;
 	}
 	.p-sum {
-		max-width: 46ch;
-		font-size: clamp(18px, 0.7vw + 14px, 22px);
-		line-height: 1.5;
-		color: #d4d2cc;
-	}
-	.credits {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-		gap: 0 clamp(24px, 3vw, 48px);
-		margin: clamp(40px, 5vw, 64px) 0 0;
-	}
-	.credits div {
-		display: grid;
-		align-content: start;
-		gap: 6px;
-		padding: 14px 0;
-		border-top: 1px solid var(--line);
-	}
-	.credits dd {
-		margin: 0;
-		font-family: var(--mono);
-		font-size: 15px;
+		max-width: 38ch;
 	}
 	.p-media {
-		margin-top: clamp(40px, 5vw, 64px);
+		margin-top: clamp(36px, 4vw, 56px);
 	}
 	.hero-img {
 		aspect-ratio: 16 / 9;
+		border-radius: 6px;
+	}
+	.tag {
+		position: absolute;
+		right: 16px;
+		bottom: 16px;
+		z-index: 2;
+		padding: 5px 9px;
+		border-radius: 3px;
+		background: var(--ink);
+		color: #0f0f0f;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+	}
+	.credits {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+		column-gap: clamp(24px, 4vw, 64px);
+		margin-top: 18px;
+	}
+	.credits div {
+		display: grid;
+		gap: 4px;
+		padding: 12px 0;
+		border-bottom: 1px solid var(--line);
+		font-size: 15px;
+	}
+	.credits .k {
+		font-size: 11px;
 	}
 	.yt-link {
-		margin-top: 8px;
-		color: var(--muted);
-		font-size: 12px;
+		margin-top: 18px;
 	}
 	.p-text {
 		display: grid;
-		gap: 48px clamp(24px, 6vw, 96px);
-	}
-	@media (min-width: 900px) {
-		.p-text {
-			grid-template-columns: 7fr 5fr;
-		}
+		grid-template-columns: 1fr 1fr;
+		gap: clamp(32px, 6vw, 110px);
+		align-items: start;
 	}
 	.p-body {
-		font-size: clamp(17px, 0.4vw + 15px, 20px);
-		line-height: 1.7;
+		font-size: clamp(17px, 1.3vw, 20px);
+		line-height: 1.65;
 	}
-	.facts {
-		margin-top: 14px;
-		border-top: 1px solid var(--line);
+	.slate {
+		border: 1px solid var(--line-2);
+		border-radius: 6px;
+		background: var(--bg-2);
+		overflow: hidden;
 	}
-	.facts div {
+	.slate-top {
+		height: 36px;
+		background: repeating-linear-gradient(-45deg, #f2efe9 0 18px, #0f0f0f 18px 36px);
+		border-bottom: 1px solid var(--line-2);
+	}
+	.slate-h {
+		display: flex;
+		justify-content: space-between;
+		padding: 16px 22px;
+		border-bottom: 1px solid var(--line);
+		font-size: 12px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+	.slate dl div {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-		gap: 1rem;
-		align-items: baseline;
+		gap: 6px;
+		padding: 16px 22px;
+		border-bottom: 1px solid var(--line);
 	}
-	.facts dd {
-		margin: 0;
-		font-family: var(--mono);
-		font-size: 15px;
+	.slate dl div:last-child {
+		border-bottom: 0;
 	}
-	.p-terrain :global(.terrain) {
-		max-width: 880px;
-		margin-inline: auto;
+	.slate dt {
+		font-size: 11px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+	.slate dd {
+		font-size: 17px;
+		line-height: 1.35;
 	}
 	.gallery {
-		columns: 1;
-		column-gap: clamp(16px, 3vw, 40px);
-	}
-	@media (min-width: 760px) {
-		.gallery {
-			columns: 2;
-		}
+		columns: 2;
+		column-gap: clamp(16px, 2.5vw, 36px);
 	}
 	.gallery figure {
-		margin: 0 0 clamp(16px, 3vw, 40px);
+		margin-bottom: clamp(16px, 2.5vw, 36px);
 		break-inside: avoid;
 	}
 	.gallery figure :global(img) {
 		height: auto;
 	}
 	.credit {
-		font-size: 13px;
+		margin-top: 4px;
 	}
-	.p-next-link {
+	.p-next {
 		display: grid;
 		grid-template-columns: 1fr auto;
 		align-items: end;
 		gap: 10px 24px;
 		padding-top: 22px;
 		border-top: 1px solid var(--line);
-		text-decoration: none;
 	}
-	.p-next-link .label {
+	.p-next .k {
 		grid-column: 1 / -1;
 	}
-	.p-next-title {
-		font-family: var(--mono);
-		font-size: clamp(26px, 2.6vw + 10px, 48px);
-		line-height: 1.15;
-		letter-spacing: -0.02em;
+	.p-next-title,
+	.p-next-arrow {
+		font-size: clamp(28px, 4vw, 64px);
+		line-height: 1.05;
+		letter-spacing: -0.03em;
+		font-variation-settings: 'wdth' 86;
 	}
 	.p-next-arrow {
-		font-family: var(--mono);
-		font-size: clamp(26px, 2.6vw + 10px, 48px);
-		line-height: 1.15;
-		transition: translate 0.4s var(--ease);
+		transition: transform 0.4s var(--ease);
 	}
-	.p-next-link:hover .p-next-arrow {
-		translate: 8px 0;
+	.p-next:hover .p-next-arrow {
+		transform: translateX(10px);
 	}
 	.p-cta {
 		display: flex;
@@ -303,5 +350,21 @@ const coverWidths = [...new Set([...heroWidths.filter((w) => w < cover.width), M
 		align-items: center;
 		justify-content: space-between;
 		gap: 24px;
+	}
+	@media (max-width: 1000px) {
+		.p-text {
+			grid-template-columns: 1fr;
+		}
+	}
+	@media (max-width: 700px) {
+		.p-grid {
+			grid-template-columns: 1fr;
+		}
+		.hide-m {
+			display: none;
+		}
+		.gallery {
+			columns: 1;
+		}
 	}
 </style>

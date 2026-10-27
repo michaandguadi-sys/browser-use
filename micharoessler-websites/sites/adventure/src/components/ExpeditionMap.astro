@@ -1,10 +1,8 @@
 ---
 // Dotted world map rendered at build time (no map library shipped to the browser).
 // Pins are plain HTML links on top of the SVG, so they stay accessible and crawlable.
-import { geoNaturalEarth1, geoPath } from 'd3-geo';
-import { feature } from 'topojson-client';
-import land110 from 'world-atlas/land-110m.json';
 import { href, type Lang } from '../i18n';
+import { projection, W, H } from '../lib/map';
 
 interface Props {
 	lang: Lang;
@@ -12,38 +10,17 @@ interface Props {
 const { lang } = Astro.props;
 const en = lang === 'en';
 
-const W = 1000;
-const H = 470;
-const STEP = 7;
-const topo = land110 as unknown as Parameters<typeof feature>[0];
-const land = feature(topo, (topo as any).objects.land) as any;
-const projection = geoNaturalEarth1()
-	.rotate([-10, 0])
-	.fitExtent(
-		[
-			[0, 0],
-			[W, H],
-		],
-		{ type: 'Sphere' },
-	)
-	.translate([W / 2, H / 2 + 38])
-	.scale(205);
-
-// Land outline as a clip mask over a dot pattern: dots and pins share one projection,
-// so nothing can drift (point-in-polygon sampling dropped parts of Europe).
-const landPath = geoPath(projection).digits(1)(land) ?? '';
-
-type Pin = { name: { en: string; de: string }; lonlat: [number, number]; when: string; slug?: string; planned?: boolean };
+type Pin = { name: { en: string; de: string }; lonlat: [number, number]; when: string; slug?: string; planned?: boolean; short?: { en: string; de: string }; left?: boolean; nolink?: boolean };
 const pins: Pin[] = [
-	{ name: { en: 'Andes Expedition, Bolivia', de: 'Anden-Expedition, Bolivien' }, lonlat: [-68.88, -18.1], when: '2024', slug: 'bolivia-andes' },
-	{ name: { en: 'Kilimanjaro, 5,895 m', de: 'Kilimandscharo, 5.895 m' }, lonlat: [37.35, -3.07], when: '2023', slug: 'kilimanjaro' },
-	{ name: { en: '24 Hours in the Sahara', de: '24 Stunden in der Sahara' }, lonlat: [-4.0, 31.1], when: '2023', slug: 'moroccan-sahara' },
-	{ name: { en: 'Drivers Eye – Nürburgring', de: 'Drivers Eye – Nürburgring' }, lonlat: [6.95, 50.33], when: '2021', slug: 'drivers-eye-24h-nurburgring' },
-	{ name: { en: 'Hotrodtour – Cologne to Ibiza', de: 'Hotrodtour – Köln bis Ibiza' }, lonlat: [1.43, 38.98], when: '', slug: 'hotrodtour-cologne-ibiza' },
+	{ name: { en: 'Andes Expedition, Bolivia', de: 'Anden-Expedition, Bolivien' }, lonlat: [-68.88, -18.1], when: '2024', slug: 'bolivia-andes', short: { en: 'Bolivia · 2024', de: 'Bolivien · 2024' } },
+	{ name: { en: 'Kilimanjaro, 5,895 m', de: 'Kilimandscharo, 5.895 m' }, lonlat: [37.35, -3.07], when: '2023', slug: 'kilimanjaro', short: { en: 'Kilimanjaro · 5,895 m', de: 'Kilimandscharo · 5.895 m' } },
+	{ name: { en: '24 Hours in the Sahara', de: '24 Stunden in der Sahara' }, lonlat: [-4.0, 31.1], when: '2023', slug: 'moroccan-sahara', short: { en: 'Sahara · 2023', de: 'Sahara · 2023' }, left: true },
+	{ name: { en: 'Drivers Eye – Nürburgring', de: 'Drivers Eye – Nürburgring' }, lonlat: [6.95, 50.33], when: '2021', slug: 'drivers-eye-24h-nurburgring', short: { en: 'Nürburgring · 2021', de: 'Nürburgring · 2021' } },
+	{ name: { en: 'Hotrodtour – Cologne to Ibiza', de: 'Hotrodtour – Köln bis Ibiza' }, lonlat: [1.43, 38.98], when: '', slug: 'hotrodtour-cologne-ibiza', nolink: true },
 	{ name: { en: 'Großvenediger glacier tour, 3,660 m', de: 'Großvenediger-Gletschertour, 3.660 m' }, lonlat: [12.35, 47.1], when: '2023' },
 	{ name: { en: 'Trolltunga winter hike', de: 'Trolltunga im Winter' }, lonlat: [6.74, 60.12], when: '2023' },
-	{ name: { en: 'Laponia ski traverse + Lyngen Alps', de: 'Laponia-Skidurchquerung + Lyngen-Alpen' }, lonlat: [20.2, 68.2], when: 'Feb 2027', planned: true },
-	{ name: { en: 'Arctic Circle Trail, Greenland', de: 'Arctic Circle Trail, Grönland' }, lonlat: [-51.0, 66.9], when: 'Jul 2027', planned: true },
+	{ name: { en: 'Laponia ski traverse + Lyngen Alps', de: 'Laponia-Skidurchquerung + Lyngen-Alpen' }, lonlat: [20.2, 68.2], when: 'Feb 2027', planned: true, short: { en: 'Laponia + Lyngen · Feb 2027', de: 'Laponia + Lyngen · Feb. 2027' } },
+	{ name: { en: 'Arctic Circle Trail, Greenland', de: 'Arctic Circle Trail, Grönland' }, lonlat: [-51.0, 66.9], when: 'Jul 2027', planned: true, short: { en: 'Arctic Circle Trail · Jul 2027', de: 'Arctic Circle Trail · Jul. 2027' }, left: true },
 ];
 const placed = pins.map((p) => {
 	const [x, y] = projection(p.lonlat)!;
@@ -54,33 +31,30 @@ const [ix, iy] = projection([1.43, 38.98])!;
 ---
 
 <div class="map" data-map>
+	<img class="map-img" src="/world-dots.svg" alt="" width={W} height={H} loading="lazy" decoding="async" />
 	<svg viewBox={`0 0 ${W} ${H}`} aria-hidden="true" class="map-svg">
-		<defs>
-			<pattern id="dotgrid" width={STEP} height={STEP} patternUnits="userSpaceOnUse">
-				<rect x={STEP / 2 - 1.3} y={STEP / 2 - 1.3} width="2.6" height="2.6" class="land"></rect>
-			</pattern>
-			<clipPath id="landclip"><path d={landPath}></path></clipPath>
-		</defs>
-		<rect width={W} height={H} fill="url(#dotgrid)" clip-path="url(#landclip)"></rect>
 		<path d={`M${cx} ${cy} Q ${(cx + ix) / 2 - 40} ${(cy + iy) / 2} ${ix} ${iy}`} class="route"></path>
 	</svg>
 	<ul class="pins">
 		{
 			placed.map((p) => (
-				<li class:list={['pin', { planned: p.planned, minor: !p.slug && !p.planned }]} style={`--x:${p.x}%;--y:${p.y}%`}>
-					{p.slug ? (
+				<li class:list={['pin', { planned: p.planned, minor: !p.slug && !p.planned, left: p.left }]} style={`--x:${p.x}%;--y:${p.y}%`}>
+					{p.slug && !p.nolink ? (
 						<a href={href(lang, p.slug)} class="dot" aria-describedby={`pin-${p.lonlat.join('')}`}>
 							<span class="sr-only">{p.name[lang]}</span>
 						</a>
 					) : (
-						<button type="button" class="dot" aria-describedby={`pin-${p.lonlat.join('')}`}>
-							<span class="sr-only">{p.name[lang]}</span>
-						</button>
+						<span class="dot" role="img" aria-label={p.name[lang]} />
+					)}
+					{p.short && (
+						<span class="lbl" aria-hidden="true">
+							{p.short[lang]}
+						</span>
 					)}
 					<span class="tip" role="tooltip" id={`pin-${p.lonlat.join('')}`}>
 						<span class="meta">{p.planned ? (en ? 'Planned' : 'Geplant') : en ? 'Filmed' : 'Gedreht'}{p.when && ` · ${p.when}`}</span>
 						<span class="tip-name">{p.name[lang]}</span>
-						{p.slug && <span class="meta tip-go">{en ? 'Open project →' : 'Projekt öffnen →'}</span>}
+						{p.slug && !p.nolink && <span class="meta tip-go">{en ? 'Open project →' : 'Projekt öffnen →'}</span>}
 					</span>
 				</li>
 			))
@@ -97,26 +71,24 @@ const [ix, iy] = projection([1.43, 38.98])!;
 	.map {
 		position: relative;
 	}
-	.map-svg {
+	.map-img {
 		width: 100%;
 		height: auto;
 		display: block;
 	}
-	.land {
-		fill: var(--ink);
-		opacity: 0.2;
+	.map-svg {
+		position: absolute;
+		inset: 0 0 auto 0;
+		width: 100%;
+		height: auto;
 	}
 	.route {
 		fill: none;
-		stroke: var(--ink);
-		stroke-width: 1.2;
-		stroke-dasharray: 3 5;
-		opacity: 0.55;
+		stroke: var(--muted);
+		stroke-width: 1;
+		stroke-dasharray: 3 4;
 	}
 	.pins {
-		list-style: none;
-		margin: 0;
-		padding: 0;
 		position: absolute;
 		inset: 0 0 auto 0;
 		aspect-ratio: 1000 / 470;
@@ -131,8 +103,8 @@ const [ix, iy] = projection([1.43, 38.98])!;
 		left: 0;
 		top: 0;
 		translate: -50% -50%;
-		width: 32px;
-		height: 32px;
+		width: 26px;
+		height: 26px;
 		padding: 0;
 		border: 0;
 		background: none;
@@ -142,11 +114,11 @@ const [ix, iy] = projection([1.43, 38.98])!;
 	}
 	.dot::before {
 		content: '';
-		width: 10px;
-		height: 10px;
+		width: 11px;
+		height: 11px;
 		border-radius: 50%;
 		background: var(--ink);
-		box-shadow: 0 0 0 5px rgb(242 240 235 / 0.14);
+		box-shadow: 0 0 0 5px rgb(242 239 233 / 0.12);
 		transition: scale 0.3s var(--ease);
 	}
 	.minor .dot::before {
@@ -156,28 +128,47 @@ const [ix, iy] = projection([1.43, 38.98])!;
 		box-shadow: none;
 	}
 	.planned .dot::before {
-		width: 9px;
-		height: 9px;
 		background: transparent;
-		border: 1px dashed var(--ink);
-		box-shadow: none;
+		border: 1.5px solid var(--signal);
+		box-shadow: 0 0 0 6px rgb(255 91 46 / 0.12);
 	}
 	.dot:hover::before,
 	.dot:focus-visible::before {
 		scale: 1.3;
 	}
+	.lbl {
+		position: absolute;
+		left: 16px;
+		top: 0;
+		translate: 0 -50%;
+		padding: 3px 7px;
+		border-radius: 3px;
+		background: rgb(15 15 15 / 0.8);
+		font-size: 11px;
+		letter-spacing: 0.08em;
+		color: var(--ink-2);
+		white-space: nowrap;
+		pointer-events: none;
+	}
+	.planned .lbl {
+		color: var(--signal);
+	}
+	.left .lbl {
+		left: auto;
+		right: 16px;
+	}
 	.tip {
 		position: absolute;
 		left: 0;
-		bottom: 20px;
+		bottom: 22px;
 		translate: -50% 0;
 		display: grid;
 		gap: 0.25rem;
-		min-width: 210px;
+		min-width: 220px;
 		padding: 0.75rem 0.9rem;
-		background: #1c1c1c;
-		border: 1px solid var(--line);
-		border-radius: 6px;
+		background: var(--bg-3);
+		border: 1px solid var(--line-2);
+		border-radius: 4px;
 		color: var(--ink);
 		pointer-events: none;
 		opacity: 0;
@@ -188,16 +179,17 @@ const [ix, iy] = projection([1.43, 38.98])!;
 		z-index: 5;
 	}
 	.tip .meta {
-		font-size: 12px;
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--muted);
 	}
 	.tip-name {
-		font-family: var(--mono);
-		font-size: 15px;
+		font-size: 16px;
 		line-height: 1.3;
 	}
 	.tip-go {
 		color: var(--ink) !important;
-		text-decoration: underline;
 	}
 	.pin:hover .tip,
 	.pin:focus-within .tip {
@@ -211,32 +203,36 @@ const [ix, iy] = projection([1.43, 38.98])!;
 	.legend {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem 1.75rem;
-		margin-top: 1.25rem;
-		padding-top: 0.9rem;
-		border-top: 1px solid var(--line);
-		font-size: 13px;
+		gap: 8px 22px;
+		margin-top: 20px;
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--muted);
 	}
 	.lg-dot {
 		display: inline-block;
-		width: 8px;
-		height: 8px;
+		width: 9px;
+		height: 9px;
 		border-radius: 50%;
 		background: var(--ink);
-		margin-right: 0.6rem;
+		margin-right: 8px;
 	}
 	.lg-minor {
-		background: var(--muted);
 		width: 6px;
 		height: 6px;
+		background: var(--muted);
 	}
 	.lg-planned {
 		background: transparent;
-		border: 1px dashed var(--ink);
+		border: 1.5px solid var(--signal);
 	}
 	@media (max-width: 700px) {
+		.lbl {
+			display: none;
+		}
 		.tip {
-			min-width: 150px;
+			min-width: 160px;
 		}
 		.dot::before {
 			width: 8px;

@@ -26,6 +26,9 @@ export type Project = {
 	featured?: boolean;
 	peak?: string; // shown at the top of the altitude rail
 	galleryCredit?: string; // photographer of the gallery stills, when documented
+	tag?: L; // short fact tag on the work card, taken from the facts above
+	views?: L; // YouTube views as shown in the film strip (from the facts above)
+	video?: string; // optional muted loop (mp4/webm path in /public) – replaces the cover still when set
 };
 
 // Facts only from micharoessler.com (2024), Notion work pages and Drive briefings.
@@ -59,6 +62,7 @@ export const projects: Project[] = [
 			{ label: { en: 'Deliverables', de: 'Lieferumfang' }, value: { en: 'Doc footage, reels, stills', de: 'Doku-Material, Reels, Fotos' } },
 		],
 		peak: '4,000 m+',
+		tag: { en: '4 weeks · 4,000 m+', de: '4 Wochen · 4.000 m+' },
 		cover: 'bolivia-twin-volcanoes',
 		gallery: [
 			'bolivia-ridge-climbers',
@@ -99,6 +103,7 @@ export const projects: Project[] = [
 			{ label: { en: 'Views', de: 'Aufrufe' }, value: { en: '1.4 million on YouTube', de: '1,4 Mio. auf YouTube' } },
 			{ label: { en: 'Format', de: 'Format' }, value: { en: 'Long-form documentary, 4K', de: 'Langform-Doku, 4K' } },
 		],
+		views: { en: '1.4M views', de: '1,4 Mio. Aufrufe' },
 		cover: 'drivers-eye-cover',
 		gallery: [],
 		youtube: '7Kt9NFOXqF4',
@@ -126,6 +131,7 @@ export const projects: Project[] = [
 			{ label: { en: 'Shooting days', de: 'Drehtage' }, value: { en: '13', de: '13' } },
 			{ label: { en: 'Views', de: 'Aufrufe' }, value: { en: '1.2 million on YouTube', de: '1,2 Mio. auf YouTube' } },
 		],
+		views: { en: '1.2M views', de: '1,2 Mio. Aufrufe' },
 		cover: 'hotrodtour-cover',
 		gallery: [],
 		youtube: 'ER8HBwDKMGw',
@@ -153,6 +159,7 @@ export const projects: Project[] = [
 			{ label: { en: 'Summit', de: 'Gipfel' }, value: { en: 'Uhuru Peak, 5,895 m', de: 'Uhuru Peak, 5.895 m' } },
 		],
 		peak: '5,895 m',
+		tag: { en: '5,895 m', de: '5.895 m' },
 		cover: 'kilimanjaro-ridge',
 		gallery: [],
 	},
@@ -198,6 +205,7 @@ export const projects: Project[] = [
 			},
 		],
 		facts: [{ label: { en: 'Formats', de: 'Formate' }, value: { en: '16:9 + 9:16', de: '16:9 + 9:16' } }],
+		tag: { en: '16:9 + 9:16', de: '16:9 + 9:16' },
 		cover: 'bleibe-sunset',
 		gallery: ['bleibe-aerial-dock', 'bleibe-coast-vertical', 'bleibe-aerial-wide', 'bleibe-dusk', 'bleibe-lake'],
 	},
