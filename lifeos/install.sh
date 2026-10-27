@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # One-time setup of the Life OS mentor on a VPS. Safe to re-run: existing .env, memory and users are kept.
-# Optional: WITH_NTFY=1 also sets up an ntfy push server; USE_OWN_PROXY=1 skips the bundled Caddy.
+# If another web server owns ports 80/443 (Traefik, nginx-proxy, nginx), the mentor is connected to it automatically.
+# Optional: WITH_NTFY=1 also sets up an ntfy push server; USE_OWN_PROXY=1 skips all proxy setup.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -94,14 +95,18 @@ PY
 fi
 
 PROFILES=()
+PROXY_KIND=""
+COMPOSE_FILES="docker-compose.yml"
 if [[ "${USE_OWN_PROXY:-}" != "1" ]]; then
-	if command -v ss >/dev/null && ss -ltnH '( sport = :80 or sport = :443 )' | grep -q . && ! docker compose ps caddy 2>/dev/null | grep -q caddy; then
-		echo "Ports 80/443 are already in use on this server (another web server or proxy)."
-		echo "Re-run with USE_OWN_PROXY=1 ./install.sh and point your proxy at 127.0.0.1:$(env_get MENTOR_PORT)."
-		exit 1
+	if command -v ss >/dev/null && ss -ltnH '( sport = :80 or sport = :443 )' | grep -q . && ! docker compose ps --status running caddy 2>/dev/null | grep -q caddy; then
+		say "Another web server already uses ports 80/443: connecting the mentor to it"
+		PROXY_KIND=$(python3 proxy_setup.py prepare "$(env_get MENTOR_DOMAIN)" "$(env_get MENTOR_PORT)") || exit 1
+		[[ -f docker-compose.proxy.yml ]] && COMPOSE_FILES="docker-compose.yml:docker-compose.proxy.yml"
+	else
+		PROFILES+=(caddy)
 	fi
-	PROFILES+=(caddy)
 fi
+set_env COMPOSE_FILE "$COMPOSE_FILES"
 
 if [[ "${WITH_NTFY:-}" == "1" ]]; then
 	if [[ -z "$(env_get PUSH_DOMAIN)" ]]; then
@@ -140,6 +145,7 @@ say "Waiting for the mentor to come up"
 healthy() { python3 -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:$(env_get MENTOR_PORT)/healthz', timeout=5).status == 200 else 1)" 2>/dev/null; }
 for _ in $(seq 1 60); do healthy && break; sleep 2; done
 healthy || die "Mentor did not start. Check: docker compose logs mentor"
+[[ -n "$PROXY_KIND" ]] && python3 proxy_setup.py finish "$PROXY_KIND" "$(env_get MENTOR_DOMAIN)"
 
 say "Done."
 cat <<EOF

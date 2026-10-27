@@ -40,7 +40,7 @@ The installer asks for your name, the domain, a login passphrase, your Anthropic
 
 Optional extra push channel: `WITH_NTFY=1 ./install.sh` also runs a self-hosted ntfy server on a second domain.
 
-If ports 80/443 are already used on the VPS (another proxy, OpenClaw, n8n…), run `USE_OWN_PROXY=1 ./install.sh`. Then point your proxy at `127.0.0.1:8787` (and `127.0.0.1:8788` for ntfy if you enabled it).
+If another web server already owns ports 80/443, the installer connects the mentor to it: Traefik (e.g. Hostinger's n8n/OpenClaw templates) through Docker labels, nginx-proxy through `VIRTUAL_HOST`, or nginx on the host through a new site plus a certbot certificate. For anything else it prints what is running and stops. `USE_OWN_PROXY=1 ./install.sh` skips all of this; then point your own proxy at `127.0.0.1:8787` (and `127.0.0.1:8788` for ntfy if you enabled it).
 
 ## Operate
 
