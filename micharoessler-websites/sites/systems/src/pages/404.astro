@@ -4,11 +4,11 @@ import Base from '../layouts/Base.astro';
 
 <Base lang="de" title="Seite nicht gefunden | Formatschnitt" description="Diese Seite gibt es nicht." alt={{ de: '/', en: '/en/' }}>
 	<div class="wrap nf">
-		<p class="mono label">404</p>
+		<p class="eyebrow">404</p>
 		<h1>Diese Seite ist nicht im Schnitt gelandet.</h1>
 		<p class="nf-p">Die Seite gibt es nicht (mehr). <span lang="en">This page does not exist.</span></p>
 		<p class="nf-links">
-			<a class="btn btn--ink" href="/">Startseite</a>
+			<a class="btn btn--primary" href="/">Startseite</a>
 			<a class="btn" href="/en/">English</a>
 		</p>
 	</div>
@@ -29,7 +29,7 @@ import Base from '../layouts/Base.astro';
 		text-wrap: balance;
 	}
 	.nf-p {
-		color: var(--muted);
+		color: var(--ink-2);
 		font-size: var(--lead);
 		line-height: 1.45;
 	}

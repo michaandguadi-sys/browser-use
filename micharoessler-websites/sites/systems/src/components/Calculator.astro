@@ -1,6 +1,6 @@
 ---
-// Effort calculator: current monthly edit hours vs. with a format system.
-// The saving rate is an explicit, editable assumption – the site never promises it.
+// Effort calculator, simplified: episodes × hours, minus an explicit, editable saving assumption.
+// The saving rate is an assumption the pilot measures — the site never promises it.
 import { type Lang } from '../i18n';
 
 interface Props {
@@ -11,21 +11,19 @@ const de = lang === 'de';
 
 const inputs = [
 	{ id: 'eps', label: de ? 'Langform-Folgen pro Monat' : 'Long-form episodes per month', min: 1, max: 12, step: 1, value: 4, unit: '' },
-	{ id: 'hEp', label: de ? 'Schnittstunden pro Folge (heute)' : 'Edit hours per episode (today)', min: 4, max: 40, step: 1, value: 16, unit: 'h' },
-	{ id: 'shorts', label: de ? 'Shorts pro Folge' : 'Shorts per episode', min: 0, max: 8, step: 1, value: 3, unit: '' },
-	{ id: 'hShort', label: de ? 'Stunden pro Short (heute)' : 'Hours per short (today)', min: 0.5, max: 4, step: 0.5, value: 1.5, unit: 'h' },
-	{ id: 'save', label: de ? 'Annahme: Zeitersparnis (unbelegt, im Pilot gemessen)' : 'Assumption: time saved (unproven, measured in the pilot)', min: 0, max: 40, step: 5, value: 20, unit: '%' },
+	{ id: 'hEp', label: de ? 'Stunden pro Folge inkl. Shorts (heute)' : 'Hours per episode incl. shorts (today)', min: 4, max: 48, step: 1, value: 20, unit: ' h' },
+	{ id: 'save', label: de ? 'Annahme: Zeitersparnis (unbelegt, im Pilot gemessen)' : 'Assumption: time saved (unproven, measured in the pilot)', min: 0, max: 40, step: 5, value: 20, unit: ' %' },
 ];
 ---
 
-<div class="calc" data-calc data-lang={lang}>
+<div class="calc glass" data-calc data-lang={lang}>
 	<div class="in">
 		{
 			inputs.map((i) => (
-				<label class:list={['row', { assume: i.id === 'save' }]}>
+				<label class="row">
 					<span class="lab">
-						{i.label}
-						<output class="mono" data-show={i.id}>
+						<span>{i.label}</span>
+						<output data-show={i.id}>
 							{i.value}
 							{i.unit}
 						</output>
@@ -37,40 +35,26 @@ const inputs = [
 	</div>
 
 	<div class="res" aria-live="polite">
-		<div class="bars">
-			<div class="bar">
-				<span class="mono">{de ? 'Heute' : 'Today'}</span>
-				<b data-o="now"></b>
-				<i data-bar="now"></i>
-			</div>
-			<div class="bar sys">
-				<span class="mono">{de ? 'Mit System' : 'With system'}</span>
-				<b data-o="sys"></b>
-				<i data-bar="sys"></i>
-			</div>
-		</div>
 		<dl class="kpi">
 			<div>
-				<dt class="mono">{de ? 'Gesparte Stunden / Monat' : 'Hours saved / month'}</dt>
+				<dt>{de ? 'Gesparte Stunden / Monat' : 'Hours saved / month'}</dt>
 				<dd data-o="saved"></dd>
 			</div>
 			<div>
-				<dt class="mono">{de ? 'Gegenwert bei 750 € / Tag' : 'Worth at €750 / day'}</dt>
+				<dt>{de ? 'Gegenwert bei 750 € / Tag' : 'Worth at €750 / day'}</dt>
 				<dd data-o="worth"></dd>
 			</div>
 		</dl>
-		<p class="mono how"><span>{de ? 'Rechenweg' : 'How it is calculated'}</span><span data-o="how"></span><span>{de ? 'Beträge netto.' : 'Amounts net.'}</span></p>
+		<p class="how"><span data-o="how"></span> {de ? 'Beträge netto.' : 'Amounts net.'}</p>
 		<div class="rec">
-			<p class="mono">{de ? 'Passendes Paket' : 'Matching package'}</p>
-			<p class="rec-name" data-o="pkg"></p>
-			<a class="btn btn--ink" href="#kontakt" data-cta>{de ? 'Damit anfragen' : 'Enquire with this'} <span class="arr">→</span></a>
+			<div>
+				<p class="rec-k">{de ? 'Passendes Paket' : 'Matching package'}</p>
+				<p class="rec-name" data-o="pkg"></p>
+			</div>
+			<a class="btn btn--primary" href="#kontakt" data-cta>{de ? 'Damit anfragen' : 'Enquire with this'} <span class="arr">→</span></a>
 		</div>
-		<p class="mono note">
-			{
-				de
-					? 'Schätzung, keine Garantie. Die Ersparnis hängt von eurem Format ab – genau das klärt der Pilot.'
-					: 'An estimate, not a promise. The saving depends on your format – which is exactly what the pilot measures.'
-			}
+		<p class="note">
+			{de ? 'Schätzung, keine Garantie. Genau das klärt der Pilot.' : 'An estimate, not a promise. That is exactly what the pilot measures.'}
 		</p>
 	</div>
 </div>
@@ -83,8 +67,9 @@ const inputs = [
 		const ranges = [...root.querySelectorAll<HTMLInputElement>('input[type=range]')];
 		const get = (n: string) => Number(root.querySelector<HTMLInputElement>(`input[name="${n}"]`)!.value);
 		const out = (k: string, t: string) => (root.querySelector(`[data-o="${k}"]`)!.textContent = t);
+		const eur = (n: number) => (de ? `${nf.format(n)} €` : `€${nf.format(n)}`);
 
-		// Restore a shared estimate from the URL (?eps=4&hEp=16…), clamped to each slider's range.
+		// Restore a shared estimate from the URL (?eps=4&hEp=20&save=20), clamped to each slider's range.
 		const q = new URLSearchParams(location.search);
 		for (const i of ranges) {
 			const v = q.get(i.name);
@@ -93,23 +78,17 @@ const inputs = [
 
 		const render = () => {
 			for (const i of ranges) {
-				const v = Number(i.value).toLocaleString(de ? 'de-DE' : 'en-GB');
-				root.querySelector(`[data-show="${i.name}"]`)!.textContent = v + (i.dataset.unit ?? '');
+				root.querySelector(`[data-show="${i.name}"]`)!.textContent = Number(i.value).toLocaleString(de ? 'de-DE' : 'en-GB') + (i.dataset.unit ?? '');
+				i.style.setProperty('--p', `${((Number(i.value) - Number(i.min)) / (Number(i.max) - Number(i.min))) * 100}%`);
 			}
 			const eps = get('eps');
-			const now = eps * (get('hEp') + get('shorts') * get('hShort'));
+			const now = eps * get('hEp');
 			const sys = now * (1 - get('save') / 100);
 			const saved = now - sys;
-			out('now', `${nf.format(now)} h`);
-			out('sys', `${nf.format(sys)} h`);
+			const worth = (saved / 8) * 750;
 			out('saved', `${nf.format(saved)} h`);
-			out('worth', de ? `≈ ${nf.format((saved / 8) * 750)} €` : `≈ €${nf.format((saved / 8) * 750)}`);
-			out(
-				'how',
-				`${eps} × (${nf1.format(get('hEp'))} h + ${get('shorts')} × ${nf1.format(get('hShort'))} h) = ${nf.format(now)} h · −${get('save')} % = ${nf.format(sys)} h · ${nf1.format(saved)} h ÷ 8 h × ${de ? '750 €' : '€750'} ≈ ${de ? `${nf.format((saved / 8) * 750)} €` : `€${nf.format((saved / 8) * 750)}`}`,
-			);
-			root.querySelector<HTMLElement>('[data-bar="now"]')!.style.setProperty('--w', '1');
-			root.querySelector<HTMLElement>('[data-bar="sys"]')!.style.setProperty('--w', String(now ? sys / now : 0));
+			out('worth', `≈ ${eur(worth)}`);
+			out('how', `${eps} × ${get('hEp')} h = ${nf.format(now)} h · −${get('save')} % = ${nf.format(sys)} h · ${nf1.format(saved)} h ÷ 8 h × ${eur(750)} ≈ ${eur(worth)}.`);
 
 			// Retainer S = 6 days, M = 10 days (8 h each), see packages.
 			const days = sys / 8;
@@ -145,33 +124,22 @@ const inputs = [
 <style>
 	.calc {
 		display: grid;
-		gap: 56px var(--gutter);
-		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-		border-top: 1px solid var(--ink);
-		padding-top: 24px;
+		gap: clamp(28px, 4vw, 56px);
+		padding: clamp(24px, 4vw, 48px);
 	}
-	.in,
-	.res {
-		grid-column: 1 / -1;
-	}
-	@media (min-width: 1040px) {
-		.in {
-			grid-column: 1 / span 6;
-		}
-		.res {
-			grid-column: 8 / -1;
+	@media (min-width: 960px) {
+		.calc {
+			grid-template-columns: 1fr 1fr;
 		}
 	}
 	.in {
 		display: grid;
-		gap: 0;
+		gap: 26px;
 		align-content: start;
 	}
 	.row {
 		display: grid;
-		gap: 6px;
-		padding: 12px 0 14px;
-		border-bottom: 1px solid var(--guide);
+		gap: 10px;
 	}
 	.lab {
 		display: flex;
@@ -179,128 +147,65 @@ const inputs = [
 		align-items: baseline;
 		gap: 16px;
 		font-size: 16px;
-		line-height: 22px;
+		font-weight: 520;
 	}
 	.lab output {
-		color: var(--ink);
-		font-size: 13px;
-		text-transform: none;
+		font-family: var(--mono);
+		font-size: 15px;
+		color: var(--iris);
 		white-space: nowrap;
-	}
-	.assume {
-		margin-top: 20px;
-		border-top: 2px solid var(--ink);
-		border-bottom: 0;
-	}
-	.assume .lab {
-		color: var(--muted);
-	}
-	.assume .lab::before {
-		content: '';
-		flex: none;
-		width: 8px;
-		height: 8px;
-		margin-top: 7px;
-		background: var(--signal);
-		align-self: flex-start;
-	}
-	.assume .lab {
-		justify-content: flex-start;
-	}
-	.assume output {
-		margin-left: auto;
 	}
 	.res {
 		display: grid;
-		gap: 28px;
+		gap: 22px;
 		align-content: start;
-	}
-	.bars {
-		display: grid;
-		gap: 16px;
-	}
-	.bar {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		align-items: baseline;
-		row-gap: 6px;
-	}
-	.bar b {
-		font-size: 22px;
-		font-weight: 750;
-		letter-spacing: -0.02em;
-	}
-	.bar i {
-		grid-column: 1 / -1;
-		display: block;
-		height: 28px;
-		background: var(--ink);
-		transform-origin: left;
-		transform: scaleX(var(--w, 1));
-		transition: transform var(--t-wipe) var(--ease);
-	}
-	.bar.sys i {
-		background: var(--signal);
 	}
 	.kpi {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: var(--gutter);
+		gap: 20px;
 		margin: 0;
 	}
-	.kpi div {
-		border-top: 1px solid var(--ink);
-		padding-top: 10px;
+	.kpi dt {
+		font-size: 14px;
+		color: var(--ink-2);
 	}
 	.kpi dd {
-		margin: 12px 0 0;
-		font-size: clamp(36px, 4vw, 64px);
-		font-weight: 850;
-		letter-spacing: -0.04em;
-		line-height: 0.9;
+		margin: 6px 0 0;
+		font-size: clamp(36px, 4vw, 56px);
+		font-weight: 680;
+		letter-spacing: -0.045em;
+		line-height: 1;
 		white-space: nowrap;
 	}
 	.how {
-		display: grid;
-		gap: 4px;
-		text-transform: none;
-		letter-spacing: 0.01em;
-		font-size: 11px;
-	}
-	.how span:first-child {
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--ink);
+		font-family: var(--mono);
+		font-size: 12.5px;
+		line-height: 1.6;
+		color: var(--ink-2);
 	}
 	.rec {
-		background: var(--ink);
-		color: var(--paper);
-		padding: 20px;
-		display: grid;
-		gap: 8px;
-		justify-items: start;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 18px 18px 18px 22px;
+		border-radius: 22px;
+		background: rgba(85, 70, 255, 0.07);
+		box-shadow: inset 0 0 0 1px rgba(85, 70, 255, 0.12);
 	}
-	.rec .mono {
-		color: var(--muted-ink);
+	.rec-k {
+		font-size: 14px;
+		color: var(--ink-2);
 	}
 	.rec-name {
-		font-size: 22px;
-		line-height: 1.15;
-		font-weight: 750;
+		font-size: 19px;
+		font-weight: 620;
 		letter-spacing: -0.02em;
-		margin-bottom: 12px;
-	}
-	.rec .btn--ink {
-		background: var(--paper);
-		color: var(--ink);
-		border-color: var(--paper);
-	}
-	.rec .btn--ink:hover {
-		background: var(--signal);
-		border-color: var(--signal);
 	}
 	.note {
-		text-transform: none;
-		letter-spacing: 0.01em;
+		font-size: 14px;
+		color: var(--ink-2);
 	}
 </style>

@@ -1,10 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import { type Lang } from '../i18n';
-import { packages, systemParts, proof, tools, faq } from '../data/content';
-import SpecDemo from '../components/SpecDemo.astro';
+import { packages, pains, steps, proof, tools, faq } from '../data/content';
 import Calculator from '../components/Calculator.astro';
-import { Image } from 'astro:assets';
+import FilmPlayer from '../components/FilmPlayer.tsx';
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
@@ -20,19 +21,27 @@ const description = de
 	? 'Freelance-Cutter für wiederkehrende YouTube-Formate: Schnitt-Templates, datengetriebene Grafiken, Shorts-Pipeline und Retainer. Festpreise ab 1.950 €, Tagessatz 750 €.'
 	: 'Freelance editor for recurring YouTube formats: edit templates, data-driven graphics, shorts pipeline and retainers. Fixed prices from €1,950, day rate €750.';
 
-const steps = de
-	? [
-			['01', 'Erstgespräch', '15 Minuten, kostenlos. Ihr zeigt mir euer Format, ich sage ehrlich, ob ein System sich lohnt.', 'Kostenlos'],
-			['02', 'Pilot', 'Eine Folge plus drei Shorts aus eurem Material – zum Festpreis.', '1.950 € · ≈ 1 Woche'],
-			['03', 'Setup', 'Audit, Templates, Grafik-Kit, Shorts-Pipeline, SOP.', '3.500 € · 3–4 Wochen'],
-			['04', 'Retainer', 'Ich schneide auf dem System, monatlich planbar.', 'ab 4.200 € / Monat'],
-		]
-	: [
-			['01', 'Intro call', '15 minutes, free. Show me your format; I will tell you honestly whether a system is worth it.', 'Free'],
-			['02', 'Pilot', 'One episode plus three shorts from your footage, at a fixed price.', '€1,950 · ≈ 1 week'],
-			['03', 'Setup', 'Audit, templates, graphics kit, shorts pipeline, SOP.', '€3,500 · 3–4 weeks'],
-			['04', 'Retainer', 'I edit on the system, plannable month to month.', 'from €4,200 / month'],
-		];
+// Posters rendered from the Remotion film (scripts/render-film.mjs) — shown before the Player hydrates.
+const files = import.meta.glob<ImageMetadata>('../assets/film/*.webp', { eager: true, import: 'default' });
+const poster = async (tag: 'wide' | 'tall', at: 'start' | 'end') => {
+	const src = files[`../assets/film/${tag}-${lang}-${at}.webp`];
+	const widths = tag === 'wide' ? [960, 1440, 1920] : [540, 810, 1080];
+	const [avif, webp] = await Promise.all([
+		getImage({ src, widths, format: 'avif', quality: 60 }),
+		getImage({ src, widths, format: 'webp', quality: 74 }),
+	]);
+	return { avif: avif.srcSet.attribute, webp: webp.srcSet.attribute, src: webp.src };
+};
+const P = {
+	wideStart: await poster('wide', 'start'),
+	wideEnd: await poster('wide', 'end'),
+	tallStart: await poster('tall', 'start'),
+	tallEnd: await poster('tall', 'end'),
+};
+const filmSizes = '(max-width: 719px) 92vw, min(1200px, 92vw)';
+const filmLabels = de
+	? { play: 'Abspielen', pause: 'Pause', replay: 'Nochmal abspielen', position: 'Film-Position', of: 'von' }
+	: { play: 'Play', pause: 'Pause', replay: 'Replay', position: 'Film position', of: 'of' };
 
 const budgets = de
 	? ['Pilot (1.950 €)', 'bis 5.000 €', '5.000–10.000 € / Monat', 'über 10.000 € / Monat', 'Weiß ich noch nicht']
@@ -55,281 +64,161 @@ const offerLd = {
 		description: p.points.map((x) => x[lang]).join('; '),
 	})),
 };
-
-// Hero "multiplier wall": one episode, six vertical clips (example rate, labelled as such).
-const perEp = 6;
-const startEps = 4;
-const ticks = [8, 22, 37, 54, 69, 86];
-const ep = de ? 'Folge' : 'Episode';
-const eps = (n: number) => (de ? (n === 1 ? 'Folge' : 'Folgen') : n === 1 ? 'episode' : 'episodes');
-const mwCap = de
-	? `Beispielrechnung: Aus jeder Folge entstehen ${perEp} Hochkant-Clips. Bei ${startEps} Folgen pro Monat sind das ${startEps * (1 + perEp)} Inhalte.`
-	: `Example calculation: every episode yields ${perEp} vertical clips. At ${startEps} episodes per month, that is ${startEps * (1 + perEp)} pieces of content.`;
-// Repetition band: the same word, every row, one row inverted.
-const repWord = de ? 'FOLGE' : 'EPISODE';
-const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 ---
 
 <Base lang={lang} title={title} description={description} alt={{ de: '/', en: '/en/' }} jsonLd={[faqLd, offerLd]}>
 	<section class="hero">
+		<div class="aura" aria-hidden="true"></div>
 		<div class="wrap hero-in">
-			<div class="guides grid" aria-hidden="true">{Array.from({ length: 12 }, () => <span />)}</div>
-			<div class="grid hero-g">
-				<p class="mono label hero-k">{de ? 'Freelance-Cutter · Workflow · Retainer' : 'Freelance editor · Workflow · Retainer'}</p>
-				<h1 class="display">
-					{de ? 'Euer YouTube-Format als Schnitt-System.' : 'Your YouTube format as an edit system.'}
-				</h1>
-				<div class="hero-txt">
-					<p class="hero-sub">
-						{
-							de
-								? 'Weniger Handarbeit pro Folge, mehr Shorts aus jedem Dreh. Ich baue für euer wiederkehrendes Format Templates, datengetriebene Grafiken, eine Shorts-Pipeline und eine saubere Review-Schleife – und schneide darauf im Retainer oder übergebe alles an euer Team.'
-								: 'Less manual work per episode, more shorts from every shoot. I build templates, data-driven graphics, a shorts pipeline and a clean review loop for your recurring format – then edit on it for you on retainer, or hand it all to your team.'
-						}
-					</p>
-					<div class="hero-cta">
-						<a class="btn btn--ink" href="#kontakt">{de ? 'Erstgespräch buchen' : 'Book an intro call'} <span class="arr">→</span></a>
-						<a class="btn" href="#system">{de ? 'System ansehen' : 'See the system'}</a>
-					</div>
-					<dl class="spec">
-						<div><dt class="mono">{de ? 'Tagessatz' : 'Day rate'}</dt><dd>{de ? '750 €' : '€750'}</dd></div>
-						<div><dt class="mono">{de ? 'Einstieg' : 'Start'}</dt><dd>{de ? 'Pilot, Festpreis' : 'Fixed-price pilot'}</dd></div>
-						<div><dt class="mono">{de ? 'Tools' : 'Tools'}</dt><dd>Premiere · Resolve · Remotion</dd></div>
-						<div><dt class="mono">{de ? 'Sprachen' : 'Languages'}</dt><dd>DE · EN</dd></div>
-					</dl>
-				</div>
+			<p class="eyebrow">{de ? 'Schnitt-Systeme für YouTube-Formate' : 'Edit systems for YouTube formats'}</p>
+			<h1>{de ? 'Euer YouTube-Format als Schnitt-System.' : 'Your YouTube format as an edit system.'}</h1>
+			<p class="hero-sub">
+				{de ? 'Feedback einmal – im System, nicht zehnmal. Planbare Folgen. Feste Preise.' : 'Feedback once – in the system, not ten times. Predictable episodes. Fixed prices.'}
+			</p>
+			<div class="hero-cta">
+				<a class="btn btn--primary" href="#kontakt">{de ? 'Erstgespräch buchen' : 'Book an intro call'} <span class="arr">→</span></a>
+				<a class="btn" href="#pakete">{de ? 'Pakete ansehen' : 'See packages'}</a>
+			</div>
+		</div>
+	</section>
 
-				<figure class="mw" data-mw data-io data-lang={lang} data-per={perEp} style="--base:18" aria-labelledby="mw-cap">
-					<div class="mw-head mono">
-						<span>{de ? `Beispielrechnung: ${perEp} Clips pro Folge` : `Example calculation: ${perEp} clips per episode`}</span>
-						<span aria-hidden="true">16:9 → 9:16</span>
-					</div>
-					<div class="unit" aria-hidden="true">
-						<div class="tile ep" style="--d:0">
-							<span class="mono t-l">{ep.toUpperCase()} 01</span>
-							<span class="mono t-f">16:9</span>
-							<span class="tl">{ticks.map((x, i) => <i style={`--x:${x}%;--d:${3 + i * 2}`} />)}</span>
-						</div>
-						{
-							Array.from({ length: perEp }, (_, i) => (
-								<div class="tile clip" style={`--d:${3 + i * 2}`}>
-									<span class="mono t-l">
-										CLIP
-										<br />
-										{String(i + 1).padStart(2, '0')}
-									</span>
-									<span class="mono t-f">9:16</span>
-								</div>
-							))
-						}
-					</div>
-					<div class="wall" aria-hidden="true">
-						{
-							Array.from({ length: 8 }, (_, s) => (
-								<div class:list={['slot', { on: s < startEps }]} style={`--s:${s}`}>
-									<span class="mono s-n">{String(s + 1).padStart(2, '0')}</span>
-									<div class="s-t">
-										{Array.from({ length: 1 + perEp }, (_, k) => (
-											<i style={`--k:${k}`} />
+	<section class="stage" data-stage aria-label={de ? 'Film: So entsteht eine Folge im System' : 'Film: how an episode gets made in the system'}>
+		<div class="stage-pin">
+			<figure class="film" data-film>
+				<div class="film-screen">
+					<picture class="film-poster">
+						<source media="(max-width: 719px) and (prefers-reduced-motion: reduce)" type="image/avif" srcset={P.tallEnd.avif} sizes={filmSizes} />
+						<source media="(max-width: 719px)" type="image/avif" srcset={P.tallStart.avif} sizes={filmSizes} />
+						<source media="(prefers-reduced-motion: reduce)" type="image/avif" srcset={P.wideEnd.avif} sizes={filmSizes} />
+						<source type="image/avif" srcset={P.wideStart.avif} sizes={filmSizes} />
+						<source media="(max-width: 719px)" type="image/webp" srcset={P.tallStart.webp} sizes={filmSizes} />
+						<img src={P.wideStart.src} srcset={P.wideStart.webp} sizes={filmSizes} width="1920" height="1080" alt="" fetchpriority="high" decoding="async" />
+					</picture>
+					<noscript>
+						<video class="film-video" controls muted playsinline preload="none" poster={P.wideEnd.src}>
+							<source src={`/media/edit-film-wide-${lang}.mp4`} type="video/mp4" />
+						</video>
+					</noscript>
+				</div>
+				<div class="film-bar" aria-hidden="true"></div>
+				<div class="film-island">
+					<FilmPlayer client:only="react" lang={lang} labels={filmLabels} />
+				</div>
+				<figcaption class="sr-only">
+					{
+						de
+							? 'Film: Countdown „Video fertig in 3 · 2 · 1“. Rohmaterial landet in der Timeline, Schnitte sitzen, Lücken schließen sich, eine Feedback-Notiz wird einmal erledigt. Ebenen für B-Roll, Titel, Grafik, Untertitel, Musik und Sounds kommen dazu. Export – fertiges Video in 16:9 und 9:16.'
+							: 'Film: countdown “Video ready in 3 · 2 · 1”. Raw footage lands in the timeline, cuts snap, gaps close, one feedback note gets resolved once. Layers for b-roll, titles, graphics, captions, music and sound effects stack up. Export – finished video in 16:9 and 9:16.'
+					}
+				</figcaption>
+			</figure>
+		</div>
+	</section>
+
+	<section class="sec why">
+		<div class="wrap">
+			<div class="sec-h">
+				<p class="eyebrow">{de ? 'Warum ein System' : 'Why a system'}</p>
+				<h2>{de ? 'Weniger Schleifen. Mehr Folgen.' : 'Fewer loops. More episodes.'}</h2>
+			</div>
+			<div class="pains">
+				{
+					pains.map((p, i) => (
+						<article class="pain glass reveal" style={`--i:${i}`}>
+							<div class:list={['ma', `ma--${p.anim}`]} aria-hidden="true">
+								{p.anim === 'loops' && (
+									<>
+										<svg class="ma-loop" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M38 24a14 14 0 1 1-4.1-9.9" />
+											<path d="M34 6v8h-8" />
+										</svg>
+										<span class="ma-check">
+											<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+												<path d="M5 12.5l4.2 4.2L19 7" />
+											</svg>
+										</span>
+									</>
+								)}
+								{p.anim === 'repeat' && (
+									<>
+										{[0, 1, 2, 3].map((k) => (
+											<span class="ma-bub" style={`--k:${k}`}>
+												<i />
+												<i />
+											</span>
+										))}
+										<span class="ma-one">1×</span>
+									</>
+								)}
+								{p.anim === 'plan' && (
+									<div class="ma-bars">
+										{[0.35, 0.9, 0.55, 1, 0.25, 0.7].map((h, k) => (
+											<i style={`--h:${h};--k:${k}`} />
 										))}
 									</div>
-								</div>
-							))
-						}
-					</div>
-					<div class="mw-ctrl">
-						<label for="mw-n" class="mono">{de ? 'Folgen pro Monat' : 'Episodes per month'}</label>
-						<output for="mw-n" class="mono mw-v" data-o="n">{startEps}</output>
-						<input id="mw-n" type="range" min="1" max="8" step="1" value={startEps} aria-valuetext={`${startEps} ${eps(startEps)} → ${startEps * (1 + perEp)} ${de ? 'Inhalte' : 'pieces of content'}`} />
-					</div>
-					<div class="mw-eq" aria-live="polite">
-						<p class="eq eq-n"><b data-o="n">{startEps}</b><span class="mono" data-o="nl">{eps(startEps)}</span></p>
-						<span class="eq-arr" aria-hidden="true">→</span>
-						<p class="eq eq-t"><b data-o="t">{startEps * (1 + perEp)}</b><span class="mono">{de ? 'Inhalte pro Monat' : 'pieces of content per month'}</span></p>
-					</div>
-					<p class="mono mw-f" aria-hidden="true">
-						<span data-o="n">{startEps}</span> × (1 {de ? 'Folge' : 'episode'} + {perEp} {de ? 'Clips' : 'clips'}) = <span data-o="t">{startEps * (1 + perEp)}</span>
-					</p>
-					<figcaption id="mw-cap" class="sr-only">{mwCap}</figcaption>
-				</figure>
+								)}
+							</div>
+							<p class="pain-p">{p.pain[lang]}</p>
+							<h3>{p.fix[lang]}</h3>
+						</article>
+					))
+				}
 			</div>
 		</div>
 	</section>
 
-	<section class="strip">
-		<div class="wrap grid strip-in">
-			<p class="mono strip-k">{de ? 'Geschnitten für' : 'Edited for'}</p>
-			<ul>
-				<li>Carwow DE <span class="mono">{de ? '· 3 Review-Folgen, 2025' : '· 3 review episodes, 2025'}</span></li>
-				<li>Felix von der Laden <span class="mono">· 2 {de ? 'Langform-Dokus' : 'long-form docs'}</span></li>
-			</ul>
-			<p class="mono strip-n">
-				{de ? 'Selbst prüfen:' : 'Check for yourself:'}
-				<a href="https://www.youtube.com/watch?v=7Kt9NFOXqF4" rel="noopener">Drivers Eye ↗</a>
-				<a href="https://www.youtube.com/watch?v=ER8HBwDKMGw" rel="noopener">Hotrodtour ↗</a>
-			</p>
-		</div>
-	</section>
-
-	<section id="system" class="sec">
+	<section id="ablauf" class="sec">
 		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">{de ? 'Das System' : 'The system'}</p>
-				<p class="mono idx" aria-hidden="true">{sec(1)}</p>
-				<h2>{de ? 'Euer Format als System' : 'Your format as a system'}</h2>
-				<p>
-					{
-						de
-							? 'Wer jede Woche dieselbe Show produziert, sollte nicht jede Woche dieselben Dinge neu bauen. Sechs Bausteine, die ich für euer Format aufsetze:'
-							: 'If you ship the same show every week, you should not rebuild the same things every week. Six building blocks I set up for your format:'
-					}
-				</p>
+			<div class="sec-h">
+				<p class="eyebrow">{de ? 'So läuft’s' : 'How it works'}</p>
+				<h2>{de ? 'Klein anfangen, dann skalieren' : 'Start small, then scale'}</h2>
+				<p>{de ? 'Vorher: 15 Minuten Erstgespräch, kostenlos.' : 'Before that: a free 15-minute intro call.'}</p>
 			</div>
-			<ol class="parts">
+			<ol class="steps">
 				{
-					systemParts.map((s) => (
-						<li class="part grid reveal">
-							<span class="p-n">{s.n}</span>
+					steps.map((s, i) => (
+						<li class="step glass reveal" style={`--i:${i}`}>
+							<span class="step-n">{s.n}</span>
 							<h3>{s.title[lang]}</h3>
-							<p>{s.text[lang]}</p>
-						</li>
-					))
-				}
-			</ol>
-			<p class="ai mono label">
-				{de ? 'KI hilft. Der Schnitt entscheidet. Keine generierten Moderatoren, kein Auto-Slop.' : 'AI assists. The edit decides. No generated presenters, no auto-slop.'}
-			</p>
-		</div>
-	</section>
-
-	<section id="demo" class="sec sec--tight">
-		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">{de ? 'Live-Demo' : 'Live demo'}</p>
-				<p class="mono idx" aria-hidden="true">{sec(2)}</p>
-				<h2>{de ? 'Grafik aus der Tabelle. Probiert es aus.' : 'Graphics from a spreadsheet. Try it.'}</h2>
-				<p>
-					{
-						de
-							? 'So funktionieren datengetriebene Grafiken: Ihr pflegt Werte, das Template rendert – in 16:9 und 9:16. Ändert eine Zahl.'
-							: 'This is how data-driven graphics work: you maintain values, the template renders – in 16:9 and 9:16. Change a number.'
-					}
-				</p>
-			</div>
-			<SpecDemo lang={lang} />
-		</div>
-	</section>
-
-	<section id="ablauf" class="sec sec--ink">
-		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">{de ? 'Ablauf' : 'Process'}</p>
-				<p class="mono idx" aria-hidden="true">{sec(3)}</p>
-				<h2 class="bw">
-					<span class="bw-txt">{de ? 'Klein anfangen, dann skalieren' : 'Start small, then scale'}</span>
-					<span class="bw-bars" aria-hidden="true"><i /><i /><i /><i /></span>
-				</h2>
-			</div>
-			<ol class="steps grid">
-				{
-					steps.map(([n, h, p, s]) => (
-						<li class="reveal">
-							<span class="st-n">{n}</span>
-							<h3>{h}</h3>
-							<p>{p}</p>
-							<p class="mono st-s">{s}</p>
+							<p class="muted">{s.text[lang]}</p>
+							<p class="chip">{s.price[lang]}</p>
 						</li>
 					))
 				}
 			</ol>
 		</div>
 	</section>
-
-	<section id="rechner" class="sec">
-		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">{de ? 'Rechner' : 'Calculator'}</p>
-				<p class="mono idx" aria-hidden="true">{sec(4)}</p>
-				<h2>{de ? 'Was spart euch ein System?' : 'What would a system save you?'}</h2>
-				<p>{de ? 'Eure Zahlen rein, Schätzung raus – inklusive passendem Paket.' : 'Your numbers in, an estimate out – including the matching package.'}</p>
-			</div>
-			<Calculator lang={lang} />
-		</div>
-	</section>
-
-	<div class="rep-wrap">
-		<div class="rep" data-lang={lang} aria-hidden="true">
-			<div class="rep-rows">
-				{
-					[0, 1, 2, 3, 4].map((r) =>
-						r === 3 ? (
-							<div class="rep-row rep-inv">
-								<span class="wrap">
-									<span>{repWord} 01 <em>=</em></span> <span>{repWord} 52</span>
-								</span>
-							</div>
-						) : (
-							<div class="rep-row">
-								<span class="wrap">{Array.from({ length: 6 }, () => repWord).join(' ')}</span>
-							</div>
-						),
-					)
-				}
-			</div>
-		</div>
-		<p class="sr-only">{de ? 'Gleiche Qualität in jeder Folge: Folge 52 sieht so gut aus wie Folge 01.' : 'Consistent quality in every episode: episode 52 looks as good as episode 01.'}</p>
-	</div>
 
 	<section id="pakete" class="sec">
+		<div class="aura aura--b" aria-hidden="true"></div>
 		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">{de ? 'Pakete & Preise' : 'Packages & pricing'}</p>
-				<p class="mono idx" aria-hidden="true">{sec(5)}</p>
+			<div class="sec-h">
+				<p class="eyebrow">{de ? 'Pakete & Preise' : 'Packages & pricing'}</p>
 				<h2>{de ? 'Festpreise. Schriftlich. Vorab.' : 'Fixed prices. In writing. Upfront.'}</h2>
-				<div class="aside">
-					<p>
-						{
-							de
-								? 'Basis ist ein Tagessatz von 750 €. Pakete sind günstiger als Einzeltage, weil das System die Arbeit schneller macht – das ist der Punkt.'
-								: 'Base day rate is €750. Packages cost less than single days because the system makes the work faster – that is the point.'
-						}
-					</p>
-					<a class="mono calc-link" href="#rechner">{de ? 'Unsicher? Rechner nutzen ↑' : 'Not sure? Use the calculator ↑'}</a>
-				</div>
+				<p>{de ? 'Tagessatz 750 €. Pakete sind günstiger – das System macht die Arbeit schneller.' : 'Day rate €750. Packages cost less – the system makes the work faster.'}</p>
 			</div>
 			<div class="pk">
 				{
-					packages.map((p, i) => {
-						const m = p.price[lang].match(/^(ab|from)\s+(.+)$/);
-						return (
-							<article class:list={['pk-col', { hl: p.highlight }]}>
-								<p class="mono pk-top">
-									<span aria-hidden="true">P/{String(i + 1).padStart(2, '0')}</span>
-									{p.highlight && <span class="pk-tag">{de ? 'Empfohlener Einstieg' : 'Recommended start'}</span>}
-								</p>
+					packages.map((p, i) => (
+						<article class:list={['pk-card', 'glass', 'reveal', { hl: p.highlight }]} style={`--i:${i % 3}`}>
+							<div class="pk-top">
 								<h3>{p.name[lang]}</h3>
-								<p class="pk-price">
-									{m ? (
-										<>
-											<span class="pk-pre">{m[1]}</span> {m[2]}
-										</>
-									) : (
-										p.price[lang]
-									)}{' '}
-									<span class="mono">{p.unit[lang]}</span>
-								</p>
-								<p class="mono pk-days">{p.days[lang]}</p>
-								<ul>
-									{p.points.map((x) => (
-										<li>{x[lang]}</li>
-									))}
-								</ul>
-							</article>
-						);
-					})
+								{p.highlight && <span class="pk-tag">{de ? 'Empfohlener Einstieg' : 'Recommended start'}</span>}
+							</div>
+							<p class="pk-price">{p.price[lang]}</p>
+							<p class="pk-meta muted">
+								{p.unit[lang]} · {p.days[lang]}
+							</p>
+							<ul>
+								{p.points.map((x) => (
+									<li>{x[lang]}</li>
+								))}
+							</ul>
+						</article>
+					))
 				}
 			</div>
-			<p class="mono pk-note">
+			<p class="pk-note muted">
 				{
 					de
 						? 'Alle Preise netto. Abrechnung über Micha Roessler LLC (USA); B2B-Kunden in der EU: Reverse-Charge, keine deutsche USt. auf der Rechnung. USD-Preise auf Anfrage.'
@@ -339,68 +228,63 @@ const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 		</div>
 	</section>
 
+	<section id="rechner" class="sec sec--tight">
+		<div class="wrap">
+			<div class="sec-h">
+				<p class="eyebrow">{de ? 'Rechner' : 'Calculator'}</p>
+				<h2>{de ? 'Was spart euch ein System?' : 'What would a system save you?'}</h2>
+			</div>
+			<Calculator lang={lang} />
+		</div>
+	</section>
+
 	<section id="arbeiten" class="sec">
 		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">{de ? 'Arbeiten' : 'Work'}</p>
-				<p class="mono idx" aria-hidden="true">{sec(6)}</p>
+			<div class="sec-h">
+				<p class="eyebrow">{de ? 'Arbeiten' : 'Work'}</p>
 				<h2>{de ? 'Was ich gebaut und geschnitten habe' : 'What I have built and edited'}</h2>
 				<p>
 					{
 						de
-							? 'Ehrlich eingeordnet: Format-Schnitt für Marken ist ein junger Schwerpunkt bei mir, Workflows baue ich seit Jahren für meine eigenen Produktionen. Große Agentur-Logos habe ich nicht – deshalb startet jede Zusammenarbeit mit einem bezahlten Pilot statt mit Versprechen. Keine erfundenen Zahlen; Kunden ohne Freigabe bleiben anonym.'
-							: 'Honestly put: format editing for brands is a young focus for me; I have been building workflows for my own productions for years. I do not have big agency logos – which is why every engagement starts with a paid pilot instead of promises. No invented numbers; clients who have not approved being named stay anonymous.'
+							? 'Ehrlich: junger Schwerpunkt, keine Agentur-Logos. Deshalb startet alles mit einem bezahlten Pilot.'
+							: 'Honestly: a young focus, no agency logos. That is why everything starts with a paid pilot.'
 					}
 				</p>
 			</div>
 			<div class="cases">
 				{
 					proof.map((c, i) => (
-						<article class="case reveal">
-							<p class="mono case-k">
-								<span>{c.tag[lang]}</span>
-								<span aria-hidden="true">{String.fromCharCode(65 + i)}</span>
-							</p>
+						<article class="case glass reveal" style={`--i:${i % 2}`}>
+							<p class="case-tag muted">{c.tag[lang]}</p>
 							<h3>{c.title[lang]}</h3>
-							<p>{c.text[lang]}</p>
+							<p class="muted">{c.text[lang]}</p>
 						</article>
 					))
 				}
 			</div>
-			<div class="tools">
-				<p class="mono label">{de ? 'Werkzeuge, die ich selbst baue und nutze' : 'Tools I build and use'}</p>
-				<dl>
-					{
-						tools.map((t) => (
-							<div class="reveal">
-								<dt>{t.name}</dt>
-								<dd>{t.text[lang]}</dd>
-							</div>
-						))
-					}
-				</dl>
+			<div class="proof-foot">
+				<p class="muted">{tools[lang]}</p>
+				<p>
+					<span class="muted">{de ? 'Selbst prüfen:' : 'Check for yourself:'}</span>
+					<a href="https://www.youtube.com/watch?v=7Kt9NFOXqF4" rel="noopener">Drivers Eye ↗</a>
+					<a href="https://www.youtube.com/watch?v=ER8HBwDKMGw" rel="noopener">Hotrodtour ↗</a>
+				</p>
 			</div>
 		</div>
 	</section>
 
 	<section class="sec about">
 		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">{de ? 'Wer dahinter steht' : 'Who is behind it'}</p>
-				<p class="mono idx" aria-hidden="true">{sec(7)}</p>
-				<h2>{de ? 'Eine Person. Schnitt und System.' : 'One person. Edit and system.'}</h2>
-			</div>
-			<div class="about-g grid">
-				<figure class="about-img">
-					<Image src={portrait} alt="Micha Rössler" widths={[360, 720, 1080]} sizes="(min-width: 1040px) 30vw, 100vw" />
-					<figcaption class="mono">Micha Rössler · Editor & {de ? 'Filmemacher' : 'filmmaker'}</figcaption>
-				</figure>
+			<div class="about-card glass reveal">
+				<Image src={portrait} alt="Micha Rössler" widths={[320, 640, 960]} sizes="(min-width: 900px) 360px, 80vw" class="about-img" />
 				<div class="about-t">
-					<p class="about-p">
+					<p class="eyebrow">{de ? 'Wer dahinter steht' : 'Who is behind it'}</p>
+					<h2>{de ? 'Eine Person. Schnitt und System.' : 'One person. Edit and system.'}</h2>
+					<p class="about-p muted">
 						{
 							de
-								? 'Ich bin Micha Rössler, Editor und Filmemacher. Gelernt habe ich das Handwerk bei Langform-Dokus für YouTube – 1,2 und 1,4 Mio. Aufrufe für Felix von der Laden. Heute schneide ich Serienformate wie Auto-Reviews und baue die Systeme dahinter: Templates, Remotion-Grafiken und eigene Tools wie eine Offload-App für den Ingest. Wenn ich nicht im Schnitt sitze, drehe ich Expeditionsfilme.'
-								: 'I am Micha Rössler, editor and filmmaker. I learned the craft on long-form YouTube docs – 1.2M and 1.4M views for Felix von der Laden. Today I edit series formats like car reviews and build the systems behind them: templates, Remotion graphics and my own tools such as an offload app for ingest. When I am not editing, I shoot expedition films.'
+								? 'Ich bin Micha Rössler, Editor und Filmemacher. Ich schneide Serienformate und baue die Systeme dahinter – Templates, Remotion-Grafiken, eigene Tools.'
+								: 'I am Micha Rössler, editor and filmmaker. I edit series formats and build the systems behind them – templates, Remotion graphics, my own tools.'
 						}
 					</p>
 					<a class="btn" href={de ? 'https://micharoessler.com/de/' : 'https://micharoessler.com/'}>micharoessler.com <span class="arr">↗</span></a>
@@ -411,21 +295,19 @@ const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 
 	<section id="faq" class="sec">
 		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">FAQ</p>
-				<p class="mono idx" aria-hidden="true">{sec(8)}</p>
+			<div class="sec-h">
+				<p class="eyebrow">FAQ</p>
 				<h2>{de ? 'Häufige Fragen' : 'Common questions'}</h2>
 			</div>
-			<div class="faq">
+			<div class="faq glass">
 				{
-					faq.map((f, i) => (
+					faq.map((f) => (
 						<details name="faq">
 							<summary>
-								<span class="mono q-n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-								<span class="q-t">{f.q[lang]}</span>
+								<span>{f.q[lang]}</span>
 								<i class="q-x" aria-hidden="true" />
 							</summary>
-							<p>{f.a[lang]}</p>
+							<p class="muted">{f.a[lang]}</p>
 						</details>
 					))
 				}
@@ -433,46 +315,39 @@ const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 		</div>
 	</section>
 
-	<section id="kontakt" class="sec sec--ink contact">
+	<section id="kontakt" class="sec contact">
+		<div class="aura" aria-hidden="true"></div>
 		<div class="wrap">
-			<div class="sec-h grid">
-				<p class="mono label">{de ? 'Kontakt' : 'Contact'}</p>
-				<p class="mono idx" aria-hidden="true">{sec(9)}</p>
-				<h2 class="bw">
-					<span class="bw-txt">{de ? 'Erzählt mir von eurem Format.' : 'Tell me about your format.'}</span>
-					<span class="bw-bars" aria-hidden="true"><i /><i /><i /><i /></span>
-				</h2>
-			</div>
-			<div class="grid c-in">
+			<div class="c-card glass">
 				<div class="c-txt">
+					<p class="eyebrow">{de ? 'Kontakt' : 'Contact'}</p>
+					<h2>{de ? 'Erzählt mir von eurem Format.' : 'Tell me about your format.'}</h2>
 					<div class="c-who">
-						<Image src={portrait} alt="Micha Rössler" width={128} height={128} widths={[64, 128]} sizes="64px" class="c-avatar" />
-						<p><b>Micha Rössler</b><br /><span class="mono">{de ? 'antwortet persönlich' : 'replies personally'}</span></p>
+						<Image src={portrait} alt="" width={112} height={112} widths={[56, 112]} sizes="56px" class="c-avatar" />
+						<p><b>Micha Rössler</b><br /><span class="muted">{de ? 'antwortet persönlich' : 'replies personally'}</span></p>
 					</div>
-					<p class="c-mail">
+					<p class="c-mail muted">
 						{de ? 'Antwort innerhalb von zwei Werktagen. Oder direkt: ' : 'Reply within two working days. Or directly: '}
 						<a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
 					</p>
 					<ul class="trust">
-						<li>{de ? 'Ihr schreibt direkt mit mir – keine Agentur, kein Vertrieb, kein Subunternehmer.' : 'You talk to me directly – no agency, no sales team, no subcontractors.'}</li>
-						<li>{de ? 'Festpreis schriftlich vor Start. Überzeugt euch der Pilot nicht, endet die Zusammenarbeit dort – ohne Folgekosten.' : 'Fixed price in writing before we start. If the pilot does not convince you, it ends there – no follow-on costs.'}</li>
-						<li>{de ? 'Ich bin Deutscher, arbeite remote von unterwegs und rechne über meine US-Firma Micha Roessler LLC ab.' : 'I am German, work remotely while travelling and invoice through my US company, Micha Roessler LLC.'}</li>
+						<li>{de ? 'Direkt mit mir – keine Agentur, kein Vertrieb.' : 'Directly with me – no agency, no sales team.'}</li>
+						<li>{de ? 'Festpreis schriftlich vor Start. Überzeugt der Pilot nicht, endet es dort – ohne Folgekosten.' : 'Fixed price in writing before we start. If the pilot does not convince you, it ends there – no follow-on costs.'}</li>
+						<li>{de ? 'Remote, auf Deutsch oder Englisch. Abrechnung über Micha Roessler LLC.' : 'Remote, in German or English. Invoiced via Micha Roessler LLC.'}</li>
 					</ul>
 				</div>
 				<form class="f" id="brief" data-subject={de ? 'Anfrage Formatschnitt' : 'Formatschnitt enquiry'}>
+					<div class="f-row">
+						<label><span>{de ? 'Name' : 'Name'}</span><input name="Name" required autocomplete="name" /></label>
+						<label><span>{de ? 'Firma / Kanal' : 'Company / channel'}</span><input name={de ? 'Firma' : 'Company'} autocomplete="organization" /></label>
+					</div>
+					<div class="f-row">
+						<label><span>{de ? 'Link zum Format' : 'Link to the format'}</span><input name={de ? 'Format-Link' : 'Format link'} type="url" placeholder="https://youtube.com/…" /></label>
+						<label><span>{de ? 'Folgen pro Monat' : 'Episodes per month'}</span><input name={de ? 'Folgen/Monat' : 'Episodes/month'} inputmode="numeric" /></label>
+					</div>
 					<fieldset>
-						<legend class="mono">01 · {de ? 'Ihr' : 'You'}</legend>
-						<label><span class="mono">{de ? 'Name' : 'Name'}</span><input name="Name" required autocomplete="name" /></label>
-						<label><span class="mono">{de ? 'Firma / Kanal' : 'Company / channel'}</span><input name={de ? 'Firma' : 'Company'} autocomplete="organization" /></label>
-					</fieldset>
-					<fieldset>
-						<legend class="mono">02 · {de ? 'Das Format' : 'The format'}</legend>
-						<label><span class="mono">{de ? 'Link zum Format' : 'Link to the format'}</span><input name={de ? 'Format-Link' : 'Format link'} type="url" placeholder="https://youtube.com/…" /></label>
-						<label><span class="mono">{de ? 'Folgen pro Monat' : 'Episodes per month'}</span><input name={de ? 'Folgen/Monat' : 'Episodes/month'} inputmode="numeric" /></label>
-					</fieldset>
-					<fieldset>
-						<legend class="mono">03 · {de ? 'Der Rahmen' : 'The frame'}</legend>
-						<div class="chips" role="radiogroup" aria-label={de ? 'Budget' : 'Budget'}>
+						<legend>{de ? 'Budget' : 'Budget'}</legend>
+						<div class="chips">
 							{
 								budgets.map((b, i) => (
 									<label class="chip">
@@ -482,12 +357,12 @@ const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 								))
 							}
 						</div>
-						<label><span class="mono">{de ? 'Start' : 'Start'}</span><input name="Start" placeholder={de ? 'z. B. Januar' : 'e.g. January'} /></label>
-						<label><span class="mono">{de ? 'Was soll besser werden?' : 'What should get better?'}</span><textarea name={de ? 'Ziel' : 'Goal'} rows="4"></textarea></label>
 					</fieldset>
+					<label><span>{de ? 'Start' : 'Start'}</span><input name="Start" placeholder={de ? 'z. B. Januar' : 'e.g. January'} /></label>
+					<label><span>{de ? 'Was soll besser werden?' : 'What should get better?'}</span><textarea name={de ? 'Ziel' : 'Goal'} rows="4"></textarea></label>
 					<div class="f-send">
-						<button class="btn btn--ink" type="submit">{de ? 'E-Mail vorbereiten' : 'Prepare email'} <span class="arr">→</span></button>
-						<p class="mono f-note">{de ? 'Öffnet euer Mailprogramm. Auf dieser Seite wird nichts gespeichert.' : 'Opens your email app. Nothing is stored on this site.'}</p>
+						<button class="btn btn--primary" type="submit">{de ? 'E-Mail vorbereiten' : 'Prepare email'} <span class="arr">→</span></button>
+						<p class="f-note muted">{de ? 'Öffnet euer Mailprogramm. Auf dieser Seite wird nichts gespeichert.' : 'Opens your email app. Nothing is stored on this site.'}</p>
 					</div>
 				</form>
 			</div>
@@ -496,36 +371,6 @@ const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 </Base>
 
 <script>
-	// Hero multiplier wall: Folgen × (1 + clips) = Inhalte. Tiles cut in on a 25 fps frame grid.
-	const mw = document.querySelector<HTMLElement>('[data-mw]');
-	if (mw) {
-		const de = mw.dataset.lang === 'de';
-		const per = Number(mw.dataset.per ?? 6);
-		const range = mw.querySelector<HTMLInputElement>('input[type=range]')!;
-		const slots = [...mw.querySelectorAll<HTMLElement>('.slot')];
-		const set = (k: string, t: string) => mw.querySelectorAll(`[data-o="${k}"]`).forEach((el) => (el.textContent = t));
-		const word = (n: number) => (de ? (n === 1 ? 'Folge' : 'Folgen') : n === 1 ? 'episode' : 'episodes');
-		let cur = Number(range.value);
-		const render = (n: number) => {
-			const total = n * (1 + per);
-			set('n', String(n));
-			set('t', String(total));
-			set('nl', word(n));
-			range.setAttribute('aria-valuetext', `${n} ${word(n)} → ${total} ${de ? 'Inhalte' : 'pieces of content'}`);
-			slots.forEach((s, i) => {
-				const on = i < n;
-				if (on !== s.classList.contains('on')) s.style.setProperty('--s', String(on ? i - cur : cur - 1 - i));
-				s.classList.toggle('on', on);
-			});
-			cur = n;
-		};
-		range.addEventListener('input', () => {
-			mw.style.setProperty('--base', '0');
-			render(Number(range.value));
-		});
-		render(cur);
-	}
-
 	const f = document.getElementById('brief') as HTMLFormElement;
 	f?.addEventListener('submit', (e) => {
 		e.preventDefault();
@@ -536,888 +381,633 @@ const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 
 <style>
 	/* ---------- hero ---------- */
+	.hero {
+		position: relative;
+		isolation: isolate;
+	}
 	.hero-in {
-		position: relative;
-		padding-block: clamp(32px, 4.5vw, 72px) clamp(64px, 8vw, 128px);
-	}
-	.guides {
-		position: absolute;
-		inset: 0 var(--margin);
-		pointer-events: none;
-	}
-	.guides span {
-		border-inline: 1px solid var(--guide-35);
-	}
-	@media (max-width: 719px) {
-		.guides span:nth-child(n + 5) {
-			display: none;
-		}
-	}
-	.hero-g {
-		position: relative;
-		align-items: start;
-	}
-	.hero-k,
-	h1 {
-		grid-column: 1 / -1;
+		display: grid;
+		justify-items: center;
+		text-align: center;
+		gap: 18px;
+		padding-block: clamp(56px, 8vw, 104px) clamp(32px, 4vw, 48px);
 	}
 	h1 {
-		margin: clamp(20px, 3vw, 40px) 0 clamp(40px, 5vw, 80px);
-		hyphens: manual;
-	}
-	.hero-txt,
-	.mw {
-		grid-column: 1 / -1;
-	}
-	@media (min-width: 720px) and (max-width: 1039px) {
-		.hero-txt {
-			grid-column: 1 / span 9;
-		}
-	}
-	@media (min-width: 1040px) {
-		.hero-txt {
-			grid-column: 1 / span 5;
-		}
-		.mw {
-			grid-column: 7 / -1;
-		}
+		font-size: var(--display);
+		font-weight: 680;
+		letter-spacing: -0.048em;
+		line-height: 0.98;
+		max-width: 12em;
 	}
 	.hero-sub {
 		font-size: var(--lead);
-		line-height: 1.45;
+		line-height: 1.35;
+		color: var(--ink-2);
+		max-width: 30em;
 	}
 	.hero-cta {
 		display: flex;
 		flex-wrap: wrap;
+		justify-content: center;
 		gap: 12px;
-		margin-top: 32px;
-	}
-	.spec {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		column-gap: var(--gutter);
-		margin: 48px 0 0;
-	}
-	.spec div {
-		border-top: 1px solid var(--ink);
-		padding: 10px 0 18px;
-	}
-	.spec dd {
-		margin: 4px 0 0;
-		font-weight: 650;
-		font-stretch: 105%;
+		margin-top: 10px;
 	}
 
-	/* ---------- multiplier wall ---------- */
-	.mw {
-		margin: 56px 0 0;
-		container-type: inline-size;
-	}
-	@media (min-width: 1040px) {
-		.mw {
-			margin-top: 6px;
-		}
-	}
-	@container (max-width: 519px) {
-		.mw-head span:last-child {
-			display: none;
-		}
-	}
-	.mw-head {
-		display: flex;
-		justify-content: space-between;
-		gap: 16px;
-		padding-bottom: 10px;
-		border-bottom: 1px solid var(--ink);
-		margin-bottom: 16px;
-		color: var(--ink);
-	}
-	.unit {
-		display: grid;
-		grid-template-columns: repeat(6, 1fr);
-		gap: 6px;
-	}
-	.unit .ep {
-		grid-column: 1 / -1;
-		aspect-ratio: 16 / 9;
-	}
-	.unit .clip {
-		aspect-ratio: 9 / 16;
-	}
-	@container (min-width: 520px) {
-		/* widths proportional to 16:9 vs 9:16 at equal height (gaps sit outside the fr maths) */
-		.unit {
-			grid-template-columns: 3.16fr repeat(6, 1fr);
-			gap: 8px;
-		}
-		.unit .ep {
-			grid-column: auto;
-		}
-	}
-	.tile {
+	/* ---------- film stage: sticky, scroll-scrubbed ---------- */
+	.stage {
 		position: relative;
-		background: var(--ink);
+		height: 220vh;
 	}
-	.tile .mono {
-		position: absolute;
-		left: 8px;
-		top: 8px;
-		font-size: 10px;
-		line-height: 1.25;
-		color: var(--paper);
-	}
-	.tile .t-f {
-		top: auto;
-		bottom: 7px;
-		color: var(--muted-ink);
-	}
-	.clip::before {
-		/* the cut */
-		content: '';
-		position: absolute;
-		inset: 0 0 auto;
-		height: 2px;
-		background: var(--signal);
-	}
-	.tl {
-		position: absolute;
-		left: 8px;
-		right: 8px;
-		bottom: 30px;
-		height: 1px;
-		background: var(--rule-ink);
-	}
-	.tl i {
-		position: absolute;
-		left: var(--x);
-		bottom: -5px;
-		width: 2px;
-		height: 11px;
-		background: var(--signal);
-	}
-	.js .unit .tile {
-		clip-path: inset(0 100% 0 0);
-	}
-	.js .tl i {
-		transform: scaleY(0);
-	}
-	.js .mw.in .unit .tile {
-		animation: cutIn var(--t-wipe) var(--ease) calc(var(--d) * var(--frame)) forwards;
-	}
-	.js .mw.in .tl i {
-		animation: cutIn 0s linear calc(var(--d) * var(--frame)) forwards;
-	}
-	@keyframes cutIn {
-		to {
-			clip-path: inset(0 0 0 0);
-			transform: none;
-		}
-	}
-
-	.wall {
+	.stage-pin {
+		position: sticky;
+		top: 66px;
+		height: calc(100svh - 66px);
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 10px 16px;
-		margin-top: 20px;
+		place-items: center;
+		padding: 12px var(--gutter) 20px;
 	}
-	@container (min-width: 520px) {
-		.wall {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-		}
-	}
-	.slot {
-		display: grid;
-		gap: 4px;
-	}
-	.s-n {
-		font-size: 10px;
-		line-height: 1;
-	}
-	.slot.on .s-n {
-		color: var(--ink);
-	}
-	.s-t {
-		display: grid;
-		grid-template-columns: 3.16fr repeat(6, 1fr);
-		gap: 3px;
-	}
-	.s-t i {
+	.film {
+		--bar: 64px;
 		position: relative;
-		aspect-ratio: 9 / 16;
-		outline: 1px solid var(--guide);
-		outline-offset: -1px;
+		margin: 0;
+		width: min(1200px, 100%, calc((100svh - 66px - 32px - var(--bar)) * 16 / 9));
+		padding: 10px;
+		border-radius: 30px;
+		background: var(--glass-bg);
+		border: var(--glass-edge);
+		box-shadow: var(--glass-shadow);
 	}
-	.s-t i:first-child {
+	.film-screen {
+		position: relative;
 		aspect-ratio: 16 / 9;
+		border-radius: 22px;
+		overflow: hidden;
+		background: #eef0f5;
 	}
-	.s-t i::after {
-		content: '';
+	.film-poster img,
+	.film-video {
 		position: absolute;
 		inset: 0;
-		background: var(--ink);
-		clip-path: inset(0 100% 0 0);
-		transition: clip-path var(--t-wipe) var(--ease);
-		transition-delay: calc((var(--base, 0) + var(--s, 0) * 3 + var(--k)) * var(--frame));
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
-	.s-t i:not(:first-child)::before {
-		content: '';
+	.film-bar {
+		height: var(--bar);
+	}
+	.film-island {
 		position: absolute;
-		inset: 0 0 auto;
-		height: 1px;
-		background: var(--signal);
-		z-index: 1;
-		transform: scaleX(0);
-		transition: transform 0s linear;
-		transition-delay: inherit;
+		inset: 10px;
 	}
-	html:not(.js) .slot.on i::after,
-	.mw.in .slot.on i::after {
-		clip-path: inset(0 0 0 0);
+	.film-island:empty {
+		display: none;
 	}
-	html:not(.js) .slot.on i::before,
-	.mw.in .slot.on i::before {
-		transform: none;
-		transition-delay: calc((var(--base, 0) + var(--s, 0) * 3 + var(--k) + 5) * var(--frame));
+	@media (max-width: 719px) {
+		.stage {
+			height: 200vh;
+		}
+		.film {
+			width: min(100%, calc((100svh - 66px - 32px - var(--bar)) * 9 / 16));
+			padding: 8px;
+			border-radius: 26px;
+		}
+		.film-screen {
+			aspect-ratio: 9 / 16;
+			border-radius: 19px;
+		}
+		.film-island {
+			inset: 8px;
+		}
 	}
-
-	.mw-ctrl {
+	/* player island markup (client-rendered React, styled globally) */
+	.film :global(.fp) {
 		display: grid;
-		grid-template-columns: 1fr auto;
-		align-items: center;
-		gap: 4px 16px;
-		margin-top: 28px;
+		grid-template-rows: auto var(--bar);
+		height: 100%;
 	}
-	.mw-ctrl label {
-		color: var(--ink);
+	.film :global(.fp-screen) {
+		border-radius: 22px;
+		overflow: hidden;
+		background: #eef0f5;
 	}
-	.mw-v {
-		color: var(--ink);
-		font-size: 13px;
-	}
-	.mw-ctrl input {
-		grid-column: 1 / -1;
-	}
-	.mw-eq {
-		display: flex;
-		flex-wrap: nowrap;
-		align-items: flex-end;
-		gap: 8px clamp(16px, 3cqi, 32px);
-		margin-top: 20px;
-		padding-top: 20px;
-		border-top: 1px solid var(--ink);
-	}
-	.eq b {
-		display: block;
-		font-size: clamp(64px, 14cqi, 128px);
-		font-weight: 850;
-		font-stretch: 105%;
-		letter-spacing: -0.04em;
-		line-height: 0.84;
-	}
-	.eq .mono {
-		display: block;
-		margin-top: 10px;
-		color: var(--ink);
-	}
-	.eq-t {
-		flex: 1;
-		min-width: 0;
-	}
-	.eq-t b {
-		color: var(--signal);
-	}
-	.eq-arr {
-		font-size: clamp(36px, 7cqi, 64px);
-		line-height: 1;
-		font-weight: 300;
-		padding-bottom: 34px;
-	}
-	.mw-f {
-		margin-top: 14px;
-		text-transform: none;
-		letter-spacing: 0;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.js .unit .tile {
-			clip-path: none;
+	@media (max-width: 719px) {
+		.film :global(.fp-screen) {
+			border-radius: 19px;
 		}
-		.js .tl i {
-			transform: none;
+	}
+	.film :global(.fp-bar) {
+		display: grid;
+		grid-template-columns: 44px 1fr auto 44px;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 4px 0;
+	}
+	.film :global(.fp-btn) {
+		width: 44px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+		border: 0;
+		border-radius: 50%;
+		cursor: pointer;
+		color: var(--ink);
+		background: rgba(255, 255, 255, 0.9);
+		box-shadow:
+			inset 0 1px 0 #fff,
+			0 0 0 1px rgba(29, 29, 31, 0.08),
+			0 4px 12px -6px rgba(16, 24, 40, 0.25);
+		transition: transform 0.2s var(--ease);
+	}
+	.film :global(.fp-btn:hover) {
+		transform: scale(1.06);
+	}
+	.film :global(.fp-btn svg) {
+		width: 20px;
+		height: 20px;
+		fill: currentColor;
+	}
+	.film :global(.fp-btn:last-child svg) {
+		fill: none;
+	}
+	.film :global(.fp-time) {
+		font-family: var(--mono);
+		font-size: 13px;
+		color: var(--ink-2);
+		font-variant-numeric: tabular-nums;
+	}
+	@media (max-width: 400px) {
+		.film :global(.fp-time) {
+			display: none;
+		}
+		.film :global(.fp-bar) {
+			grid-template-columns: 44px 1fr 44px;
 		}
 	}
 
-	/* ---------- strip ---------- */
-	.strip {
-		border-block: 1px solid var(--ink);
+	/* ---------- pains ---------- */
+	.pains {
+		display: grid;
+		gap: 20px;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
 	}
-	.strip-in {
-		align-items: baseline;
-		row-gap: 12px;
-		padding-block: 22px;
+	.pain {
+		padding: 28px 28px 32px;
+		display: grid;
+		align-content: start;
+		gap: 10px;
 	}
-	.strip-k,
-	.strip ul,
-	.strip-n {
-		grid-column: 1 / -1;
-	}
-	@media (min-width: 1040px) {
-		.strip-k {
-			grid-column: 1 / span 2;
-		}
-		.strip ul {
-			grid-column: 3 / span 6;
-		}
-		.strip-n {
-			grid-column: 9 / -1;
-			justify-content: flex-end;
-		}
-	}
-	.strip ul {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px 32px;
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		font-size: clamp(22px, 2vw, 30px);
-		line-height: 1.1;
-		font-weight: 750;
-		font-stretch: 105%;
-		letter-spacing: -0.03em;
-	}
-	.strip li .mono {
-		font-size: 11px;
-		letter-spacing: 0.02em;
-		font-stretch: 100%;
-	}
-	.strip-n {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px 20px;
-	}
-	.strip-n a {
-		color: var(--ink);
-		text-decoration-color: var(--signal);
+	.pain-p {
+		color: var(--ink-2);
+		font-size: 17px;
+		text-decoration: line-through;
+		text-decoration-color: rgba(85, 70, 255, 0.55);
 		text-decoration-thickness: 2px;
 	}
-
-	/* ---------- system rows ---------- */
-	.parts {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		border-bottom: 1px solid var(--ink);
-	}
-	.part {
-		border-top: 1px solid var(--ink);
-		padding-block: 20px 40px;
-		row-gap: 12px;
-		align-items: start;
-	}
-	.p-n {
-		grid-column: 1 / span 1;
-		grid-row: 1 / span 2;
-		font-size: clamp(56px, 9vw, 152px);
-		font-weight: 850;
-		font-stretch: 100%;
-		letter-spacing: -0.05em;
-		line-height: 0.8;
-		color: var(--signal);
-	}
-	.part h3,
-	.part p {
-		grid-column: 2 / -1;
-	}
-	.part h3 {
+	.pain h3 {
 		font-size: var(--h3);
-		font-weight: 750;
-		line-height: 1;
 		letter-spacing: -0.025em;
-		font-stretch: 105%;
+		line-height: 1.2;
 	}
-	.part p {
-		color: var(--muted);
-		max-width: 38em;
+	.ma {
+		position: relative;
+		height: 112px;
+		margin-bottom: 14px;
+		border-radius: 20px;
+		background: linear-gradient(180deg, rgba(85, 70, 255, 0.07), rgba(85, 70, 255, 0.02));
+		box-shadow: inset 0 0 0 1px rgba(85, 70, 255, 0.08);
+		display: grid;
+		place-items: center;
+		overflow: hidden;
+		color: var(--iris);
 	}
-	@media (min-width: 720px) {
-		.p-n {
-			grid-column: 1 / span 3;
+	/* loops → one check */
+	.ma-loop {
+		width: 52px;
+		height: 52px;
+		animation: maLoop 4s var(--ease) infinite;
+	}
+	.ma-check {
+		position: absolute;
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		background: var(--green);
+		display: grid;
+		place-items: center;
+		box-shadow: 0 10px 22px -8px rgba(21, 128, 61, 0.6);
+		animation: maCheck 4s var(--ease) infinite;
+	}
+	.ma-check svg {
+		width: 28px;
+	}
+	@keyframes maLoop {
+		0% {
+			transform: rotate(0);
+			opacity: 1;
 		}
-		.part h3 {
-			grid-column: 4 / span 4;
-			padding-top: 6px;
+		55% {
+			transform: rotate(1080deg);
+			opacity: 1;
 		}
-		.part p {
-			grid-column: 8 / -1;
-			padding-top: 8px;
-		}
-		.part h3,
-		.part p {
-			grid-row: 1;
+		62%,
+		100% {
+			transform: rotate(1080deg) scale(0.4);
+			opacity: 0;
 		}
 	}
-	@media (min-width: 720px) and (max-width: 1039px) {
-		.part h3 {
-			grid-column: 4 / -1;
+	@keyframes maCheck {
+		0%,
+		58% {
+			transform: scale(0.3);
+			opacity: 0;
 		}
-		.part p {
-			grid-column: 4 / -1;
-			grid-row: 2;
-			padding-top: 0;
+		68%,
+		92% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(0.8);
+			opacity: 0;
 		}
 	}
-	.ai::before {
-		margin-top: 4px;
+	/* the same note four times → once */
+	.ma-bub {
+		position: absolute;
+		width: 112px;
+		padding: 10px 12px;
+		border-radius: 14px 14px 14px 4px;
+		background: #fff;
+		box-shadow:
+			0 0 0 1px rgba(29, 29, 31, 0.06),
+			0 6px 14px -8px rgba(16, 24, 40, 0.3);
+		display: grid;
+		gap: 6px;
+		animation: maBub 4s var(--ease) infinite;
+		--dx: calc((var(--k) - 1.5) * 34px);
+		--dy: calc((var(--k) - 1.5) * 10px);
 	}
-	.ai {
-		align-items: flex-start;
-		margin-top: 32px;
-		text-transform: none;
-		letter-spacing: 0.01em;
+	.ma-bub i {
+		display: block;
+		height: 6px;
+		border-radius: 3px;
+		background: rgba(29, 29, 31, 0.14);
+	}
+	.ma-bub i + i {
+		width: 60%;
+	}
+	.ma-one {
+		position: absolute;
+		right: calc(50% - 74px);
+		top: 18px;
+		padding: 3px 9px;
+		border-radius: 999px;
+		background: var(--iris);
+		color: #fff;
+		font-size: 13px;
+		font-weight: 650;
+		animation: maOne 4s var(--ease) infinite;
+	}
+	@keyframes maBub {
+		0%,
+		30% {
+			transform: translate(var(--dx), var(--dy));
+		}
+		55%,
+		90% {
+			transform: translate(0, 0);
+		}
+		100% {
+			transform: translate(var(--dx), var(--dy));
+		}
+	}
+	@keyframes maOne {
+		0%,
+		52% {
+			transform: scale(0);
+		}
+		60%,
+		88% {
+			transform: scale(1);
+		}
+		96%,
+		100% {
+			transform: scale(0);
+		}
+	}
+	/* uneven → planned */
+	.ma-bars {
+		display: flex;
+		align-items: flex-end;
+		gap: 10px;
+		height: 64px;
+	}
+	.ma-bars i {
+		width: 16px;
+		height: 64px;
+		border-radius: 8px;
+		background: linear-gradient(180deg, var(--iris-2), var(--iris));
+		transform-origin: bottom;
+		animation: maBar 4s var(--ease) infinite;
+		animation-delay: calc(var(--k) * 60ms);
+	}
+	@keyframes maBar {
+		0%,
+		20% {
+			transform: scaleY(var(--h));
+			opacity: 0.55;
+		}
+		50%,
+		85% {
+			transform: scaleY(0.72);
+			opacity: 1;
+		}
+		100% {
+			transform: scaleY(var(--h));
+			opacity: 0.55;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ma-loop {
+			opacity: 0;
+		}
+		.ma-check,
+		.ma-one {
+			transform: none;
+			opacity: 1;
+		}
+		.ma-bub {
+			transform: none;
+		}
+		.ma-bars i {
+			transform: scaleY(0.72);
+		}
 	}
 
-	/* ---------- process (ink) ---------- */
+	/* ---------- steps ---------- */
 	.steps {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		row-gap: 48px;
+		display: grid;
+		gap: 20px;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
 	}
-	.steps li {
-		grid-column: span 4;
-		border-left: 1px solid var(--rule-ink);
-		padding: 0 0 8px 16px;
+	.step {
+		padding: 28px;
 		display: grid;
 		align-content: start;
-		gap: 12px;
+		gap: 10px;
 	}
-	@media (min-width: 720px) {
-		.steps li {
-			grid-column: span 6;
-		}
+	.step-n {
+		font-family: var(--mono);
+		font-size: 14px;
+		color: var(--iris);
 	}
-	@media (min-width: 1040px) {
-		.steps {
-			grid-template-rows: repeat(4, auto);
-		}
-		.steps li {
-			grid-column: span 3;
-			grid-row: span 4;
-			grid-template-rows: subgrid;
-		}
+	.step h3 {
+		font-size: clamp(28px, 2.6vw, 36px);
+		letter-spacing: -0.035em;
 	}
-	.st-n {
-		font-size: clamp(64px, 7vw, 120px);
-		font-weight: 850;
-		letter-spacing: -0.05em;
-		line-height: 0.8;
-		color: var(--signal);
-		margin-bottom: 20px;
-	}
-	.steps h3 {
-		font-size: var(--h3);
-		font-weight: 750;
-		font-stretch: 105%;
-		letter-spacing: -0.025em;
-	}
-	.steps p:not(.mono) {
-		color: var(--muted-ink);
-	}
-	.steps .st-s {
+	.chip {
+		justify-self: start;
 		margin-top: 8px;
-		padding-top: 10px;
-		border-top: 1px solid var(--rule-ink);
-		color: var(--paper);
-	}
-
-	/* ---------- repetition band ---------- */
-	.rep {
-		--rh: calc(var(--display) * 0.84);
-		height: calc(var(--rh) * 4.3);
-		overflow: hidden;
-		border-block: 1px solid var(--ink);
-		font-size: var(--display);
-		font-weight: 850;
-		font-stretch: 105%;
-		letter-spacing: -0.04em;
-		line-height: 0.84;
-		text-transform: uppercase;
-		white-space: nowrap;
-	}
-	.rep-rows {
-		transform: translateY(calc(var(--rh) * -0.35));
-	}
-	.rep-row {
-		height: var(--rh);
-		overflow: hidden;
-		display: flex;
-		align-items: center;
-	}
-	.rep-row > .wrap {
-		display: block;
-		padding-top: 0.06em;
-	}
-	.rep-inv {
-		background: var(--ink);
-		color: var(--paper);
-		/* fits "FOLGE 01 = FOLGE 52" (≈10.1em) / "EPISODE 01 = EPISODE 52" (≈12.1em) inside the margins */
-		font-size: min(var(--display), calc((min(100vw, var(--max) + 2 * var(--margin)) - 2 * var(--margin)) / var(--fit, 10.4)));
-	}
-	.rep[data-lang='en'] .rep-inv {
-		--fit: 12.5;
-	}
-	.rep-inv em {
-		font-style: normal;
-		color: var(--signal);
-	}
-	@media (max-width: 719px) {
-		.rep {
-			height: calc(var(--rh) * 5.3);
-		}
-		.rep-inv {
-			height: calc(var(--rh) * 2);
-			font-size: calc((100vw - 2 * var(--margin)) / var(--fit, 5.6));
-		}
-		.rep[data-lang='en'] .rep-inv {
-			--fit: 6.9;
-		}
-		.rep-inv span span {
-			display: block;
-		}
-		.rep-inv .wrap {
-			line-height: 0.9;
-		}
+		padding: 6px 12px;
+		border-radius: 999px;
+		background: rgba(85, 70, 255, 0.08);
+		color: #3b2fd6;
+		font-size: 15px;
+		font-weight: 560;
 	}
 
 	/* ---------- packages ---------- */
-	.calc-link {
-		display: inline-block;
-		margin-top: 16px;
-		color: var(--ink);
-		text-decoration: underline;
-		text-decoration-color: var(--signal);
-		text-decoration-thickness: 2px;
+	.aura--b::after {
+		background: radial-gradient(closest-side, rgba(110, 220, 200, 0.22), rgba(110, 220, 200, 0.07) 50%, transparent);
+	}
+	.hero .aura {
+		bottom: -70vh;
 	}
 	.pk {
 		display: grid;
-		grid-template-columns: 1fr;
-		border-top: 2px solid var(--ink);
+		gap: 20px;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
 	}
-	@media (min-width: 720px) {
-		.pk {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			grid-template-rows: repeat(5, auto);
-			column-gap: 0;
-		}
-	}
-	@media (min-width: 1200px) {
-		.pk {
-			grid-template-columns: repeat(5, minmax(0, 1fr));
-			grid-template-rows: auto auto auto auto 1fr;
-		}
-	}
-	.pk-col {
+	.pk-card {
+		grid-column: span 2;
+		padding: 28px;
 		display: grid;
 		align-content: start;
-		gap: 10px;
-		padding: 16px 16px 32px;
-		border-bottom: 1px solid var(--ink);
+		gap: 6px;
 	}
-	@media (min-width: 720px) {
-		.pk-col {
-			grid-row: span 5;
-			grid-template-rows: subgrid;
-			gap: 0;
-			border-left: 1px solid var(--ink);
-		}
-		.pk-col:nth-child(2n + 1) {
-			border-left: 0;
-		}
+	.pk-card:nth-child(-n + 2) {
+		grid-column: span 3;
 	}
-	@media (min-width: 1200px) {
-		.pk-col,
-		.pk-col:nth-child(2n + 1) {
-			border-left: 1px solid var(--ink);
-			border-bottom: 0;
+	@media (max-width: 1000px) {
+		.pk {
+			grid-template-columns: 1fr 1fr;
 		}
-		.pk-col:first-child {
-			border-left: 0;
+		.pk-card,
+		.pk-card:nth-child(-n + 2) {
+			grid-column: span 1;
 		}
 	}
-	.pk-col.hl {
-		background: var(--ink);
-		color: var(--paper);
-		border-color: var(--ink);
+	@media (max-width: 640px) {
+		.pk {
+			grid-template-columns: 1fr;
+		}
 	}
-	.pk-col.hl .mono {
-		color: var(--muted-ink);
+	.pk-card.hl {
+		box-shadow:
+			var(--glass-shadow),
+			0 0 0 2px var(--iris);
 	}
 	.pk-top {
 		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
 		justify-content: space-between;
-		gap: 8px;
-		min-height: 18px;
+		gap: 8px 12px;
 	}
-	.pk-col.hl .pk-tag {
-		color: var(--signal);
-	}
-	.pk-col h3 {
-		font-size: 22px;
-		line-height: 1.05;
-		font-weight: 750;
-		font-stretch: 105%;
+	.pk-top h3 {
+		font-size: 19px;
 		letter-spacing: -0.02em;
-		padding-top: 40px;
+		font-weight: 620;
 	}
-	@media (max-width: 719px) {
-		.pk-col:not(.hl) {
-			padding-inline: 0;
-		}
-		.pk-col h3 {
-			padding-top: 20px;
-		}
+	.pk-tag {
+		padding: 4px 10px;
+		border-radius: 999px;
+		background: var(--iris);
+		color: #fff;
+		font-size: 13px;
+		font-weight: 600;
 	}
 	.pk-price {
-		padding-top: 20px;
-		font-size: clamp(44px, 3.7vw, 64px);
-		font-weight: 850;
-		font-stretch: 100%;
+		margin-top: 18px;
+		font-size: clamp(40px, 4.2vw, 56px);
+		font-weight: 680;
 		letter-spacing: -0.045em;
-		line-height: 0.9;
+		line-height: 1;
 		white-space: nowrap;
 	}
-	.pk-pre {
-		font-size: 0.4em;
-		font-weight: 700;
-		letter-spacing: -0.01em;
+	.pk-meta {
+		font-size: 15px;
 	}
-	.pk-price .mono {
-		display: block;
-		margin-top: 10px;
-		letter-spacing: 0.04em;
-		font-weight: 420;
-		white-space: normal;
-	}
-	.pk-col.hl .pk-price .mono {
-		color: var(--paper);
-	}
-	.pk-days {
-		padding-top: 4px;
-	}
-	.pk-col ul {
+	.pk-card ul {
 		list-style: none;
-		margin: 20px 0 0;
-		padding: 16px 0 0;
-		border-top: 1px solid currentColor;
+		margin: 18px 0 0;
+		padding: 18px 0 0;
+		border-top: 1px solid var(--line);
 		display: grid;
-		align-content: start;
 		gap: 10px;
 		font-size: 15px;
-		line-height: 22px;
+		line-height: 1.4;
 	}
-	.pk-col li {
+	.pk-card li {
 		display: grid;
-		grid-template-columns: 16px 1fr;
+		grid-template-columns: 22px 1fr;
 	}
-	.pk-col li::before {
+	.pk-card li::before {
 		content: '';
-		width: 6px;
-		height: 6px;
-		margin-top: 8px;
-		background: var(--signal);
+		width: 14px;
+		height: 14px;
+		margin-top: 3px;
+		border-radius: 50%;
+		background: rgba(85, 70, 255, 0.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235546ff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4L18 8'/%3E%3C/svg%3E") center / 10px no-repeat;
 	}
 	.pk-note {
-		margin-top: 24px;
-		max-width: 64em;
-		text-transform: none;
-		letter-spacing: 0.01em;
+		margin: 28px auto 0;
+		max-width: 52rem;
+		text-align: center;
+		font-size: 14px;
+	}
+
+	.sec--tight {
+		padding-top: 0;
 	}
 
 	/* ---------- work ---------- */
 	.cases {
 		display: grid;
-		gap: 56px var(--gutter);
-	}
-	@media (min-width: 900px) {
-		.cases {
-			grid-template-columns: 1fr 1fr;
-		}
+		gap: 20px;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
 	}
 	.case {
-		border-top: 2px solid var(--ink);
-		padding-top: 14px;
+		padding: 28px;
 		display: grid;
+		gap: 8px;
 		align-content: start;
-		gap: 16px;
 	}
-	.case-k {
-		display: flex;
-		justify-content: space-between;
-		gap: 16px;
-	}
-	.case-k span:last-child {
-		color: var(--ink);
+	.case-tag {
+		font-size: 14px;
 	}
 	.case h3 {
-		font-size: var(--h3);
-		font-weight: 750;
-		font-stretch: 105%;
-		line-height: 1;
-		letter-spacing: -0.025em;
-		max-width: 18em;
+		font-size: clamp(22px, 2vw, 28px);
+		letter-spacing: -0.03em;
 	}
-	.case p:last-child {
-		color: var(--muted);
-		max-width: 38em;
-	}
-	.tools {
-		margin-top: clamp(64px, 8vw, 120px);
-	}
-	.tools dl {
-		margin: 20px 0 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-		border-top: 1px solid var(--ink);
-	}
-	.tools div {
-		padding: 16px 24px 20px 0;
-		border-bottom: 1px solid var(--ink);
-	}
-	.tools dt {
-		font-size: 20px;
-		font-weight: 750;
-		font-stretch: 105%;
-		letter-spacing: -0.02em;
-	}
-	.tools dd {
-		margin: 6px 0 0;
-		color: var(--muted);
+	.proof-foot {
+		margin-top: 28px;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 12px 24px;
 		font-size: 15px;
-		line-height: 22px;
+	}
+	.proof-foot a {
+		margin-left: 14px;
+		color: var(--iris);
+		text-decoration: none;
+		font-weight: 560;
+	}
+	.proof-foot a:hover {
+		text-decoration: underline;
 	}
 
 	/* ---------- about ---------- */
-	.about-g {
-		row-gap: 32px;
-		align-items: end;
+	.about-card {
+		display: grid;
+		gap: clamp(24px, 4vw, 56px);
+		align-items: center;
+		padding: clamp(14px, 2vw, 20px);
 	}
-	.about-img,
-	.about-t {
-		grid-column: 1 / -1;
-	}
-	.about-img {
-		margin: 0;
-		max-width: 420px;
-	}
-	@media (min-width: 1040px) {
-		.about-img {
-			grid-column: 1 / span 4;
-		}
-		.about-t {
-			grid-column: 6 / -1;
+	@media (min-width: 900px) {
+		.about-card {
+			grid-template-columns: 360px 1fr;
+			padding-right: 56px;
 		}
 	}
-	.about-img img {
+	.about-card :global(.about-img) {
 		width: 100%;
 		aspect-ratio: 4 / 5;
 		object-fit: cover;
 		object-position: 50% 18%;
-		filter: grayscale(1) contrast(1.05);
+		border-radius: 24px;
 	}
-	.about-img figcaption {
-		margin-top: 10px;
-		padding-top: 8px;
-		border-top: 1px solid var(--ink);
+	.about-t {
+		display: grid;
+		gap: 16px;
+		justify-items: start;
+		padding: 8px 12px 20px;
+	}
+	.about-t h2 {
+		font-size: var(--h2);
 	}
 	.about-p {
-		font-size: clamp(22px, 2.2vw, 34px);
-		line-height: 1.22;
-		font-weight: 480;
-		letter-spacing: -0.02em;
-		margin-bottom: 32px;
+		font-size: var(--lead);
+		line-height: 1.4;
+		max-width: 30em;
 	}
 
 	/* ---------- faq ---------- */
 	.faq {
-		border-top: 1px solid var(--ink);
+		max-width: 52rem;
+		margin-inline: auto;
+		padding: 8px 28px;
 	}
-	details {
-		border-bottom: 1px solid var(--ink);
+	details + details {
+		border-top: 1px solid var(--line);
 	}
 	summary {
-		display: grid;
-		grid-template-columns: 48px 1fr 24px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		gap: 16px;
-		align-items: baseline;
+		padding: 22px 0;
 		cursor: pointer;
 		list-style: none;
-		padding: 20px 0;
-		font-size: clamp(20px, 1.8vw, 26px);
-		line-height: 1.2;
-		font-weight: 700;
-		font-stretch: 105%;
+		font-size: 19px;
+		font-weight: 600;
 		letter-spacing: -0.02em;
-	}
-	@media (min-width: 1040px) {
-		summary {
-			grid-template-columns: calc((100% - 11 * var(--gutter)) / 12 * 3 + 2 * var(--gutter)) 1fr 24px;
-			gap: var(--gutter);
-		}
 	}
 	summary::-webkit-details-marker {
 		display: none;
 	}
 	.q-x {
 		position: relative;
-		width: 18px;
-		height: 18px;
-		align-self: center;
+		flex: none;
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		background: rgba(85, 70, 255, 0.1);
 	}
 	.q-x::before,
 	.q-x::after {
 		content: '';
 		position: absolute;
-		background: var(--signal);
-		transition: transform var(--t-hover) var(--ease);
-	}
-	.q-x::before {
-		left: 0;
-		right: 0;
-		top: 8px;
+		left: 8px;
+		right: 8px;
+		top: 13px;
 		height: 2px;
+		border-radius: 1px;
+		background: var(--iris);
+		transition: transform 0.3s var(--ease);
 	}
 	.q-x::after {
-		top: 0;
-		bottom: 0;
-		left: 8px;
-		width: 2px;
+		transform: rotate(90deg);
 	}
 	details[open] .q-x::after {
-		transform: scaleY(0);
-	}
-	summary:hover .q-t {
-		text-decoration: underline;
-		text-decoration-color: var(--signal);
-		text-decoration-thickness: 2px;
+		transform: rotate(0);
 	}
 	details p {
-		padding: 0 0 28px;
-		color: var(--muted);
-		max-width: 44em;
-	}
-	@media (min-width: 1040px) {
-		details p {
-			margin-left: calc((100% - 11 * var(--gutter)) / 12 * 3 + 3 * var(--gutter));
-		}
-	}
-	@media (max-width: 719px) {
-		summary {
-			grid-template-columns: 32px 1fr 18px;
-			gap: 12px;
-		}
-		details p {
-			margin-left: 44px;
-		}
+		padding: 0 44px 24px 0;
 	}
 	@supports (interpolate-size: allow-keywords) {
 		details {
@@ -1427,182 +1017,179 @@ const sec = (n: number) => `${String(n).padStart(2, '0')}/09`;
 			block-size: 0;
 			overflow: clip;
 			transition:
-				block-size var(--t-wipe) var(--ease),
-				content-visibility var(--t-wipe) allow-discrete;
+				block-size 0.35s var(--ease),
+				content-visibility 0.35s allow-discrete;
 		}
 		details[open]::details-content {
 			block-size: auto;
 		}
 	}
 
-	/* ---------- contact (ink) ---------- */
-	.c-in {
-		row-gap: 56px;
+	/* ---------- contact ---------- */
+	.contact {
+		isolation: isolate;
 	}
-	.c-txt,
-	.f {
-		grid-column: 1 / -1;
+	.c-card {
+		display: grid;
+		gap: clamp(32px, 5vw, 64px);
+		padding: clamp(24px, 4vw, 56px);
 	}
-	@media (min-width: 1040px) {
-		.c-txt {
-			grid-column: 1 / span 5;
+	@media (min-width: 1000px) {
+		.c-card {
+			grid-template-columns: 0.9fr 1.1fr;
 		}
-		.f {
-			grid-column: 7 / -1;
-		}
+	}
+	.c-txt {
+		display: grid;
+		gap: 18px;
+		align-content: start;
+	}
+	.c-txt h2 {
+		font-size: var(--h2);
 	}
 	.c-who {
 		display: flex;
 		align-items: center;
 		gap: 14px;
-	}
-	.c-who p {
+		margin-top: 8px;
 		line-height: 1.35;
 	}
-	.c-avatar {
-		width: 64px;
-		height: 64px;
+	.c-txt :global(.c-avatar) {
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
 		object-fit: cover;
 		object-position: 50% 18%;
-		filter: grayscale(1) contrast(1.05);
-	}
-	.c-mail {
-		margin-top: 28px;
-		color: var(--muted-ink);
-		font-size: var(--lead);
-		line-height: 1.45;
 	}
 	.c-mail a {
-		color: var(--paper);
-		text-decoration-color: var(--signal);
-		text-decoration-thickness: 2px;
+		color: var(--iris);
+		font-weight: 560;
+		text-decoration: none;
 	}
 	.trust {
 		list-style: none;
-		margin: 40px 0 0;
+		margin: 6px 0 0;
 		padding: 0;
-		border-top: 1px solid var(--rule-ink);
+		display: grid;
+		gap: 12px;
+		font-size: 15px;
+		line-height: 1.45;
 	}
 	.trust li {
 		display: grid;
-		grid-template-columns: 24px 1fr;
-		padding: 14px 0;
-		border-bottom: 1px solid var(--rule-ink);
-		font-size: 15px;
-		line-height: 22px;
+		grid-template-columns: 26px 1fr;
 	}
 	.trust li::before {
 		content: '';
-		width: 8px;
-		height: 8px;
-		margin-top: 7px;
-		background: var(--signal);
+		width: 18px;
+		height: 18px;
+		margin-top: 1px;
+		border-radius: 50%;
+		background: var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4L18 8'/%3E%3C/svg%3E") center / 12px no-repeat;
 	}
 	.f {
 		display: grid;
-		gap: 24px;
+		gap: 16px;
+		align-content: start;
 	}
-	.f fieldset {
-		border: 0;
-		border-top: 1px solid var(--paper);
-		padding: 14px 0 0;
-		margin: 0;
+	.f-row {
 		display: grid;
 		gap: 16px;
-	}
-	.f legend {
-		float: left;
-		width: 100%;
-		padding: 0;
-		margin-bottom: 4px;
-		color: var(--paper) !important;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
 	}
 	.f label {
 		display: grid;
 		gap: 6px;
+		font-size: 14px;
+		font-weight: 560;
+		color: var(--ink-2);
 	}
 	.f input,
 	.f textarea {
 		font: inherit;
 		font-size: 16px;
-		color: var(--paper);
-		background: transparent;
-		border: 1px solid var(--rule-ink);
-		padding: 12px 14px;
+		font-weight: 400;
+		color: var(--ink);
+		background: rgba(255, 255, 255, 0.8);
+		border: 0;
+		border-radius: 14px;
+		padding: 13px 16px;
 		width: 100%;
-		transition: border-color var(--t-hover) var(--ease);
+		box-shadow:
+			inset 0 0 0 1px rgba(29, 29, 31, 0.1),
+			inset 0 1px 2px rgba(16, 24, 40, 0.04);
+		transition: box-shadow 0.2s var(--ease);
 	}
 	.f input::placeholder,
 	.f textarea::placeholder {
-		color: #8f8c85;
-	}
-	.f input:hover,
-	.f textarea:hover {
-		border-color: var(--muted-ink);
+		color: #8a8a90;
 	}
 	.f input:focus,
 	.f textarea:focus {
 		outline: none;
-		border-color: var(--signal);
+		box-shadow:
+			inset 0 0 0 2px var(--iris),
+			0 0 0 4px rgba(85, 70, 255, 0.12);
+	}
+	fieldset {
+		border: 0;
+		margin: 0;
+		padding: 0;
+	}
+	legend {
+		padding: 0;
+		margin-bottom: 8px;
+		font-size: 14px;
+		font-weight: 560;
+		color: var(--ink-2);
 	}
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px;
 	}
-	.chip {
+	.f .chip {
 		display: block;
 	}
-	.chip input {
+	.f .chip input {
 		position: absolute;
 		opacity: 0;
 		width: 1px;
+		height: 1px;
+		padding: 0;
+		box-shadow: none;
+		background: none;
 	}
-	.chip span {
+	.f .chip span {
 		display: inline-block;
-		border: 1px solid var(--rule-ink);
-		padding: 8px 14px;
+		padding: 9px 14px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.8);
+		box-shadow: inset 0 0 0 1px rgba(29, 29, 31, 0.1);
+		color: var(--ink);
 		font-size: 14px;
-		line-height: 20px;
 		cursor: pointer;
 		transition:
-			background-color var(--t-hover) var(--ease),
-			border-color var(--t-hover) var(--ease);
+			background-color 0.2s var(--ease),
+			color 0.2s var(--ease);
 	}
-	.chip span:hover {
-		border-color: var(--muted-ink);
+	.f .chip input:checked + span {
+		background: var(--iris);
+		color: #fff;
+		box-shadow: none;
 	}
-	.chip input:checked + span {
-		background: var(--signal);
-		border-color: var(--signal);
-		color: var(--ink);
-		font-weight: 600;
-	}
-	.chip input:focus-visible + span {
-		outline: 2px solid var(--signal);
+	.f .chip input:focus-visible + span {
+		outline: 3px solid rgba(85, 70, 255, 0.55);
 		outline-offset: 2px;
 	}
 	.f-send {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 16px 24px;
-		margin-top: 8px;
-	}
-	.contact .btn--ink {
-		background: var(--paper);
-		color: var(--ink);
-		border-color: var(--paper);
-	}
-	.contact .btn--ink:hover {
-		background: var(--signal);
-		border-color: var(--signal);
+		gap: 12px 20px;
+		margin-top: 4px;
 	}
 	.f-note {
-		text-transform: none;
-		letter-spacing: 0.01em;
-	}
-	.sec--tight {
-		padding-bottom: clamp(80px, 8vw, 120px);
+		font-size: 14px;
 	}
 </style>

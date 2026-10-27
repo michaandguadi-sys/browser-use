@@ -54,7 +54,7 @@ const org = {
 		<link rel="alternate" hreflang="x-default" href={new URL(alt.de, site).href} />
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 		<link rel="sitemap" href="/sitemap-index.xml" />
-		<meta name="theme-color" content="#eeece6" />
+		<meta name="theme-color" content="#f5f5f7" />
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content="Formatschnitt" />
 		<meta property="og:locale" content={de ? 'de_DE' : 'en_GB'} />
@@ -70,19 +70,18 @@ const org = {
 	<body>
 		<a class="skip" href="#main">{de ? 'Zum Inhalt springen' : 'Skip to content'}</a>
 		<header class="hd">
-			<div class="wrap bar">
+			<div class="bar">
 				<a class="brand" href={href(lang, 'home')} aria-label="Formatschnitt">
-					<i aria-hidden="true"></i>
+					<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2" y="5" width="12" height="6" rx="3" fill="#5546ff"></rect><rect x="9" y="13" width="13" height="6" rx="3" fill="#1d1d1f"></rect><rect x="15" y="2" width="2" height="20" rx="1" fill="#5546ff"></rect></svg>
 					<span>Formatschnitt</span>
 				</a>
 				<nav aria-label={de ? 'Hauptnavigation' : 'Main'}>
-					<a href={`${home}#system`}>{de ? 'System' : 'System'}</a>
-					<a href={`${home}#demo`}>Demo</a>
-					<a href={`${home}#pakete`}>{de ? 'Pakete' : 'Packages'}</a>
-					<a href={`${home}#arbeiten`}>{de ? 'Arbeiten' : 'Work'}</a>
-					<a href={`${home}#faq`}>FAQ</a>
+					<a class="nl" href={`${home}#ablauf`}>{de ? 'Ablauf' : 'Process'}</a>
+					<a class="nl" href={`${home}#pakete`}>{de ? 'Pakete' : 'Packages'}</a>
+					<a class="nl" href={`${home}#arbeiten`}>{de ? 'Arbeiten' : 'Work'}</a>
+					<a class="nl" href={`${home}#faq`}>FAQ</a>
 					<a class="lang" href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>{other(lang).toUpperCase()}</a>
-					<a class="btn btn--ink hd-cta" href={`${home}#kontakt`}>{de ? 'Erstgespräch' : 'Intro call'}</a>
+					<a class="btn btn--primary hd-cta" href={`${home}#kontakt`}>{de ? 'Erstgespräch' : 'Intro call'}</a>
 				</nav>
 			</div>
 		</header>
@@ -92,19 +91,19 @@ const org = {
 		</main>
 
 		<footer class="ft">
-			<div class="wrap grid ft-in">
-				<div class="ft-a">
+			<div class="wrap ft-in">
+				<div>
 					<p class="ft-brand">Formatschnitt</p>
-					<p class="mono">{de ? 'Schnitt-Systeme für wiederkehrende Videoformate' : 'Edit systems for recurring video formats'}</p>
+					<p class="muted">{de ? 'Schnitt-Systeme für wiederkehrende Videoformate' : 'Edit systems for recurring video formats'}</p>
 				</div>
-				<ul class="ft-b">
+				<ul>
 					<li><a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a></li>
 					<li><a href={de ? 'https://micharoessler.com/de/' : 'https://micharoessler.com/'}>{de ? 'Outdoor- & Expeditionsfilm → micharoessler.com' : 'Outdoor & expedition film → micharoessler.com'}</a></li>
 				</ul>
-				<ul class="ft-c">
+				<ul>
 					<li><a href={href(lang, 'imprint')}>{de ? 'Impressum' : 'Legal notice'}</a></li>
 					<li><a href={href(lang, 'privacy')}>{de ? 'Datenschutz' : 'Privacy'}</a></li>
-					<li class="mono">© {new Date().getFullYear()} Micha Roessler LLC</li>
+					<li class="muted">© {new Date().getFullYear()} Micha Roessler LLC</li>
 				</ul>
 			</div>
 		</footer>
@@ -120,120 +119,102 @@ const org = {
 					}),
 				{ rootMargin: '0px 0px -8% 0px' },
 			);
-			document.querySelectorAll('.reveal, .bw, [data-io]').forEach((el) => io.observe(el));
+			document.querySelectorAll('.reveal, [data-io]').forEach((el) => io.observe(el));
 		</script>
 
 		<style>
+			/* floating glass nav — the one real backdrop-filter on the page */
 			.hd {
 				position: sticky;
 				top: 0;
 				z-index: 50;
-				background: var(--paper);
-				border-bottom: 1px solid var(--ink);
+				padding: 10px var(--gutter) 0;
 			}
 			.bar {
+				max-width: var(--max);
+				margin-inline: auto;
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				height: 64px;
 				gap: 16px;
+				height: 56px;
+				padding: 0 8px 0 18px;
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.72);
+				-webkit-backdrop-filter: saturate(1.8) blur(20px);
+				backdrop-filter: saturate(1.8) blur(20px);
+				box-shadow:
+					inset 0 1px 0 rgba(255, 255, 255, 0.9),
+					0 0 0 1px rgba(29, 29, 31, 0.06),
+					0 8px 24px -12px rgba(16, 24, 40, 0.18);
 			}
 			.brand {
 				display: flex;
 				align-items: center;
 				gap: 10px;
 				text-decoration: none;
-				font-weight: 800;
-				font-stretch: 112%;
-				letter-spacing: -0.035em;
-				font-size: 22px;
-				line-height: 1;
-			}
-			.brand i {
-				width: 12px;
-				height: 12px;
-				background: var(--signal);
+				font-weight: 650;
+				font-size: 18px;
+				letter-spacing: -0.03em;
 			}
 			nav {
 				display: flex;
 				align-items: center;
-				gap: clamp(12px, 2vw, 28px);
-				font-family: var(--mono);
-				font-size: 12px;
-				letter-spacing: 0.04em;
-				text-transform: uppercase;
+				gap: 4px;
+				font-size: 15px;
 			}
 			nav > a:not(.btn) {
 				text-decoration: none;
-				color: var(--muted);
-				padding-block: 6px;
-				position: relative;
-				transition: color var(--t-hover) var(--ease);
-			}
-			nav > a:not(.btn)::after {
-				content: '';
-				position: absolute;
-				inset: auto 0 0 0;
-				height: 2px;
-				background: var(--signal);
-				transform: scaleX(0);
-				transform-origin: left;
-				transition: transform var(--t-hover) var(--ease);
+				color: var(--ink-2);
+				padding: 8px 12px;
+				border-radius: 999px;
+				transition:
+					color 0.2s var(--ease),
+					background-color 0.2s var(--ease);
 			}
 			nav > a:not(.btn):hover {
 				color: var(--ink);
-			}
-			nav > a:not(.btn):hover::after {
-				transform: scaleX(1);
+				background: rgba(29, 29, 31, 0.05);
 			}
 			nav > a.lang {
 				color: var(--ink);
+				font-weight: 560;
 			}
 			.hd-cta {
 				min-height: 40px;
-				padding: 8px 14px;
-				font-family: var(--sans);
-				font-size: 14px;
-				text-transform: none;
-				letter-spacing: -0.01em;
+				padding: 8px 18px;
+				font-size: 15px;
+				margin-left: 6px;
 			}
 			@media (max-width: 860px) {
-				nav > a:not(.btn):not(.lang) {
+				nav > a.nl {
 					display: none;
 				}
 			}
+			@media (max-width: 400px) {
+				.brand span {
+					font-size: 17px;
+				}
+				.bar {
+					padding-left: 14px;
+				}
+			}
 			.ft {
-				padding-block: 64px 40px;
-				border-top: 2px solid var(--ink);
+				padding-block: 64px 48px;
+				font-size: 15px;
 			}
 			.ft-in {
-				row-gap: 32px;
-			}
-			.ft-a {
-				grid-column: 1 / -1;
-			}
-			.ft-b,
-			.ft-c {
-				grid-column: 1 / -1;
-			}
-			@media (min-width: 900px) {
-				.ft-a {
-					grid-column: 1 / span 6;
-				}
-				.ft-b {
-					grid-column: 7 / span 3;
-				}
-				.ft-c {
-					grid-column: 10 / span 3;
-				}
+				display: grid;
+				gap: 32px;
+				grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+				border-top: 1px solid var(--line);
+				padding-top: 40px;
 			}
 			.ft-brand {
-				font-size: clamp(40px, 5.5vw, 88px);
-				font-weight: 850;
-				font-stretch: 110%;
-				letter-spacing: -0.045em;
-				line-height: 0.9;
-				margin-bottom: 16px;
+				font-size: 22px;
+				font-weight: 650;
+				letter-spacing: -0.03em;
+				margin-bottom: 6px;
 			}
 			.ft ul {
 				list-style: none;
@@ -242,16 +223,12 @@ const org = {
 				display: grid;
 				gap: 8px;
 				align-content: start;
-				font-size: 15px;
-				line-height: 22px;
 			}
 			.ft a {
 				text-decoration: none;
 			}
 			.ft a:hover {
-				text-decoration: underline;
-				text-decoration-color: var(--signal);
-				text-decoration-thickness: 2px;
+				color: var(--iris);
 			}
 		</style>
 	</body>

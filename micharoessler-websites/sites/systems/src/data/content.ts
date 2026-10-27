@@ -77,54 +77,44 @@ export const packages: {
 	},
 ];
 
-export const systemParts: { n: string; title: L; text: L }[] = [
+// "Glass" round (Oct 2026): copy cut hard on the owner's request. Old → new list lives in the hand-off report.
+
+export const pains: { pain: L; fix: L; anim: 'loops' | 'repeat' | 'plan' }[] = [
+	{
+		pain: { de: 'Zehn Korrekturschleifen.', en: 'Ten revision rounds.' },
+		fix: { de: 'Feedback landet einmal im System – als klare Änderungsliste.', en: 'Feedback lands once, in the system – as a clear change list.' },
+		anim: 'loops',
+	},
+	{
+		pain: { de: 'Dasselbe Feedback. Jede Folge.', en: 'Same feedback. Every episode.' },
+		fix: { de: 'Einmal entschieden, im Template festgehalten.', en: 'Decided once, locked into the template.' },
+		anim: 'repeat',
+	},
+	{
+		pain: { de: 'Jede Folge ein Überraschungspaket.', en: 'Every episode a surprise.' },
+		fix: { de: 'Festes Format, fester Preis, planbare Lieferung.', en: 'Fixed format, fixed price, predictable delivery.' },
+		anim: 'plan',
+	},
+];
+
+export const steps: { n: string; title: L; text: L; price: L }[] = [
 	{
 		n: '01',
-		title: { de: 'Format-Audit', en: 'Format audit' },
-		text: {
-			de: 'Ich zerlege eure Show in ihre wiederkehrenden Beats: Cold Open, Spec-Cards, Test-Segmente, Verdict, Endscreen. Danach ist klar, was jedes Mal neu gebaut wird – und was nicht mehr muss.',
-			en: 'I break your show into its repeatable beats: cold open, spec cards, test segments, verdict, end screen. Then it is obvious what gets rebuilt every episode, and what never has to be again.',
-		},
+		title: { de: 'Pilot', en: 'Pilot' },
+		text: { de: 'Eine Folge plus drei Shorts aus eurem Material.', en: 'One episode plus three shorts from your footage.' },
+		price: { de: '1.950 € · ≈ 1 Woche', en: '€1,950 · ≈ 1 week' },
 	},
 	{
 		n: '02',
-		title: { de: 'Projekt-Templates', en: 'Project templates' },
-		text: {
-			de: 'Bins, Sequenzen, Benennung, Audio-Kette und Export-Presets in Premiere oder DaVinci Resolve. Jede Folge startet im selben, sauberen Projekt.',
-			en: 'Bins, sequences, naming, audio chain and export presets in Premiere or DaVinci Resolve. Every episode starts in the same clean project.',
-		},
+		title: { de: 'Setup', en: 'Setup' },
+		text: { de: 'Templates, Grafik-Kit, Shorts-Pipeline, SOP.', en: 'Templates, graphics kit, shorts pipeline, SOP.' },
+		price: { de: '3.500 € · 3–4 Wochen', en: '€3,500 · 3–4 weeks' },
 	},
 	{
 		n: '03',
-		title: { de: 'Datengetriebene Grafiken', en: 'Data-driven graphics' },
-		text: {
-			de: 'Spec-Cards, Vergleichstabellen, Score-Overlays und Bauchbinden als MoGRTs oder programmatische Remotion-Templates – befüllt aus einer Tabelle statt jedes Mal neu animiert.',
-			en: 'Spec cards, comparison tables, score overlays and lower thirds as MoGRTs or programmatic Remotion templates, filled from a spreadsheet instead of re-animated every time.',
-		},
-	},
-	{
-		n: '04',
-		title: { de: 'Shorts-Pipeline', en: 'Shorts pipeline' },
-		text: {
-			de: 'Regeln plus KI-gestützte Transkript-Selects: aus jeder Langform-Folge entstehen 3–6 Hochkant-Shorts. Die KI schlägt vor, der Schnitt entscheidet.',
-			en: 'Rules plus AI-assisted transcript selects turn every long-form episode into 3–6 vertical shorts. AI suggests, the edit decides.',
-		},
-	},
-	{
-		n: '05',
-		title: { de: 'Review-Schleife', en: 'Review loop' },
-		text: {
-			de: 'Frame.io-Kommentare werden zu strukturierten Änderungslisten. Weniger Korrekturrunden, keine verlorenen Notizen.',
-			en: 'Frame.io comments become structured change lists. Fewer revision rounds, no lost notes.',
-		},
-	},
-	{
-		n: '06',
-		title: { de: 'SOP & Übergabe', en: 'SOP & handover' },
-		text: {
-			de: 'Ein Dokument, mit dem jede Editorin und jeder Editor in eurem Team das System bedienen kann. Kein Lock-in – das System gehört euch.',
-			en: 'One document any editor on your team can follow. No lock-in: the system belongs to you.',
-		},
+		title: { de: 'Retainer', en: 'Retainer' },
+		text: { de: 'Ich schneide auf dem System. Monatlich planbar.', en: 'I edit on the system. Plannable month to month.' },
+		price: { de: 'ab 4.200 € / Monat', en: 'from €4,200 / month' },
 	},
 ];
 
@@ -132,76 +122,38 @@ export const proof: { title: L; tag: L; text: L; named?: boolean }[] = [
 	{
 		title: { de: 'Carwow DE – Review-Folgen', en: 'Carwow DE – review episodes' },
 		tag: { de: 'Format-Schnitt · 2025', en: 'Format edit · 2025' },
-		text: {
-			de: 'Schnitt von drei Auto-Review-Folgen im bestehenden Carwow-Format: Struktur, Grafik-Beats und Pacing exakt nach Vorgabe, in Serie produziert.',
-			en: 'Edited three car-review episodes inside the existing Carwow format: structure, graphic beats and pacing to spec, produced as a series.',
-		},
+		text: { de: 'Drei Auto-Reviews im bestehenden Carwow-Format – nach Vorgabe, in Serie.', en: 'Three car reviews inside the existing Carwow format – to spec, as a series.' },
+		named: true,
+	},
+	{
+		title: { de: 'Langform-Dokus mit 1,2 und 1,4 Mio. Aufrufen', en: 'Long-form docs with 1.2M and 1.4M views' },
+		tag: { de: 'Doku-Schnitt · YouTube', en: 'Doc edit · YouTube' },
+		text: { de: 'Gedreht und geschnitten für Felix von der Laden.', en: 'Shot and edited for Felix von der Laden.' },
 		named: true,
 	},
 	{
 		title: { de: 'D2C-Produktmarke – modulare Ad-Library', en: 'D2C product brand – modular ad library' },
 		tag: { de: 'Dreh + Schnitt · 2026', en: 'Shoot + edit · 2026' },
-		text: {
-			de: 'Dreh geplant als Baukasten: Hook-Bank, Vorher/Nachher mit identischem Framing, Installations-Clips. Ziel des Kunden: Material für 50+ Ads, 4 YouTube-Anleitungen und ein Founder-Q&A aus einem Dreh.',
-			en: 'Shoot planned as a kit: hook bank, before/after with matched framing, installation clips. The client’s goal: material for 50+ ads, 4 YouTube how-tos and a founder Q&A from one shoot.',
-		},
+		text: { de: 'Ein Dreh als Baukasten: Hook-Bank, Vorher/Nachher, Installations-Clips.', en: 'One shoot as a kit: hook bank, before/after, installation clips.' },
 	},
 	{
 		title: { de: 'Podcast-Produktion – Workflow-Setup', en: 'Podcast production – workflow setup' },
 		tag: { de: 'Workflow-Coaching · 2025', en: 'Workflow coaching · 2025' },
-		text: {
-			de: 'DaVinci-Resolve-Projekttemplate, Multicam-Workflow, Farbmanagement und Shortcut-Set für eine wöchentliche Podcast-Produktion – aufgesetzt und übergeben.',
-			en: 'DaVinci Resolve project template, multicam workflow, colour management and shortcut set for a weekly podcast, set up and handed over.',
-		},
-	},
-	{
-		title: { de: 'Langform-Dokus mit 1,2 und 1,4 Mio. Aufrufen', en: 'Long-form docs with 1.2M and 1.4M views' },
-		tag: { de: 'Doku-Schnitt · YouTube', en: 'Doc edit · YouTube' },
-		text: {
-			de: 'Gedreht und geschnitten für Felix von der Laden. Der Beweis, dass System und Storytelling sich nicht ausschließen.',
-			en: 'Shot and edited for Felix von der Laden. Proof that systems and storytelling are not opposites.',
-		},
-		named: true,
+		text: { de: 'DaVinci-Template, Multicam, Farbmanagement – aufgesetzt und übergeben.', en: 'DaVinci template, multicam, colour management – set up and handed over.' },
 	},
 ];
 
-export const tools: { name: string; text: L }[] = [
-	{
-		name: 'Offload',
-		text: {
-			de: 'Eigene macOS-App für Karten-Offload und Ingest mit Prüfsummen – weil Datenverlust kein Workflow-Problem sein darf.',
-			en: 'My own macOS app for checksum-verified card offload and ingest, because data loss should never be a workflow problem.',
-		},
-	},
-	{
-		name: 'Remotion',
-		text: {
-			de: 'Programmatische Grafik-Templates: Specs und Vergleiche kommen aus der Tabelle, nicht aus Handarbeit.',
-			en: 'Programmatic graphics templates: specs and comparisons come from the spreadsheet, not from hand-keying.',
-		},
-	},
-	{
-		name: 'DaVinci Resolve & Premiere',
-		text: {
-			de: 'Templates, Multicam, Farbmanagement und Export-Presets für beide Systeme.',
-			en: 'Templates, multicam, colour management and export presets for both.',
-		},
-	},
-	{
-		name: 'Frame.io',
-		text: {
-			de: 'Review-Schleife mit strukturierten Änderungslisten.',
-			en: 'Review loop with structured change lists.',
-		},
-	},
-];
+export const tools: L = {
+	de: 'Premiere · DaVinci Resolve · Remotion · Frame.io · eigene Offload-App',
+	en: 'Premiere · DaVinci Resolve · Remotion · Frame.io · my own offload app',
+};
 
 export const faq: { q: L; a: L }[] = [
 	{
 		q: { de: 'Wie viele Formate hast du schon systematisiert?', en: 'How many formats have you systemised so far?' },
 		a: {
-			de: 'Ehrliche Antwort: wenige. Ich habe Auto-Review-Folgen im bestehenden Carwow-Format geschnitten, einen Podcast-Workflow in DaVinci aufgesetzt und einen Produkt-Dreh als Ad-Baukasten geplant und geschnitten. Meine eigenen Produktionen laufen seit Jahren auf Templates und selbst gebauten Tools. Genau deshalb biete ich den Pilot zum Festpreis an: Ihr seht das Ergebnis, bevor ihr euch bindet.',
-			en: 'Honest answer: a few. I edited car-review episodes inside the existing Carwow format, set up a DaVinci podcast workflow and planned and edited a product shoot as an ad kit. My own productions have run on templates and self-built tools for years. That is exactly why I offer the fixed-price pilot: you see the result before you commit.',
+			de: 'Ehrlich: wenige. Carwow-Reviews im bestehenden Format, ein Podcast-Workflow in DaVinci, ein Produkt-Dreh als Ad-Baukasten. Deshalb der Pilot zum Festpreis: Ihr seht das Ergebnis, bevor ihr euch bindet.',
+			en: 'Honestly: a few. Carwow reviews inside the existing format, a DaVinci podcast workflow, a product shoot as an ad kit. That is why there is a fixed-price pilot: you see the result before you commit.',
 		},
 	},
 	{
@@ -219,24 +171,10 @@ export const faq: { q: L; a: L }[] = [
 		},
 	},
 	{
-		q: { de: 'Premiere oder DaVinci Resolve?', en: 'Premiere or DaVinci Resolve?' },
-		a: {
-			de: 'Beides. Ich baue im System, das ihr schon nutzt.',
-			en: 'Both. I build in whatever your team already uses.',
-		},
-	},
-	{
 		q: { de: 'Wie startet eine Zusammenarbeit?', en: 'How do we start?' },
 		a: {
 			de: 'Mit einem 15-Minuten-Call und dann meist dem bezahlten Pilot: eine Folge plus drei Shorts zum Festpreis, voll anrechenbar.',
 			en: 'A 15-minute call, then usually the paid pilot: one episode plus three shorts at a fixed price, fully credited.',
-		},
-	},
-	{
-		q: { de: 'Wo sitzt du?', en: 'Where are you based?' },
-		a: {
-			de: 'Ich arbeite remote und reise viel; Kommunikation auf Deutsch oder Englisch, Abrechnung über Micha Roessler LLC. Für B2B-Kunden in der EU gilt Reverse-Charge.',
-			en: 'I work remotely and travel a lot; communication in German or English, invoicing via Micha Roessler LLC. EU B2B clients are invoiced under reverse charge.',
 		},
 	},
 ];
