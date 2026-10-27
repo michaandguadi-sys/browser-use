@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+	<rect width="512" height="512" rx="112" fill="#06080d"/>
+	<circle cx="256" cy="256" r="150" fill="none" stroke="#0af2c2" stroke-width="18"/>
+	<circle cx="256" cy="256" r="60" fill="none" stroke="#0af2c2" stroke-width="18"/>
+	<circle cx="256" cy="256" r="16" fill="#ffd23f"/>
+	<!-- corner HUD brackets -->
+	<path d="M120 150 v-30 h30" fill="none" stroke="#0af2c2" stroke-width="14" stroke-linecap="round"/>
+	<path d="M392 150 v-30 h-30" fill="none" stroke="#0af2c2" stroke-width="14" stroke-linecap="round"/>
+	<path d="M120 362 v30 h30" fill="none" stroke="#0af2c2" stroke-width="14" stroke-linecap="round"/>
+	<path d="M392 362 v30 h-30" fill="none" stroke="#0af2c2" stroke-width="14" stroke-linecap="round"/>
+</svg>

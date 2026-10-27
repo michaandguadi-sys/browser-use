@@ -75,8 +75,8 @@ main { flex: 1; position: relative; overflow: hidden; }
 	object-fit: cover;
 }
 #overlay { z-index: 10; pointer-events: none; }
-#video { transform: scaleX(-1); } /* mirror like a selfie/heads-up view */
-#overlay { transform: scaleX(-1); }
+/* Rear (environment) camera points at the world, so no mirroring — labels and
+   any real-world text must read the right way round. */
 
 .hud-frame { position: absolute; inset: 0; z-index: 11; pointer-events: none; }
 .hud-frame::before, .hud-frame::after {

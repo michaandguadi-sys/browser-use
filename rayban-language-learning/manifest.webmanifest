@@ -1,0 +1,14 @@
+{
+	"name": "LingoLens — learn by looking",
+	"short_name": "LingoLens",
+	"description": "Point your phone at the world and learn the words for what you see, live.",
+	"start_url": "./index.html",
+	"scope": "./",
+	"display": "standalone",
+	"orientation": "portrait",
+	"background_color": "#06080d",
+	"theme_color": "#06080d",
+	"icons": [
+		{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+	]
+}

@@ -143,11 +143,6 @@ function draw() {
 		const chipX = x;
 		const chipY = Math.max(0, y - chipH - 4);
 
-		ctx.save();
-		ctx.translate(chipX + chipW / 2, 0);
-		ctx.scale(-1, 1); // un-mirror text so it reads correctly through the flipped canvas
-		ctx.translate(-(chipX + chipW / 2), 0);
-
 		ctx.fillStyle = 'rgba(6,12,20,0.82)';
 		roundRect(ctx, chipX, chipY, chipW, chipH, 8);
 		ctx.fill();
@@ -158,7 +153,6 @@ function draw() {
 		ctx.fillStyle = '#8aa0ab';
 		ctx.font = '15px sans-serif';
 		ctx.fillText(base, chipX + padding, chipY + 32);
-		ctx.restore();
 	}
 }
 
@@ -218,9 +212,8 @@ document.getElementById('look').addEventListener('click', (e) => {
 	const rect = overlay.getBoundingClientRect();
 	const scaleX = overlay.width / rect.width;
 	const scaleY = overlay.height / rect.height;
-	let cx = (e.clientX - rect.left) * scaleX;
+	const cx = (e.clientX - rect.left) * scaleX;
 	const cy = (e.clientY - rect.top) * scaleY;
-	cx = overlay.width - cx; // undo mirror
 	for (const p of state.predictions) {
 		const [x, y, w, h] = p.bbox;
 		if (cx >= x && cx <= x + w && cy >= y - 56 && cy <= y + h) {
