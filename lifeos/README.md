@@ -1,10 +1,11 @@
 # Life OS — Mentor MVP
 
-A proactive AI mentor that runs 24/7 on your own VPS. It knows your north star, values, projects and commitments, checks in now and then with one Socratic question, runs an evening reflection and a weekly review, and learns from your conversations. You use it as an installable web app on phone and laptop, and check-ins arrive as push notifications through ntfy.
+A proactive AI mentor that runs 24/7 on your own VPS. It knows your north star, values, projects and commitments, checks in now and then with one Socratic question, runs an evening reflection and a weekly review, and learns from your conversations. You use it as an installable web app on phone and laptop. Check-ins arrive as notifications from the Mentor app itself (Web Push), and you can talk to it through Siri.
 
 ```
 phone / laptop (installed web app) ──HTTPS──► Caddy ──► mentor  (FastAPI + SQLite + scheduler + Claude)
-ntfy app (push)                    ◄──HTTPS── Caddy ◄── ntfy    (self-hosted push, auth required)
+            ▲  Web Push (VAPID, end-to-end encrypted payload) ◄─┘
+Siri ("Hey Siri, Mentor") ── iOS Shortcut ──POST /api/voice──►  (spoken reply)
 ```
 
 ## How it behaves
@@ -17,11 +18,13 @@ ntfy app (push)                    ◄──HTTPS── Caddy ◄── ntfy    
 - **Profile interview** (Memory tab): about 15 minutes, one question at a time. It covers 7 topics (north star, values, anti-goals, 90-day goals, strengths, blind spots, how you want to be coached) and shows how many are known.
 - **Coaching with evidence** (Progress tab): you set leading indicators with weekly targets. The defaults are 5 h/week on your own documentary project and 1 doc-industry contact per week. Log progress with one tap, or just say it in chat ("spent 2 hours on the film") and it's logged automatically. A deterministic weekly scorecard tracks indicators vs pace, commitments kept, energy and check-in usefulness. The mentor sees it, names gaps with the numbers, and the Sunday review is built on it.
 - **Today strip:** a one-tap energy rating (1–5), plus commitments that are due, with Done / Not yet buttons. Low energy shifts the mentor toward care, or toward staying quiet.
-- **Voice input:** the mic button uses the browser's speech recognition where available. Keyboard dictation works everywhere.
+- **Notifications from the app itself:** Settings → Notifications → "Turn on notifications". On iPhone this needs iOS 16.4+ and the app opened from the home screen icon. Tapping a notification opens the app on that message. The VAPID key is created on first start and kept in the data volume.
+- **Siri:** Settings → "Talk to it with Siri" shows a 2-minute Shortcuts recipe (Dictate Text → Get Contents of URL → Speak Text) with your URL and token. Say "Hey Siri, Mentor", talk, and Siri reads a short answer. The exchange lands in Talk, and memory and indicators update in the background.
+- **Voice input in the app:** the mic button uses the browser's speech recognition where available. Keyboard dictation works everywhere.
 
 ## Install on your VPS (about 10 minutes)
 
-Requirements: Docker with Compose v2, python3, and two DNS A records pointing at the VPS. Example: `mentor.micharoessler.com` and `push.micharoessler.com`.
+Requirements: Docker with Compose v2, python3, and one DNS A record pointing at the VPS, e.g. `mentor.micharoessler.com`.
 
 ```bash
 git clone -b claude/wonderful-hypatia-e20n76 https://github.com/michaandguadi-sys/browser-use.git lifeos-src
@@ -29,12 +32,15 @@ cd lifeos-src/lifeos
 ./install.sh
 ```
 
-The installer asks for your name, both domains, a login passphrase, your Anthropic API key, and an optional healthchecks.io ping URL. It writes `.env` and a private `seed_profile.json` (starter memory: north star, projects, context; edit it before first start, it is never committed), starts the stack with automatic HTTPS (Caddy), creates the ntfy user, topic access and publish token, and prints:
+The installer asks for your name, the domain, a login passphrase, your Anthropic API key, an optional healthchecks.io ping URL and an optional starter memory code (`LOS1:…`, one line). It writes `.env` and a private `seed_profile.json` (never committed), starts the stack with automatic HTTPS (Caddy), waits until the mentor is healthy, and prints the next steps:
 
-1. the app URL. On your phone, open it and choose **Add to Home Screen** (iOS) or **Install app** (Android). On your laptop, click **Install** in the address bar.
-2. the ntfy server, username, password (shown once) and topic. Enter these in the ntfy app (iOS/Android/desktop).
+1. iPhone: open the URL in Safari, log in, Share → **Add to Home Screen**, then always open Mentor from the icon.
+2. In the app: Settings → Notifications → **Turn on notifications** (a test push arrives).
+3. Settings → **Talk to it with Siri** for the shortcut recipe.
 
-If ports 80/443 are already used on the VPS (another proxy, OpenClaw, n8n…), run `USE_OWN_PROXY=1 ./install.sh`. Then point your proxy at `127.0.0.1:8787` (mentor) and `127.0.0.1:8788` (ntfy).
+Optional extra push channel: `WITH_NTFY=1 ./install.sh` also runs a self-hosted ntfy server on a second domain.
+
+If ports 80/443 are already used on the VPS (another proxy, OpenClaw, n8n…), run `USE_OWN_PROXY=1 ./install.sh`. Then point your proxy at `127.0.0.1:8787` (and `127.0.0.1:8788` for ntfy if you enabled it).
 
 ## Operate
 
@@ -42,7 +48,7 @@ If ports 80/443 are already used on the VPS (another proxy, OpenClaw, n8n…), r
 |---|---|
 | Logs | `docker compose logs -f mentor` |
 | Health | `curl -s https://mentor.yourdomain/healthz` (returns 503 if the scheduler stalls) |
-| Update | `git pull && docker compose --profile caddy up -d --build` |
+| Update | `git pull && docker compose up -d --build` (profiles come from `COMPOSE_PROFILES` in `.env`) |
 | Backup | `docker run --rm -v lifeos_mentor-data:/d -v $PWD:/b alpine cp /d/mentor.db /b/mentor-backup.db` |
 | Change model | set `MENTOR_MODEL` in `.env`, then `docker compose up -d mentor` |
 
@@ -52,7 +58,9 @@ If ports 80/443 are already used on the VPS (another proxy, OpenClaw, n8n…), r
 
 - The mentor only talks. It has no tools, sends no email, and spends no money, so a prompt injection has nothing to act on.
 - Login uses one passphrase with an HTTP-only session cookie (90 days) and a rate limit of 10 failed attempts per 15 minutes. Use a long passphrase.
-- ntfy denies anonymous access. Only the `lifeos` user can read or write the topic. iOS push goes through the ntfy.sh relay, which only sees a message ID, not the content.
+- Web Push payloads are encrypted end to end (RFC 8291) for each device. Apple/Google push services only relay ciphertext.
+- The Siri token is a 43-character random secret, checked in constant time, with the same failure rate limit as login. Rotate it in Settings if it leaks.
+- Optional ntfy denies anonymous access. Only the `lifeos` user can read or write the topic.
 - The SQLite database lives in the `mentor-data` Docker volume on your VPS. Conversations are sent to the Anthropic API to generate replies.
 
 ## Develop
@@ -65,7 +73,6 @@ uv venv && uv pip install -r requirements-dev.txt
 
 ## Known limits (MVP)
 
-- On iOS, tapping a push opens Safari rather than the installed app.
-- Text only: no voice notes yet.
+- Voice goes through Siri dictation (or keyboard dictation). Audio files are not stored or transcribed on the server.
 - Single user. Guada would need her own instance or a later multi-user version.
 - No offline sending: the app opens offline, but messages need a connection.

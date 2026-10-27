@@ -1,25 +1,37 @@
-"""Push notifications via ntfy (self-hosted in the compose stack, or any ntfy server)."""
+"""Push notifications: Web Push to the installed app, plus ntfy when it is configured."""
 
 import logging
 
 import httpx
 
 from app.config import Config
+from app.webpush import WebPush
 
 logger = logging.getLogger(__name__)
 
 
 class Notifier:
-	def __init__(self, config: Config):
+	def __init__(self, config: Config, webpush: WebPush | None = None):
 		self._config = config
+		self.webpush = webpush
+
+	@property
+	def ntfy_enabled(self) -> bool:
+		return bool(self._config.ntfy_url and self._config.ntfy_topic)
 
 	@property
 	def enabled(self) -> bool:
-		return bool(self._config.ntfy_url and self._config.ntfy_topic)
+		return self.ntfy_enabled or bool(self.webpush and self.webpush.has_subscribers)
 
 	async def push(self, title: str, body: str, message_id: str, priority: int = 3) -> bool:
-		"""Send one push. Returns False (never raises) so a push outage can't break the mentor."""
-		if not self.enabled:
+		"""Send one push to every channel. Returns whether any accepted it; never raises, so a push outage can't break the mentor."""
+		delivered = (
+			await self.webpush.send(title or 'Mentor', body, url=f'/#m={message_id}', tag=message_id) if self.webpush else 0
+		)
+		return await self._ntfy(title, body, message_id, priority) or delivered > 0
+
+	async def _ntfy(self, title: str, body: str, message_id: str, priority: int) -> bool:
+		if not self.ntfy_enabled:
 			return False
 		payload = {
 			'topic': self._config.ntfy_topic,

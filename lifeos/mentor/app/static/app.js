@@ -390,18 +390,123 @@ function renderSettings() {
 	const until = state.settings.focus_until ? new Date(state.settings.focus_until) : null;
 	$('#focus-state').textContent = until && until > new Date() ? `Focused until ${fmtTime(until.toISOString())}` : 'Not in focus mode.';
 	$('#status').textContent = state.settings.paused ? 'paused' : (until && until > new Date() ? 'focus' : '');
-	const push = state.push || {};
-	const info = $('#push-info');
-	info.replaceChildren();
-	if (push.enabled && push.server) {
-		info.append(
-			el('p', {}, 'Install the free ntfy app (iOS / Android / desktop), add this server, log in with the ntfy user from setup, and subscribe to this topic:'),
-			el('p', {}, 'Server: ', el('code', {}, push.server)),
-			el('p', {}, 'Topic: ', el('code', {}, push.topic)),
-		);
-	} else {
-		info.append(el('p', { class: 'muted' }, 'Push is not configured on the server yet (see lifeos/README.md).'));
+	renderPush();
+	renderSiri();
+}
+
+// --- notifications (Web Push from the installed app) -----------------------
+
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const STANDALONE = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const PUSH_SUPPORTED = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+function keyBytes(b64) {
+	const s = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (b64.length % 4)) % 4));
+	return Uint8Array.from(s, (c) => c.charCodeAt(0));
+}
+
+async function currentSubscription() {
+	if (!PUSH_SUPPORTED) return null;
+	const reg = await navigator.serviceWorker.ready;
+	return reg.pushManager.getSubscription();
+}
+
+async function enablePush() {
+	// requestPermission must be the first await inside the tap, or iOS ignores it
+	const permission = await Notification.requestPermission();
+	if (permission !== 'granted') { await renderPush(); return; }
+	const reg = await navigator.serviceWorker.ready;
+	const { publicKey } = await api('/api/push/key');
+	let sub = await reg.pushManager.getSubscription();
+	if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) });
+	const res = await api('/api/push/subscribe', { method: 'POST', body: JSON.stringify(sub.toJSON()) });
+	state.push.devices = res.devices;
+	await api('/api/push/test', { method: 'POST' });
+	await renderPush();
+}
+
+async function disablePush() {
+	const sub = await currentSubscription();
+	if (sub) {
+		await api('/api/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint: sub.endpoint }) });
+		await sub.unsubscribe();
 	}
+	await renderPush();
+}
+
+function pushButton(label, fn, cls = '') {
+	return el('button', { type: 'button', class: cls, onclick: async (e) => {
+		e.target.disabled = true;
+		try { await fn(); } catch (err) { alert(err.message); } finally { e.target.disabled = false; }
+	} }, label);
+}
+
+async function renderPush() {
+	const info = $('#push-info');
+	const nudge = $('#push-nudge');
+	const push = state.push || {};
+	const parts = [];
+	let showNudge = false;
+	if (IS_IOS && !STANDALONE) {
+		parts.push(el('p', {}, 'On iPhone, notifications only work in the home screen app. In Safari tap Share → Add to Home Screen, then open Mentor from the icon and turn them on here.'));
+	} else if (!PUSH_SUPPORTED) {
+		parts.push(el('p', { class: 'muted' }, 'This browser can’t receive notifications.'));
+	} else if (Notification.permission === 'denied') {
+		parts.push(el('p', {}, IS_IOS ? 'Notifications are blocked. iPhone Settings → Notifications → Mentor → Allow Notifications.' : 'Notifications are blocked for this site in the browser settings.'));
+	} else {
+		const sub = await currentSubscription().catch(() => null);
+		if (sub && Notification.permission === 'granted') {
+			parts.push(
+				el('p', {}, 'On for this device. Check-ins, the evening reflection and the weekly review arrive as notifications from Mentor. Tap one to answer.'),
+				el('div', { class: 'row wrap' }, pushButton('Send a test', () => api('/api/push/test', { method: 'POST' })), pushButton('Turn off here', disablePush, 'ghost')),
+			);
+		} else {
+			showNudge = true;
+			parts.push(
+				el('p', {}, 'Let the mentor reach you: it checks in a few times a day at most, never in quiet hours.'),
+				el('div', { class: 'row' }, pushButton('Turn on notifications', enablePush)),
+			);
+		}
+	}
+	if (push.devices) parts.push(el('p', { class: 'muted' }, `${push.devices} device${push.devices === 1 ? '' : 's'} receive check-ins.`));
+	if (push.enabled && push.server) parts.push(el('p', { class: 'muted' }, 'Also sent to ntfy: ', el('code', {}, `${push.server}/${push.topic}`)));
+	info.replaceChildren(...parts);
+	nudge.replaceChildren(el('span', {}, 'Turn on notifications so I can check in with you.'), pushButton('Turn on', enablePush));
+	nudge.classList.toggle('hidden', !showNudge);
+}
+
+// --- Siri shortcut ----------------------------------------------------------
+
+function copyField(value) {
+	return el('div', { class: 'copy' }, el('code', {}, value), el('button', { type: 'button', class: 'ghost small-btn', onclick: async (e) => {
+		await navigator.clipboard.writeText(value);
+		e.target.textContent = 'Copied';
+		setTimeout(() => { e.target.textContent = 'Copy'; }, 1500);
+	} }, 'Copy'));
+}
+
+async function renderSiri(rotate = false) {
+	const box = $('#siri-info');
+	let setup;
+	try {
+		setup = await api(rotate ? '/api/voice/rotate' : '/api/voice/setup', rotate ? { method: 'POST' } : {});
+	} catch (err) {
+		box.replaceChildren(el('p', { class: 'error' }, err.message));
+		return;
+	}
+	box.replaceChildren(
+		el('p', {}, 'Say “Hey Siri, Mentor”, talk, and Siri reads the answer. It lands in Talk too, and updates go into memory and your indicators. Build the shortcut once (2 minutes):'),
+		el('ol', {},
+			el('li', {}, 'Open the Shortcuts app → + → name it ', el('b', {}, 'Mentor'), '.'),
+			el('li', {}, 'Add the action ', el('b', {}, 'Dictate Text'), '.'),
+			el('li', {}, 'Add ', el('b', {}, 'Get Contents of URL'), ' with this URL:', copyField(setup.url)),
+			el('li', {}, 'Tap the arrow on that action: Method ', el('b', {}, 'POST'), '. Headers → Add: key ', el('code', {}, 'Authorization'), ', value:', copyField(`Bearer ${setup.token}`)),
+			el('li', {}, 'Request Body ', el('b', {}, 'JSON'), ' → Add field: type Text, key ', el('code', {}, 'text'), ', value: the ', el('b', {}, 'Dictated Text'), ' variable.'),
+			el('li', {}, 'Add ', el('b', {}, 'Speak Text'), ' and give it ', el('b', {}, 'Contents of URL'), '.'),
+		),
+		el('p', { class: 'muted' }, 'The token is a password for your mentor. If it leaks, make a new one (the old shortcut then stops working).'),
+		el('div', { class: 'row' }, pushButton('New token', () => renderSiri(true), 'ghost')),
+	);
 }
 
 // --- boot ------------------------------------------------------------------
@@ -547,6 +652,12 @@ function wire() {
 	});
 
 	window.addEventListener('hashchange', highlightFromHash);
+	if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (e) => {
+		if (!e.data || e.data.type !== 'open') return;
+		const url = new URL(e.data.url);
+		history.replaceState(null, '', url.pathname + url.hash);
+		loadState({ full: false }).catch(() => {});
+	});
 	document.addEventListener('visibilitychange', () => {
 		if (document.visibilityState === 'visible' && !sending) loadState({ full: false }).catch(() => {});
 	});

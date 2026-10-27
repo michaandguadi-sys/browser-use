@@ -292,3 +292,123 @@ def test_seed_loads_once(tmp_path, llm):
 	create_app(config, llm=llm, run_scheduler=False)
 	create_app(config, llm=llm, run_scheduler=False)
 	assert [m.text for m in DB(config.db_path).list_memory()] == ['Become an expedition filmmaker.']
+
+
+# --- web push + Siri ----------------------------------------------------------
+
+
+def _browser_subscription(endpoint: str) -> tuple[dict, Any, bytes]:
+	"""What a phone's PushManager hands the app: an ECDH key pair and an auth secret."""
+	import os
+
+	from app.webpush import b64url
+	from cryptography.hazmat.primitives import serialization
+	from cryptography.hazmat.primitives.asymmetric import ec
+
+	key = ec.generate_private_key(ec.SECP256R1())
+	auth = os.urandom(16)
+	pub = key.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)
+	return {'endpoint': endpoint, 'keys': {'p256dh': b64url(pub), 'auth': b64url(auth)}}, key, auth
+
+
+def _b64decode(s: str) -> bytes:
+	import base64
+
+	return base64.urlsafe_b64decode(s + '=' * (-len(s) % 4))
+
+
+async def test_checkin_push_reaches_the_app_encrypted_and_signed(db, llm, httpserver: HTTPServer, tmp_path):
+	import http_ece
+	from app.webpush import WebPush
+	from cryptography.hazmat.primitives import hashes
+	from cryptography.hazmat.primitives.asymmetric import ec
+	from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
+
+	httpserver.expect_request('/push/phone', method='POST').respond_with_data('', status=201)
+	httpserver.expect_request('/push/gone', method='POST').respond_with_data('', status=410)
+	sub, browser_key, auth = _browser_subscription(httpserver.url_for('/push/phone'))
+	gone, _, _ = _browser_subscription(httpserver.url_for('/push/gone'))
+	for s in (sub, gone):
+		db.add_push_sub(s['endpoint'], s['keys']['p256dh'], s['keys']['auth'])
+	webpush = WebPush(db, tmp_path / 'vapid.pem', subject='https://m.test')
+	scheduler = Scheduler(db, Mentor(db, llm, 'Micha'), Notifier(make_config(tmp_path), webpush), tick_seconds=60)
+	llm.reply = 'What did you notice about the light today?'
+
+	assert await scheduler.tick(utc('2026-10-27T19:45:00')) == ['evening']
+
+	request = next(r for r, _ in httpserver.log if r.path == '/push/phone')
+	assert request.headers['Content-Encoding'] == 'aes128gcm'
+	assert request.headers['TTL'] == '14400'
+	payload = json.loads(http_ece.decrypt(request.data, private_key=browser_key, auth_secret=auth, version='aes128gcm'))
+	msg = db.last_message('mentor', kinds=('evening',))
+	assert payload == {
+		'title': 'Evening reflection',
+		'body': 'What did you notice about the light today?',
+		'url': f'/#m={msg.id}',
+		'tag': msg.id,
+	}
+
+	# VAPID: a JWT for this push service, signed with the key the app subscribed with
+	scheme, params = request.headers['Authorization'].split(' ', 1)
+	assert scheme == 'vapid'
+	fields = dict(p.strip().split('=', 1) for p in params.split(','))
+	assert fields['k'] == webpush.public_key
+	header_b64, claims_b64, sig_b64 = fields['t'].split('.')
+	claims = json.loads(_b64decode(claims_b64))
+	assert claims['aud'] == httpserver.url_for('/').rstrip('/') and claims['sub'] == 'https://m.test'
+	sig = _b64decode(sig_b64)
+	public = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), _b64decode(webpush.public_key))
+	public.verify(
+		encode_dss_signature(int.from_bytes(sig[:32], 'big'), int.from_bytes(sig[32:], 'big')),
+		f'{header_b64}.{claims_b64}'.encode(),
+		ec.ECDSA(hashes.SHA256()),
+	)
+
+	assert [s['endpoint'] for s in db.list_push_subs()] == [sub['endpoint']]  # 410 Gone was forgotten
+	assert WebPush(db, tmp_path / 'vapid.pem', subject='https://m.test').public_key == webpush.public_key  # key survives restarts
+
+
+def test_push_subscribe_api_and_siri_voice(tmp_path, llm):
+	import time as _time
+
+	app = create_app(make_config(tmp_path, public_url='https://m.test'), llm=llm, run_scheduler=False)
+	sub, _, _ = _browser_subscription('https://web.push.apple.com/abc')
+	with TestClient(app) as client:
+		assert client.get('/api/push/key').status_code == 401
+		assert client.post('/api/voice', json={'text': 'hi'}).status_code == 401
+		client.post('/api/login', json={'passphrase': 'correct horse battery'})
+
+		key = client.get('/api/push/key').json()['publicKey']
+		assert len(_b64decode(key)) == 65  # uncompressed P-256 point, what PushManager.subscribe wants
+		assert client.post('/api/push/subscribe', json={**sub, 'endpoint': 'http://insecure.test/x'}).status_code == 422
+		assert client.post('/api/push/subscribe', json=sub).json() == {'devices': 1}
+		assert client.post('/api/push/subscribe', json=sub).json() == {'devices': 1}  # re-subscribing is idempotent
+		assert client.get('/api/state').json()['push']['devices'] == 1
+
+		setup = client.get('/api/voice/setup').json()
+		assert setup['url'] == 'https://m.test/api/voice' and len(setup['token']) >= 40
+		voice = TestClient(app)  # the Shortcut has no session cookie, only the token
+		assert voice.post('/api/voice', json={'text': 'hi'}, headers={'Authorization': 'Bearer wrong'}).status_code == 401
+		llm.reply = 'Good. What is the first shot you need tomorrow?'
+		res = voice.post(
+			'/api/voice',
+			json={'text': 'Just spent 2 hours on the Andes edit'},
+			headers={'Authorization': f'Bearer {setup["token"]}'},
+		)
+		assert res.status_code == 200 and res.headers['content-type'].startswith('text/plain')
+		assert res.text == 'Good. What is the first shot you need tomorrow?'
+		spoken = llm.calls[-1] if llm.calls[-1]['schema'] is None else llm.calls[-2]
+		assert spoken['effort'] == 'low' and '[system: voice]' in spoken['messages'][-1]['content']
+		texts = [m['content'] for m in client.get('/api/state').json()['messages']]
+		assert texts[-2:] == ['Just spent 2 hours on the Andes edit', 'Good. What is the first shot you need tomorrow?']
+		deadline = _time.monotonic() + 5
+		while not any(c['schema'] is MEMORY_UPDATE_SCHEMA for c in llm.calls) and _time.monotonic() < deadline:
+			_time.sleep(0.05)
+		assert any(c['schema'] is MEMORY_UPDATE_SCHEMA for c in llm.calls), 'memory update runs after the spoken reply'
+
+		new = client.post('/api/voice/rotate').json()['token']
+		assert new != setup['token']
+		assert (
+			voice.post('/api/voice', json={'text': 'hi'}, headers={'Authorization': f'Bearer {setup["token"]}'}).status_code
+			== 401
+		)

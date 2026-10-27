@@ -13,7 +13,7 @@ from typing import Literal
 from zoneinfo import available_timezones
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.middleware.sessions import SessionMiddleware
@@ -27,6 +27,7 @@ from app.scheduler import Scheduler
 from app.scorecard import build_scorecard
 from app.timing import local_now, parse_iso
 from app.views import DEFAULT_INDICATORS, INTERVIEW_TOPICS, MemoryKind, Settings
+from app.webpush import WebPush
 
 logger = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).parent / 'static'
@@ -83,6 +84,24 @@ class TodayIn(BaseModel):
 	energy: int = Field(ge=1, le=5)
 
 
+class PushKeys(BaseModel):
+	p256dh: str = Field(min_length=1, max_length=200)
+	auth: str = Field(min_length=1, max_length=100)
+
+
+class PushSubIn(BaseModel):
+	endpoint: str = Field(min_length=12, max_length=2000, pattern=r'^https://')
+	keys: PushKeys
+
+
+class PushUnsubIn(BaseModel):
+	endpoint: str = Field(min_length=1, max_length=2000)
+
+
+class VoiceIn(BaseModel):
+	text: str = Field(min_length=1, max_length=5000)
+
+
 def load_seed(db: DB, seed_path: str) -> None:
 	"""Load starter memory once, on an empty database."""
 	if not seed_path or db.memory_count() > 0 or not Path(seed_path).is_file():
@@ -106,7 +125,13 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 	load_seed(db, config.seed_path)
 	seed_indicators(db)
 	mentor = Mentor(db, llm or ClaudeLLM(config.anthropic_api_key, config.model), config.owner_name)
-	notifier = Notifier(config)
+	key_path = (
+		Path(config.vapid_key_path) if config.vapid_key_path else Path(config.db_path).resolve().parent / 'vapid_private.pem'
+	)
+	webpush = WebPush(
+		db, key_path, subject=config.public_url if config.public_url.startswith('https://') else 'mailto:mentor@localhost'
+	)
+	notifier = Notifier(config, webpush)
 	scheduler = Scheduler(db, mentor, notifier, config.tick_seconds, config.healthcheck_ping_url)
 	failures: dict[str, list[float]] = defaultdict(list)
 
@@ -142,13 +167,17 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 
 	auth = [Depends(require_auth)]
 
-	@app.post('/api/login')
-	async def login(body: LoginIn, request: Request):
+	def limit_failures(request: Request) -> tuple[str, float]:
 		ip = request.client.host if request.client else '?'
 		now = time.monotonic()
 		failures[ip] = [t for t in failures[ip] if now - t < LOGIN_WINDOW_SECONDS]
 		if len(failures[ip]) >= LOGIN_MAX_FAILURES:
 			raise HTTPException(status_code=429, detail='too many attempts, wait 15 minutes')
+		return ip, now
+
+	@app.post('/api/login')
+	async def login(body: LoginIn, request: Request):
+		ip, now = limit_failures(request)
 		if not hmac.compare_digest(body.passphrase.encode(), config.passphrase.encode()):
 			failures[ip].append(now)
 			raise HTTPException(status_code=401, detail='wrong passphrase')
@@ -187,7 +216,12 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 			'messages': [m.model_dump() for m in db.recent_messages(200)],
 			'memory': [m.model_dump() for m in db.list_memory(include_done=True)],
 			'settings': db.get_settings().model_dump(),
-			'push': {'enabled': notifier.enabled, 'server': config.ntfy_public_url, 'topic': config.ntfy_topic},
+			'push': {
+				'enabled': notifier.ntfy_enabled,
+				'server': config.ntfy_public_url,
+				'topic': config.ntfy_topic,
+				'devices': len(db.list_push_subs()),
+			},
 			**progress(),
 		}
 
@@ -277,6 +311,47 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 	async def focus(body: FocusIn):
 		until = (datetime.now(UTC) + timedelta(minutes=body.minutes)).isoformat(timespec='seconds') if body.minutes else ''
 		return db.update_settings(focus_until=until).model_dump()
+
+	# --- web push: notifications from the installed app itself ---------------
+
+	@app.get('/api/push/key', dependencies=auth)
+	async def push_key():
+		return {'publicKey': webpush.public_key}
+
+	@app.post('/api/push/subscribe', dependencies=auth)
+	async def push_subscribe(body: PushSubIn, request: Request):
+		db.add_push_sub(body.endpoint, body.keys.p256dh, body.keys.auth, request.headers.get('user-agent', ''))
+		return {'devices': len(db.list_push_subs())}
+
+	@app.post('/api/push/unsubscribe', dependencies=auth)
+	async def push_unsubscribe(body: PushUnsubIn):
+		db.delete_push_sub(body.endpoint)
+		return {'devices': len(db.list_push_subs())}
+
+	@app.post('/api/push/test', dependencies=auth)
+	async def push_test():
+		delivered = await webpush.send('Mentor', 'Notifications work. This is how my check-ins will arrive.', url='/', tag='test')
+		return {'delivered': delivered, 'devices': len(db.list_push_subs())}
+
+	# --- Siri: an iOS Shortcut posts what you said, Siri reads the answer -----
+
+	@app.get('/api/voice/setup', dependencies=auth)
+	async def voice_setup():
+		return {'url': f'{config.public_url}/api/voice', 'token': db.voice_token()}
+
+	@app.post('/api/voice/rotate', dependencies=auth)
+	async def voice_rotate():
+		return {'url': f'{config.public_url}/api/voice', 'token': db.rotate_voice_token()}
+
+	@app.post('/api/voice', response_class=PlainTextResponse)
+	async def voice(body: VoiceIn, request: Request):
+		ip, now = limit_failures(request)
+		given = request.headers.get('authorization', '').removeprefix('Bearer ').strip()
+		if not given or not hmac.compare_digest(given.encode(), db.voice_token().encode()):
+			failures[ip].append(now)
+			raise HTTPException(status_code=401, detail='wrong token')
+		_, mentor_msg, _, _ = await mentor.reply(body.text, voice=True)
+		return PlainTextResponse(mentor_msg.content)
 
 	@app.get('/healthz')
 	async def healthz():

@@ -9,6 +9,5 @@
 	reverse_proxy mentor:8000
 }
 
-{$PUSH_DOMAIN} {
-	reverse_proxy ntfy:80
-}
+# Optional sites (ntfy) written by install.sh; an empty folder is fine.
+import /etc/caddy/sites/*.caddy

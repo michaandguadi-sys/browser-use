@@ -69,6 +69,8 @@ INTERVIEW_START_INSTRUCTION = """Run {owner}'s profile interview, the foundation
 Ask ONE open, specific question for the first missing topic, building on what you already know (don't re-ask known things). If no topics are missing, summarise the profile in at most 6 short lines (north star, top values, anti-goals, 90-day goals, strengths, blind spots, coaching preferences) and ask them to confirm or correct it. Under 70 words, no preamble."""
 
 
+VOICE_STEER = """{owner} said this out loud through Siri, on the move, and your answer will be read aloud by Siri. Answer in at most three short spoken sentences: no lists, no markdown, no emoji, no links. If you ask something, ask ONE question. If it was just an update, acknowledge it in a few words and ask the one thing worth knowing."""
+
 INTERVIEW_STEER = """Profile interview in progress. Topics still missing: {missing}. Respond to their answer briefly (reflect back what you heard in one sentence, or ask one follow-up if it was vague), then ask ONE question for the next missing topic. If they want to stop, accept it and say they can continue from the Memory tab."""
 
 

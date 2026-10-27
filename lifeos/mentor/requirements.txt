@@ -5,3 +5,4 @@ itsdangerous==2.2.0
 httpx==0.28.1
 pydantic==2.14.1
 tzdata==2025.2
+pywebpush==2.5.0

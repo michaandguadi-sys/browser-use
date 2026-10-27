@@ -1,5 +1,6 @@
-# Life OS mentor stack. Run ./install.sh once; afterwards: docker compose --profile caddy up -d
-# Without the "caddy" profile, mentor and ntfy only listen on 127.0.0.1 for your own reverse proxy.
+# Life OS mentor stack. Run ./install.sh once; afterwards: docker compose up -d
+# Profiles (set in .env as COMPOSE_PROFILES): "caddy" = bundled HTTPS proxy, "ntfy" = optional extra push server.
+# Without "caddy", the mentor only listens on 127.0.0.1 for your own reverse proxy.
 
 services:
   mentor:
@@ -13,11 +14,10 @@ services:
       - ./seed_profile.json:/srv/seed/seed_profile.json:ro  # private starter memory, created by install.sh
     ports:
       - "127.0.0.1:${MENTOR_PORT:-8787}:8000"
-    depends_on:
-      - ntfy
 
   ntfy:
     image: binwiederhier/ntfy:v2.14.0
+    profiles: ["ntfy"]
     command: serve
     restart: unless-stopped
     environment:
@@ -46,11 +46,11 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy-sites:/etc/caddy/sites:ro  # install.sh drops ntfy.caddy here when ntfy is enabled
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
       - mentor
-      - ntfy
 
 volumes:
   mentor-data:

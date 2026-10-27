@@ -1,5 +1,6 @@
 """The mentor: chat replies, memory updates, proactive check-ins and rituals."""
 
+import asyncio
 import json
 import logging
 from datetime import UTC, datetime, timedelta
@@ -15,6 +16,7 @@ from app.prompts import (
 	INTERVIEW_STEER,
 	ONDEMAND_INSTRUCTION,
 	SYSTEM_PROMPT,
+	VOICE_STEER,
 	WEEKLY_INSTRUCTION,
 )
 from app.scorecard import build_scorecard, format_scorecard
@@ -40,6 +42,7 @@ class Mentor:
 		self.llm = llm
 		self.owner = owner
 		self._system_prompt = SYSTEM_PROMPT.format(owner=owner)
+		self._background: set[asyncio.Task] = set()  # memory updates after voice replies; kept so they aren't garbage-collected
 
 	# --- context ----------------------------------------------------------
 
@@ -97,8 +100,12 @@ class Mentor:
 
 	# --- chat -------------------------------------------------------------
 
-	async def reply(self, text: str, now_utc: datetime | None = None) -> tuple[Message, Message, list[MemoryItem], list[dict]]:
-		"""Store the user's message, answer it, then update memory and indicator logs from the exchange."""
+	async def reply(
+		self, text: str, now_utc: datetime | None = None, voice: bool = False
+	) -> tuple[Message, Message, list[MemoryItem], list[dict]]:
+		"""Store the user's message, answer it, then update memory and indicator logs from the exchange.
+
+		voice=True (Siri): a short spoken answer, and the memory update runs in the background so Siri isn't kept waiting."""
 		now_utc = now_utc or datetime.now(UTC)
 		text = text.strip()
 		assert text, 'message must not be empty'
@@ -110,17 +117,30 @@ class Mentor:
 		if interviewing:
 			steer = INTERVIEW_STEER.format(missing=', '.join(f'{t} ({INTERVIEW_TOPICS[t]})' for t in missing))
 			turns = _with_instruction(turns, 'interview', steer)
+		if voice:
+			turns = _with_instruction(turns, 'voice', VOICE_STEER.format(owner=self.owner))
 		try:
-			answer = await self.llm.complete(system=self._system(now_utc), messages=turns, effort='medium')
+			answer = await self.llm.complete(system=self._system(now_utc), messages=turns, effort='low' if voice else 'medium')
 		except LLMError as e:
 			logger.warning('reply failed: %s', e)
 			answer = f'(I could not reach my brain just now: {e}. Your message is saved; try again in a minute.)'
 		mentor_msg = self.db.add_message('mentor', answer, kind='interview' if interviewing else 'chat', at=now_utc)
 		assert mentor_msg is not None
+		if voice:
+			task = asyncio.create_task(self._finish_exchange(user_msg, mentor_msg, now_utc))
+			self._background.add(task)
+			task.add_done_callback(self._background.discard)
+			return user_msg, mentor_msg, [], []
+		added, logged = await self._finish_exchange(user_msg, mentor_msg, now_utc)
+		return user_msg, mentor_msg, added, logged
+
+	async def _finish_exchange(
+		self, user_msg: Message, mentor_msg: Message, now_utc: datetime
+	) -> tuple[list[MemoryItem], list[dict]]:
 		added, logged = await self.update_memory(user_msg, mentor_msg, now_utc)
 		if self.db.get_settings().interview_active and not self.missing_topics():
 			self.db.update_settings(interview_active=False)
-		return user_msg, mentor_msg, added, logged
+		return added, logged
 
 	async def update_memory(
 		self, user_msg: Message, mentor_msg: Message, now_utc: datetime

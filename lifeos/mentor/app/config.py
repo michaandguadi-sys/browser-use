@@ -23,6 +23,8 @@ class Config(BaseModel):
 	ntfy_token: str = ''
 	ntfy_public_url: str = ''  # what the phone's ntfy app subscribes to
 
+	vapid_key_path: str = ''  # default: vapid_private.pem next to the database
+
 	healthcheck_ping_url: str = ''
 	tick_seconds: int = Field(default=300, ge=10)
 	seed_path: str = ''
@@ -44,6 +46,7 @@ def load_config() -> Config:
 		ntfy_topic=env.get('NTFY_TOPIC', ''),
 		ntfy_token=env.get('NTFY_TOKEN', ''),
 		ntfy_public_url=env.get('NTFY_PUBLIC_URL', '').rstrip('/'),
+		vapid_key_path=env.get('VAPID_KEY_PATH', ''),
 		healthcheck_ping_url=env.get('HEALTHCHECK_PING_URL', ''),
 		tick_seconds=int(env.get('TICK_SECONDS', '300')),
 		seed_path=env.get('SEED_PATH', ''),

@@ -1,6 +1,7 @@
 """SQLite store: settings, long-term memory, conversation, scheduler runs."""
 
 import json
+import secrets
 import sqlite3
 import threading
 import uuid
@@ -54,6 +55,13 @@ CREATE TABLE IF NOT EXISTS indicator_logs (
 );
 CREATE INDEX IF NOT EXISTS indicator_logs_day ON indicator_logs(indicator_id, day);
 CREATE TABLE IF NOT EXISTS daily_state (day TEXT PRIMARY KEY, energy INTEGER, note TEXT, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS push_subs (
+	endpoint TEXT PRIMARY KEY,
+	p256dh TEXT NOT NULL,
+	auth TEXT NOT NULL,
+	user_agent TEXT,
+	created_at TEXT NOT NULL
+);
 """
 
 
@@ -108,6 +116,35 @@ class DB:
 			(json.dumps(epoch),),
 		)
 		return epoch
+
+	def voice_token(self) -> str:
+		"""Bearer token for the Siri shortcut; created on first use."""
+		rows = self._exec("SELECT value FROM settings WHERE key='_voice_token'")
+		return json.loads(rows[0]['value']) if rows else self.rotate_voice_token()
+
+	def rotate_voice_token(self) -> str:
+		token = secrets.token_urlsafe(32)
+		self._exec(
+			"INSERT INTO settings(key, value) VALUES('_voice_token', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+			(json.dumps(token),),
+		)
+		return token
+
+	# --- web push subscriptions ------------------------------------------
+
+	def add_push_sub(self, endpoint: str, p256dh: str, auth: str, user_agent: str = '') -> None:
+		assert endpoint.startswith(('https://', 'http://')), 'push endpoint must be a URL'  # the API only accepts https
+		self._exec(
+			'INSERT INTO push_subs(endpoint, p256dh, auth, user_agent, created_at) VALUES(?,?,?,?,?) '
+			'ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth, user_agent=excluded.user_agent',
+			(endpoint, p256dh, auth, user_agent[:300], now_iso()),
+		)
+
+	def list_push_subs(self) -> list[dict[str, str]]:
+		return [dict(r) for r in self._exec('SELECT endpoint, p256dh, auth, user_agent FROM push_subs ORDER BY created_at')]
+
+	def delete_push_sub(self, endpoint: str) -> None:
+		self._exec('DELETE FROM push_subs WHERE endpoint=?', (endpoint,))
 
 	# --- memory ---------------------------------------------------------
 

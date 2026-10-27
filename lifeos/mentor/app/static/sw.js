@@ -1,5 +1,5 @@
 // App-shell cache so the mentor opens instantly (and offline shows the last UI). API calls always go to the network.
-const CACHE = 'mentor-shell-v1';
+const CACHE = 'mentor-shell-v2';
 const SHELL = ['/', '/static/style.css', '/static/app.js', '/static/manifest.webmanifest', '/static/icon.svg', '/static/icon-192.png'];
 
 self.addEventListener('install', (event) => {
@@ -27,4 +27,32 @@ self.addEventListener('fetch', (event) => {
 			})
 			.catch(() => caches.match(event.request).then((hit) => hit || caches.match('/'))),
 	);
+});
+
+// Web Push: check-ins arrive as a notification from the Mentor app itself.
+self.addEventListener('push', (event) => {
+	let data = {};
+	try { data = event.data ? event.data.json() : {}; } catch (_) { data = { body: event.data ? event.data.text() : '' }; }
+	event.waitUntil(self.registration.showNotification(data.title || 'Mentor', {
+		body: data.body || '',
+		tag: data.tag || 'mentor',
+		data: { url: data.url || '/' },
+		icon: '/static/icon-192.png',
+		badge: '/static/icon-192.png',
+	}));
+});
+
+self.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	const target = new URL(event.notification.data && event.notification.data.url || '/', self.location.origin).href;
+	event.waitUntil((async () => {
+		const open = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+		for (const client of open) {
+			if (new URL(client.url).origin !== self.location.origin) continue;
+			await client.focus();
+			client.postMessage({ type: 'open', url: target });
+			return;
+		}
+		await self.clients.openWindow(target);
+	})());
 });
