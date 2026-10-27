@@ -58,14 +58,31 @@ fi
 
 if [[ ! -f seed_profile.json ]]; then
 	say "Starter memory"
-	echo "If you got a starter memory code (one long line starting with LOS1:), paste it now. Enter skips."
+	echo "If you got a starter memory code (one long line starting with LOS1: or LL1:), paste it now. Enter skips."
 	ask SEED_CODE "Starter memory code" ""
 	if [[ -n "$SEED_CODE" ]]; then
-		python3 - "$SEED_CODE" <<'PY' || die "That starter memory code is broken. Re-run ./install.sh and paste it again."
+		python3 - "$SEED_CODE" <<'PY' || die "That starter memory code is broken. Re-run ./install.sh and paste it again (Enter skips)."
 import base64, gzip, json, sys, pathlib
-code = sys.argv[1].strip().removeprefix('LOS1:')
-items = json.loads(gzip.decompress(base64.urlsafe_b64decode(code + '=' * (-len(code) % 4))))
-assert isinstance(items, list) and all({'kind', 'text'} <= set(i) for i in items)
+
+def b64(code):
+	code = ''.join(code.split())
+	return base64.urlsafe_b64decode(code + '=' * (-len(code) % 4))
+
+code = sys.argv[1].strip()
+if code.startswith('LOS1:'):  # mentor starter memory: gzip'd list of {kind, text}
+	items = json.loads(gzip.decompress(b64(code[5:])))
+elif code.startswith('LL1:'):  # Life Ledger setup code: turn its profile into memory items
+	p = json.loads(b64(code[4:])).get('profile') or {}
+	lines = lambda v: [x.strip() for x in (v or '').splitlines() if x.strip() and not x.strip().startswith('(')]
+	items = [{'kind': 'north_star', 'text': p['north']}] if p.get('north') else []
+	items += [{'kind': 'value', 'text': v} for v in lines(p.get('values'))]
+	items += [{'kind': 'project', 'text': p['season']}] if p.get('season') else []
+	items += [{'kind': 'person', 'text': v} for v in lines(p.get('people'))]
+	items += [{'kind': 'anti_goal', 'text': v} for v in lines(p.get('anti'))]
+	items += [{'kind': 'coaching_pref', 'text': p['coach']}] if p.get('coach') else []
+else:
+	sys.exit('unknown code: it should start with LOS1: or LL1:')
+assert isinstance(items, list) and items and all({'kind', 'text'} <= set(i) for i in items)
 pathlib.Path('seed_profile.json').write_text(json.dumps(items, ensure_ascii=False, indent=2) + '\n')
 print(f'Loaded {len(items)} memory items.')
 PY
