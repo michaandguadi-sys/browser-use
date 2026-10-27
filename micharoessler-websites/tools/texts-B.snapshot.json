@@ -1,1274 +1,1214 @@
 [
- {
-  "id": "B-HOME-01",
-  "file": "systems/src/views/Home.astro",
-  "de": "Formatschnitt – Cutter Freelancer für YouTube-Formate & Schnitt-Systeme",
-  "en": "Formatschnitt – Format Video Editor & Edit Systems for YouTube Teams"
- },
- {
-  "id": "B-HOME-02",
-  "file": "systems/src/views/Home.astro",
-  "de": "Freelance-Cutter für wiederkehrende YouTube-Formate: Schnitt-Templates, datengetriebene Grafiken, Shorts-Pipeline und Retainer. Festpreise ab 1.950 €, Tagessatz 750 €.",
-  "en": "Freelance editor for recurring YouTube formats: edit templates, data-driven graphics, shorts pipeline and retainers. Fixed prices from €1,950, day rate €750."
- },
- {
-  "id": "B-HOME-03",
-  "file": "systems/src/views/Home.astro",
-  "de": "Test A",
-  "en": "Segment A"
- },
- {
-  "id": "B-HOME-04",
-  "file": "systems/src/views/Home.astro",
-  "de": "Test B",
-  "en": "Segment B"
- },
- {
-  "id": "B-HOME-05",
-  "file": "systems/src/views/Home.astro",
-  "de": "Hook · aus der Hook-Bank, 3 Varianten pro Folge vorbereitet",
-  "en": "Hook · from the hook bank, 3 variants prepared per episode"
- },
- {
-  "id": "B-HOME-06",
-  "file": "systems/src/views/Home.astro",
-  "de": "Intro · Template mit Titelkarte aus der Tabelle",
-  "en": "Intro · template with title card from the sheet"
- },
- {
-  "id": "B-HOME-07",
-  "file": "systems/src/views/Home.astro",
-  "de": "Test A · Spec-Card automatisch befüllt",
-  "en": "Segment A · spec card filled automatically"
- },
- {
-  "id": "B-HOME-08",
-  "file": "systems/src/views/Home.astro",
-  "de": "Test B · gleiche Grafik, neue Daten – kein Neu-Animieren",
-  "en": "Segment B · same graphic, new data – no re-animating"
- },
- {
-  "id": "B-HOME-09",
-  "file": "systems/src/views/Home.astro",
-  "de": "Verdict · Score-Overlay aus der Tabelle",
-  "en": "Verdict · score overlay from the sheet"
- },
- {
-  "id": "B-HOME-10",
-  "file": "systems/src/views/Home.astro",
-  "de": "Endscreen · Export-Preset + 3–6 Shorts aus Transkript-Selects",
-  "en": "End screen · export preset + 3–6 shorts from transcript selects"
- },
- {
-  "id": "B-HOME-11",
-  "file": "systems/src/views/Home.astro",
-  "de": "Erstgespräch",
-  "en": "Intro call"
- },
- {
-  "id": "B-HOME-12",
-  "file": "systems/src/views/Home.astro",
-  "de": "15 Minuten, kostenlos. Ihr zeigt mir euer Format, ich sage ehrlich, ob ein System sich lohnt.",
-  "en": "15 minutes, free. Show me your format; I will tell you honestly whether a system is worth it."
- },
- {
-  "id": "B-HOME-13",
-  "file": "systems/src/views/Home.astro",
-  "de": "Kostenlos",
-  "en": "Free"
- },
- {
-  "id": "B-HOME-14",
-  "file": "systems/src/views/Home.astro",
-  "de": "Pilot",
-  "en": "Pilot"
- },
- {
-  "id": "B-HOME-15",
-  "file": "systems/src/views/Home.astro",
-  "de": "Eine Folge plus drei Shorts aus eurem Material – zum Festpreis.",
-  "en": "One episode plus three shorts from your footage, at a fixed price."
- },
- {
-  "id": "B-HOME-16",
-  "file": "systems/src/views/Home.astro",
-  "de": "1.950 € · ≈ 1 Woche",
-  "en": "€1,950 · ≈ 1 week"
- },
- {
-  "id": "B-HOME-17",
-  "file": "systems/src/views/Home.astro",
-  "de": "Setup",
-  "en": "Setup"
- },
- {
-  "id": "B-HOME-18",
-  "file": "systems/src/views/Home.astro",
-  "de": "Audit, Templates, Grafik-Kit, Shorts-Pipeline, SOP.",
-  "en": "Audit, templates, graphics kit, shorts pipeline, SOP."
- },
- {
-  "id": "B-HOME-19",
-  "file": "systems/src/views/Home.astro",
-  "de": "3.500 € · 3–4 Wochen",
-  "en": "€3,500 · 3–4 weeks"
- },
- {
-  "id": "B-HOME-20",
-  "file": "systems/src/views/Home.astro",
-  "de": "Retainer",
-  "en": "Retainer"
- },
- {
-  "id": "B-HOME-21",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ich schneide auf dem System, monatlich planbar.",
-  "en": "I edit on the system, plannable month to month."
- },
- {
-  "id": "B-HOME-22",
-  "file": "systems/src/views/Home.astro",
-  "de": "ab 4.200 € / Monat",
-  "en": "from €4,200 / month"
- },
- {
-  "id": "B-HOME-23",
-  "file": "systems/src/views/Home.astro",
-  "de": "Pilot (1.950 €)",
-  "en": "Pilot (€1,950)"
- },
- {
-  "id": "B-HOME-24",
-  "file": "systems/src/views/Home.astro",
-  "de": "bis 5.000 €",
-  "en": "up to €5k"
- },
- {
-  "id": "B-HOME-25",
-  "file": "systems/src/views/Home.astro",
-  "de": "5.000–10.000 € / Monat",
-  "en": "€5–10k / month"
- },
- {
-  "id": "B-HOME-26",
-  "file": "systems/src/views/Home.astro",
-  "de": "über 10.000 € / Monat",
-  "en": "over €10k / month"
- },
- {
-  "id": "B-HOME-27",
-  "file": "systems/src/views/Home.astro",
-  "de": "Weiß ich noch nicht",
-  "en": "Not sure yet"
- },
- {
-  "id": "B-HOME-28",
-  "file": "systems/src/views/Home.astro",
-  "de": "Formatschnitt Pakete",
-  "en": "Formatschnitt packages"
- },
- {
-  "id": "B-HOME-29",
-  "file": "systems/src/views/Home.astro",
-  "de": "Freelance-Cutter · Workflow · Retainer",
-  "en": "Freelance editor · Workflow · Retainer"
- },
- {
-  "id": "B-HOME-30",
-  "file": "systems/src/views/Home.astro",
-  "de": "Euer YouTube-Format als Schnitt-System.",
-  "en": "Your YouTube format as an edit system."
- },
- {
-  "id": "B-HOME-31",
-  "file": "systems/src/views/Home.astro",
-  "de": "Weniger Handarbeit pro Folge, mehr Shorts aus jedem Dreh. Ich baue für euer wiederkehrendes Format Templates, datengetriebene Grafiken, eine Shorts-Pipeline und eine saubere Review-Schleife – und schneide darauf im Retainer oder übergebe alles an euer Team.",
-  "en": "Less manual work per episode, more shorts from every shoot. I build templates, data-driven graphics, a shorts pipeline and a clean review loop for your recurring format – then edit on it for you on retainer, or hand it all to your team."
- },
- {
-  "id": "B-HOME-32",
-  "file": "systems/src/views/Home.astro",
-  "de": "Erstgespräch buchen",
-  "en": "Book an intro call"
- },
- {
-  "id": "B-HOME-33",
-  "file": "systems/src/views/Home.astro",
-  "de": "System ansehen",
-  "en": "See the system"
- },
- {
-  "id": "B-HOME-34",
-  "file": "systems/src/views/Home.astro",
-  "de": "Tagessatz",
-  "en": "Day rate"
- },
- {
-  "id": "B-HOME-35",
-  "file": "systems/src/views/Home.astro",
-  "de": "750 €",
-  "en": "€750"
- },
- {
-  "id": "B-HOME-36",
-  "file": "systems/src/views/Home.astro",
-  "de": "Einstieg",
-  "en": "Start"
- },
- {
-  "id": "B-HOME-37",
-  "file": "systems/src/views/Home.astro",
-  "de": "Pilot, Festpreis",
-  "en": "Fixed-price pilot"
- },
- {
-  "id": "B-HOME-38",
-  "file": "systems/src/views/Home.astro",
-  "de": "Tools",
-  "en": "Tools"
- },
- {
-  "id": "B-HOME-39",
-  "file": "systems/src/views/Home.astro",
-  "de": "Sprachen",
-  "en": "Languages"
- },
- {
-  "id": "B-HOME-40",
-  "file": "systems/src/views/Home.astro",
-  "de": "Schema einer Format-Timeline: Hook, Intro, Segmente, Verdict, Endscreen mit Grafik-Spur",
-  "en": "Diagram of a format timeline: hook, intro, segments, verdict, end screen with graphics track"
- },
- {
-  "id": "B-HOME-41",
-  "file": "systems/src/views/Home.astro",
-  "de": "Vergleichstest",
-  "en": "comparison"
- },
- {
-  "id": "B-HOME-42",
-  "file": "systems/src/views/Home.astro",
-  "de": "Template",
-  "en": "Template"
- },
- {
-  "id": "B-HOME-43",
-  "file": "systems/src/views/Home.astro",
-  "de": "Grafik-Beats aus Tabelle",
-  "en": "graphic beats from sheet"
- },
- {
-  "id": "B-HOME-44",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ziehen oder",
-  "en": "Drag or"
- },
- {
-  "id": "B-HOME-45",
-  "file": "systems/src/views/Home.astro",
-  "de": "Geschnitten für",
-  "en": "Edited for"
- },
- {
-  "id": "B-HOME-46",
-  "file": "systems/src/views/Home.astro",
-  "de": "· 3 Review-Folgen, 2025",
-  "en": "· 3 review episodes, 2025"
- },
- {
-  "id": "B-HOME-47",
-  "file": "systems/src/views/Home.astro",
-  "de": "Langform-Dokus",
-  "en": "long-form docs"
- },
- {
-  "id": "B-HOME-48",
-  "file": "systems/src/views/Home.astro",
-  "de": "Selbst prüfen:",
-  "en": "Check for yourself:"
- },
- {
-  "id": "B-HOME-49",
-  "file": "systems/src/views/Home.astro",
-  "de": "Das System",
-  "en": "The system"
- },
- {
-  "id": "B-HOME-50",
-  "file": "systems/src/views/Home.astro",
-  "de": "Euer Format als System",
-  "en": "Your format as a system"
- },
- {
-  "id": "B-HOME-51",
-  "file": "systems/src/views/Home.astro",
-  "de": "Wer jede Woche dieselbe Show produziert, sollte nicht jede Woche dieselben Dinge neu bauen. Sechs Bausteine, die ich für euer Format aufsetze:",
-  "en": "If you ship the same show every week, you should not rebuild the same things every week. Six building blocks I set up for your format:"
- },
- {
-  "id": "B-HOME-52",
-  "file": "systems/src/views/Home.astro",
-  "de": "KI hilft. Der Schnitt entscheidet. Keine generierten Moderatoren, kein Auto-Slop.",
-  "en": "AI assists. The edit decides. No generated presenters, no auto-slop."
- },
- {
-  "id": "B-HOME-53",
-  "file": "systems/src/views/Home.astro",
-  "de": "Live-Demo",
-  "en": "Live demo"
- },
- {
-  "id": "B-HOME-54",
-  "file": "systems/src/views/Home.astro",
-  "de": "Grafik aus der Tabelle. Probiert es aus.",
-  "en": "Graphics from a spreadsheet. Try it."
- },
- {
-  "id": "B-HOME-55",
-  "file": "systems/src/views/Home.astro",
-  "de": "So funktionieren datengetriebene Grafiken: Ihr pflegt Werte, das Template rendert – in 16:9 und 9:16. Ändert eine Zahl.",
-  "en": "This is how data-driven graphics work: you maintain values, the template renders – in 16:9 and 9:16. Change a number."
- },
- {
-  "id": "B-HOME-56",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ablauf",
-  "en": "Process"
- },
- {
-  "id": "B-HOME-57",
-  "file": "systems/src/views/Home.astro",
-  "de": "Klein anfangen, dann skalieren",
-  "en": "Start small, then scale"
- },
- {
-  "id": "B-HOME-58",
-  "file": "systems/src/views/Home.astro",
-  "de": "Rechner",
-  "en": "Calculator"
- },
- {
-  "id": "B-HOME-59",
-  "file": "systems/src/views/Home.astro",
-  "de": "Was spart euch ein System?",
-  "en": "What would a system save you?"
- },
- {
-  "id": "B-HOME-60",
-  "file": "systems/src/views/Home.astro",
-  "de": "Eure Zahlen rein, Schätzung raus – inklusive passendem Paket.",
-  "en": "Your numbers in, an estimate out – including the matching package."
- },
- {
-  "id": "B-HOME-61",
-  "file": "systems/src/views/Home.astro",
-  "de": "Pakete & Preise",
-  "en": "Packages & pricing"
- },
- {
-  "id": "B-HOME-62",
-  "file": "systems/src/views/Home.astro",
-  "de": "Festpreise. Schriftlich. Vorab.",
-  "en": "Fixed prices. In writing. Upfront."
- },
- {
-  "id": "B-HOME-63",
-  "file": "systems/src/views/Home.astro",
-  "de": "Basis ist ein Tagessatz von 750 €. Pakete sind günstiger als Einzeltage, weil das System die Arbeit schneller macht – das ist der Punkt.",
-  "en": "Base day rate is €750. Packages cost less than single days because the system makes the work faster – that is the point."
- },
- {
-  "id": "B-HOME-64",
-  "file": "systems/src/views/Home.astro",
-  "de": "Unsicher? Rechner nutzen ↑",
-  "en": "Not sure? Use the calculator ↑"
- },
- {
-  "id": "B-HOME-65",
-  "file": "systems/src/views/Home.astro",
-  "de": "Empfohlener Einstieg",
-  "en": "Recommended start"
- },
- {
-  "id": "B-HOME-66",
-  "file": "systems/src/views/Home.astro",
-  "de": "Alle Preise netto. Abrechnung über Micha Roessler LLC (USA); B2B-Kunden in der EU: Reverse-Charge, keine deutsche USt. auf der Rechnung. USD-Preise auf Anfrage.",
-  "en": "All prices net. Invoiced by Micha Roessler LLC (USA); EU B2B clients: reverse charge. USD pricing on request."
- },
- {
-  "id": "B-HOME-67",
-  "file": "systems/src/views/Home.astro",
-  "de": "Arbeiten",
-  "en": "Work"
- },
- {
-  "id": "B-HOME-68",
-  "file": "systems/src/views/Home.astro",
-  "de": "Was ich gebaut und geschnitten habe",
-  "en": "What I have built and edited"
- },
- {
-  "id": "B-HOME-69",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ehrlich eingeordnet: Format-Schnitt für Marken ist ein junger Schwerpunkt bei mir, Workflows baue ich seit Jahren für meine eigenen Produktionen. Große Agentur-Logos habe ich nicht – deshalb startet jede Zusammenarbeit mit einem bezahlten Pilot statt mit Versprechen. Keine erfundenen Zahlen; Kunden ohne Freigabe bleiben anonym.",
-  "en": "Honestly put: format editing for brands is a young focus for me; I have been building workflows for my own productions for years. I do not have big agency logos – which is why every engagement starts with a paid pilot instead of promises. No invented numbers; clients who have not approved being named stay anonymous."
- },
- {
-  "id": "B-HOME-70",
-  "file": "systems/src/views/Home.astro",
-  "de": "Werkzeuge, die ich selbst baue und nutze",
-  "en": "Tools I build and use"
- },
- {
-  "id": "B-HOME-71",
-  "file": "systems/src/views/Home.astro",
-  "de": "Wer dahinter steht",
-  "en": "Who is behind it"
- },
- {
-  "id": "B-HOME-72",
-  "file": "systems/src/views/Home.astro",
-  "de": "Eine Person. Schnitt und System.",
-  "en": "One person. Edit and system."
- },
- {
-  "id": "B-HOME-73",
-  "file": "systems/src/views/Home.astro",
-  "de": "Filmemacher",
-  "en": "filmmaker"
- },
- {
-  "id": "B-HOME-74",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ich bin Micha Rössler, Editor und Filmemacher. Gelernt habe ich das Handwerk bei Langform-Dokus für YouTube – 1,2 und 1,4 Mio. Aufrufe für Felix von der Laden. Heute schneide ich Serienformate wie Auto-Reviews und baue die Systeme dahinter: Templates, Remotion-Grafiken und eigene Tools wie eine Offload-App für den Ingest. Wenn ich nicht im Schnitt sitze, drehe ich Expeditionsfilme.",
-  "en": "I am Micha Rössler, editor and filmmaker. I learned the craft on long-form YouTube docs – 1.2M and 1.4M views for Felix von der Laden. Today I edit series formats like car reviews and build the systems behind them: templates, Remotion graphics and my own tools such as an offload app for ingest. When I am not editing, I shoot expedition films."
- },
- {
-  "id": "B-HOME-75",
-  "file": "systems/src/views/Home.astro",
-  "de": "Häufige Fragen",
-  "en": "Common questions"
- },
- {
-  "id": "B-HOME-76",
-  "file": "systems/src/views/Home.astro",
-  "de": "Kontakt",
-  "en": "Contact"
- },
- {
-  "id": "B-HOME-77",
-  "file": "systems/src/views/Home.astro",
-  "de": "antwortet persönlich",
-  "en": "replies personally"
- },
- {
-  "id": "B-HOME-78",
-  "file": "systems/src/views/Home.astro",
-  "de": "Erzählt mir von eurem Format.",
-  "en": "Tell me about your format."
- },
- {
-  "id": "B-HOME-79",
-  "file": "systems/src/views/Home.astro",
-  "de": "Antwort innerhalb von zwei Werktagen. Oder direkt: ",
-  "en": "Reply within two working days. Or directly: "
- },
- {
-  "id": "B-HOME-80",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ihr schreibt direkt mit mir – keine Agentur, kein Vertrieb, kein Subunternehmer.",
-  "en": "You talk to me directly – no agency, no sales team, no subcontractors."
- },
- {
-  "id": "B-HOME-81",
-  "file": "systems/src/views/Home.astro",
-  "de": "Festpreis schriftlich vor Start. Überzeugt euch der Pilot nicht, endet die Zusammenarbeit dort – ohne Folgekosten.",
-  "en": "Fixed price in writing before we start. If the pilot does not convince you, it ends there – no follow-on costs."
- },
- {
-  "id": "B-HOME-82",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ich bin Deutscher, arbeite remote von unterwegs und rechne über meine US-Firma Micha Roessler LLC ab.",
-  "en": "I am German, work remotely while travelling and invoice through my US company, Micha Roessler LLC."
- },
- {
-  "id": "B-HOME-83",
-  "file": "systems/src/views/Home.astro",
-  "de": "Anfrage Formatschnitt",
-  "en": "Formatschnitt enquiry"
- },
- {
-  "id": "B-HOME-84",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ihr",
-  "en": "You"
- },
- {
-  "id": "B-HOME-85",
-  "file": "systems/src/views/Home.astro",
-  "de": "Name",
-  "en": "Name"
- },
- {
-  "id": "B-HOME-86",
-  "file": "systems/src/views/Home.astro",
-  "de": "Firma / Kanal",
-  "en": "Company / channel"
- },
- {
-  "id": "B-HOME-87",
-  "file": "systems/src/views/Home.astro",
-  "de": "Firma",
-  "en": "Company"
- },
- {
-  "id": "B-HOME-88",
-  "file": "systems/src/views/Home.astro",
-  "de": "Das Format",
-  "en": "The format"
- },
- {
-  "id": "B-HOME-89",
-  "file": "systems/src/views/Home.astro",
-  "de": "Link zum Format",
-  "en": "Link to the format"
- },
- {
-  "id": "B-HOME-90",
-  "file": "systems/src/views/Home.astro",
-  "de": "Format-Link",
-  "en": "Format link"
- },
- {
-  "id": "B-HOME-91",
-  "file": "systems/src/views/Home.astro",
-  "de": "Folgen pro Monat",
-  "en": "Episodes per month"
- },
- {
-  "id": "B-HOME-92",
-  "file": "systems/src/views/Home.astro",
-  "de": "Folgen/Monat",
-  "en": "Episodes/month"
- },
- {
-  "id": "B-HOME-93",
-  "file": "systems/src/views/Home.astro",
-  "de": "Der Rahmen",
-  "en": "The frame"
- },
- {
-  "id": "B-HOME-94",
-  "file": "systems/src/views/Home.astro",
-  "de": "Budget",
-  "en": "Budget"
- },
- {
-  "id": "B-HOME-95",
-  "file": "systems/src/views/Home.astro",
-  "de": "Start",
-  "en": "Start"
- },
- {
-  "id": "B-HOME-96",
-  "file": "systems/src/views/Home.astro",
-  "de": "z. B. Januar",
-  "en": "e.g. January"
- },
- {
-  "id": "B-HOME-97",
-  "file": "systems/src/views/Home.astro",
-  "de": "Was soll besser werden?",
-  "en": "What should get better?"
- },
- {
-  "id": "B-HOME-98",
-  "file": "systems/src/views/Home.astro",
-  "de": "Ziel",
-  "en": "Goal"
- },
- {
-  "id": "B-HOME-99",
-  "file": "systems/src/views/Home.astro",
-  "de": "E-Mail vorbereiten",
-  "en": "Prepare email"
- },
- {
-  "id": "B-HOME-100",
-  "file": "systems/src/views/Home.astro",
-  "de": "Öffnet euer Mailprogramm. Auf dieser Seite wird nichts gespeichert.",
-  "en": "Opens your email app. Nothing is stored on this site."
- },
- {
-  "id": "B-CONTENT-01",
-  "file": "systems/src/data/content.ts",
-  "de": "Bezahlter Pilot",
-  "en": "Paid pilot"
- },
- {
-  "id": "B-CONTENT-02",
-  "file": "systems/src/data/content.ts",
-  "de": "1.950 €",
-  "en": "€1,950"
- },
- {
-  "id": "B-CONTENT-03",
-  "file": "systems/src/data/content.ts",
-  "de": "Festpreis",
-  "en": "fixed"
- },
- {
-  "id": "B-CONTENT-04",
-  "file": "systems/src/data/content.ts",
-  "de": "≈ 2,6 Tage",
-  "en": "≈ 2.6 days"
- },
- {
-  "id": "B-CONTENT-05",
-  "file": "systems/src/data/content.ts",
-  "de": "1 Folge + 3 Shorts aus eurem Rohmaterial",
-  "en": "1 episode + 3 shorts from your footage"
- },
- {
-  "id": "B-CONTENT-06",
-  "file": "systems/src/data/content.ts",
-  "de": "Zeigt Qualität und Durchlaufzeit, bevor ihr euch bindet",
-  "en": "Proves quality and turnaround before you commit"
- },
- {
-  "id": "B-CONTENT-07",
-  "file": "systems/src/data/content.ts",
-  "de": "100 % anrechenbar auf den ersten Retainer-Monat",
-  "en": "100% credited to your first retainer month"
- },
- {
-  "id": "B-CONTENT-08",
-  "file": "systems/src/data/content.ts",
-  "de": "Format-System Setup",
-  "en": "Format system setup"
- },
- {
-  "id": "B-CONTENT-09",
-  "file": "systems/src/data/content.ts",
-  "de": "3.500 €",
-  "en": "€3,500"
- },
- {
-  "id": "B-CONTENT-10",
-  "file": "systems/src/data/content.ts",
-  "de": "einmalig",
-  "en": "one-off"
- },
- {
-  "id": "B-CONTENT-11",
-  "file": "systems/src/data/content.ts",
-  "de": "≈ 5 Tage",
-  "en": "≈ 5 days"
- },
- {
-  "id": "B-CONTENT-12",
-  "file": "systems/src/data/content.ts",
-  "de": "Format-Audit: Beats, Grafiken, Exporte",
-  "en": "Format audit: beats, graphics, exports"
- },
- {
-  "id": "B-CONTENT-13",
-  "file": "systems/src/data/content.ts",
-  "de": "Projekt-Templates für Premiere oder DaVinci Resolve",
-  "en": "Project templates for Premiere or DaVinci Resolve"
- },
- {
-  "id": "B-CONTENT-14",
-  "file": "systems/src/data/content.ts",
-  "de": "Grafik-Kit aus der Tabelle (MoGRT oder Remotion)",
-  "en": "Spreadsheet-driven graphics kit (MoGRT or Remotion)"
- },
- {
-  "id": "B-CONTENT-15",
-  "file": "systems/src/data/content.ts",
-  "de": "Shorts-Pipeline, SOP und Übergabe-Call",
-  "en": "Shorts pipeline, SOP and handover call"
- },
- {
-  "id": "B-CONTENT-16",
-  "file": "systems/src/data/content.ts",
-  "de": "Format-Retainer S",
-  "en": "Format retainer S"
- },
- {
-  "id": "B-CONTENT-17",
-  "file": "systems/src/data/content.ts",
-  "de": "4.200 €",
-  "en": "€4,200"
- },
- {
-  "id": "B-CONTENT-18",
-  "file": "systems/src/data/content.ts",
-  "de": "pro Monat",
-  "en": "per month"
- },
- {
-  "id": "B-CONTENT-19",
-  "file": "systems/src/data/content.ts",
-  "de": "6 Schnitttage",
-  "en": "6 edit days"
- },
- {
-  "id": "B-CONTENT-20",
-  "file": "systems/src/data/content.ts",
-  "de": "z. B. 2 Langform-Folgen + 8–12 Shorts",
-  "en": "e.g. 2 long-form episodes + 8–12 shorts"
- },
- {
-  "id": "B-CONTENT-21",
-  "file": "systems/src/data/content.ts",
-  "de": "Läuft auf eurem Format-System",
-  "en": "Runs on your format system"
- },
- {
-  "id": "B-CONTENT-22",
-  "file": "systems/src/data/content.ts",
-  "de": "3 Monate Mindestlaufzeit",
-  "en": "3-month minimum"
- },
- {
-  "id": "B-CONTENT-23",
-  "file": "systems/src/data/content.ts",
-  "de": "Format-Retainer M",
-  "en": "Format retainer M"
- },
- {
-  "id": "B-CONTENT-24",
-  "file": "systems/src/data/content.ts",
-  "de": "6.750 €",
-  "en": "€6,750"
- },
- {
-  "id": "B-CONTENT-25",
-  "file": "systems/src/data/content.ts",
-  "de": "10 Schnitttage",
-  "en": "10 edit days"
- },
- {
-  "id": "B-CONTENT-26",
-  "file": "systems/src/data/content.ts",
-  "de": "z. B. 4 Langform-Folgen + 16–24 Shorts",
-  "en": "e.g. 4 long-form episodes + 16–24 shorts"
- },
- {
-  "id": "B-CONTENT-27",
-  "file": "systems/src/data/content.ts",
-  "de": "Priorisierte Durchlaufzeit",
-  "en": "Priority turnaround"
- },
- {
-  "id": "B-CONTENT-28",
-  "file": "systems/src/data/content.ts",
-  "de": "Monatlicher Format-Performance-Review",
-  "en": "Monthly format performance review"
- },
- {
-  "id": "B-CONTENT-29",
-  "file": "systems/src/data/content.ts",
-  "de": "Schnitt + Social",
-  "en": "Edit + social"
- },
- {
-  "id": "B-CONTENT-30",
-  "file": "systems/src/data/content.ts",
-  "de": "ab 7.800 €",
-  "en": "from €7,800"
- },
- {
-  "id": "B-CONTENT-31",
-  "file": "systems/src/data/content.ts",
-  "de": "10 Schnitttage + Social",
-  "en": "10 edit days + social"
- },
- {
-  "id": "B-CONTENT-32",
-  "file": "systems/src/data/content.ts",
-  "de": "Content-Kalender, Planung, Captions",
-  "en": "Content calendar, scheduling, captions"
- },
- {
-  "id": "B-CONTENT-33",
-  "file": "systems/src/data/content.ts",
-  "de": "Leichtes Community-Management",
-  "en": "Light community management"
- },
- {
-  "id": "B-CONTENT-34",
-  "file": "systems/src/data/content.ts",
-  "de": "Monatlicher Analytics-Report, Preis nach Kanälen",
-  "en": "Monthly analytics report, priced by channel count"
- },
- {
-  "id": "B-CONTENT-35",
-  "file": "systems/src/data/content.ts",
-  "de": "Format-Audit",
-  "en": "Format audit"
- },
- {
-  "id": "B-CONTENT-36",
-  "file": "systems/src/data/content.ts",
-  "de": "Ich zerlege eure Show in ihre wiederkehrenden Beats: Cold Open, Spec-Cards, Test-Segmente, Verdict, Endscreen. Danach ist klar, was jedes Mal neu gebaut wird – und was nicht mehr muss.",
-  "en": "I break your show into its repeatable beats: cold open, spec cards, test segments, verdict, end screen. Then it is obvious what gets rebuilt every episode, and what never has to be again."
- },
- {
-  "id": "B-CONTENT-37",
-  "file": "systems/src/data/content.ts",
-  "de": "Projekt-Templates",
-  "en": "Project templates"
- },
- {
-  "id": "B-CONTENT-38",
-  "file": "systems/src/data/content.ts",
-  "de": "Bins, Sequenzen, Benennung, Audio-Kette und Export-Presets in Premiere oder DaVinci Resolve. Jede Folge startet im selben, sauberen Projekt.",
-  "en": "Bins, sequences, naming, audio chain and export presets in Premiere or DaVinci Resolve. Every episode starts in the same clean project."
- },
- {
-  "id": "B-CONTENT-39",
-  "file": "systems/src/data/content.ts",
-  "de": "Datengetriebene Grafiken",
-  "en": "Data-driven graphics"
- },
- {
-  "id": "B-CONTENT-40",
-  "file": "systems/src/data/content.ts",
-  "de": "Spec-Cards, Vergleichstabellen, Score-Overlays und Bauchbinden als MoGRTs oder programmatische Remotion-Templates – befüllt aus einer Tabelle statt jedes Mal neu animiert.",
-  "en": "Spec cards, comparison tables, score overlays and lower thirds as MoGRTs or programmatic Remotion templates, filled from a spreadsheet instead of re-animated every time."
- },
- {
-  "id": "B-CONTENT-41",
-  "file": "systems/src/data/content.ts",
-  "de": "Shorts-Pipeline",
-  "en": "Shorts pipeline"
- },
- {
-  "id": "B-CONTENT-42",
-  "file": "systems/src/data/content.ts",
-  "de": "Regeln plus KI-gestützte Transkript-Selects: aus jeder Langform-Folge entstehen 3–6 Hochkant-Shorts. Die KI schlägt vor, der Schnitt entscheidet.",
-  "en": "Rules plus AI-assisted transcript selects turn every long-form episode into 3–6 vertical shorts. AI suggests, the edit decides."
- },
- {
-  "id": "B-CONTENT-43",
-  "file": "systems/src/data/content.ts",
-  "de": "Review-Schleife",
-  "en": "Review loop"
- },
- {
-  "id": "B-CONTENT-44",
-  "file": "systems/src/data/content.ts",
-  "de": "Frame.io-Kommentare werden zu strukturierten Änderungslisten. Weniger Korrekturrunden, keine verlorenen Notizen.",
-  "en": "Frame.io comments become structured change lists. Fewer revision rounds, no lost notes."
- },
- {
-  "id": "B-CONTENT-45",
-  "file": "systems/src/data/content.ts",
-  "de": "SOP & Übergabe",
-  "en": "SOP & handover"
- },
- {
-  "id": "B-CONTENT-46",
-  "file": "systems/src/data/content.ts",
-  "de": "Ein Dokument, mit dem jede Editorin und jeder Editor in eurem Team das System bedienen kann. Kein Lock-in – das System gehört euch.",
-  "en": "One document any editor on your team can follow. No lock-in: the system belongs to you."
- },
- {
-  "id": "B-CONTENT-47",
-  "file": "systems/src/data/content.ts",
-  "de": "Carwow DE – Review-Folgen",
-  "en": "Carwow DE – review episodes"
- },
- {
-  "id": "B-CONTENT-48",
-  "file": "systems/src/data/content.ts",
-  "de": "Format-Schnitt · 2025",
-  "en": "Format edit · 2025"
- },
- {
-  "id": "B-CONTENT-49",
-  "file": "systems/src/data/content.ts",
-  "de": "Schnitt von drei Auto-Review-Folgen im bestehenden Carwow-Format: Struktur, Grafik-Beats und Pacing exakt nach Vorgabe, in Serie produziert.",
-  "en": "Edited three car-review episodes inside the existing Carwow format: structure, graphic beats and pacing to spec, produced as a series."
- },
- {
-  "id": "B-CONTENT-50",
-  "file": "systems/src/data/content.ts",
-  "de": "D2C-Produktmarke – modulare Ad-Library",
-  "en": "D2C product brand – modular ad library"
- },
- {
-  "id": "B-CONTENT-51",
-  "file": "systems/src/data/content.ts",
-  "de": "Dreh + Schnitt · 2026",
-  "en": "Shoot + edit · 2026"
- },
- {
-  "id": "B-CONTENT-52",
-  "file": "systems/src/data/content.ts",
-  "de": "Dreh geplant als Baukasten: Hook-Bank, Vorher/Nachher mit identischem Framing, Installations-Clips. Ziel des Kunden: Material für 50+ Ads, 4 YouTube-Anleitungen und ein Founder-Q&A aus einem Dreh.",
-  "en": "Shoot planned as a kit: hook bank, before/after with matched framing, installation clips. The client’s goal: material for 50+ ads, 4 YouTube how-tos and a founder Q&A from one shoot."
- },
- {
-  "id": "B-CONTENT-53",
-  "file": "systems/src/data/content.ts",
-  "de": "Podcast-Produktion – Workflow-Setup",
-  "en": "Podcast production – workflow setup"
- },
- {
-  "id": "B-CONTENT-54",
-  "file": "systems/src/data/content.ts",
-  "de": "Workflow-Coaching · 2025",
-  "en": "Workflow coaching · 2025"
- },
- {
-  "id": "B-CONTENT-55",
-  "file": "systems/src/data/content.ts",
-  "de": "DaVinci-Resolve-Projekttemplate, Multicam-Workflow, Farbmanagement und Shortcut-Set für eine wöchentliche Podcast-Produktion – aufgesetzt und übergeben.",
-  "en": "DaVinci Resolve project template, multicam workflow, colour management and shortcut set for a weekly podcast, set up and handed over."
- },
- {
-  "id": "B-CONTENT-56",
-  "file": "systems/src/data/content.ts",
-  "de": "Langform-Dokus mit 1,2 und 1,4 Mio. Aufrufen",
-  "en": "Long-form docs with 1.2M and 1.4M views"
- },
- {
-  "id": "B-CONTENT-57",
-  "file": "systems/src/data/content.ts",
-  "de": "Doku-Schnitt · YouTube",
-  "en": "Doc edit · YouTube"
- },
- {
-  "id": "B-CONTENT-58",
-  "file": "systems/src/data/content.ts",
-  "de": "Gedreht und geschnitten für Felix von der Laden. Der Beweis, dass System und Storytelling sich nicht ausschließen.",
-  "en": "Shot and edited for Felix von der Laden. Proof that systems and storytelling are not opposites."
- },
- {
-  "id": "B-CONTENT-59",
-  "file": "systems/src/data/content.ts",
-  "de": "Eigene macOS-App für Karten-Offload und Ingest mit Prüfsummen – weil Datenverlust kein Workflow-Problem sein darf.",
-  "en": "My own macOS app for checksum-verified card offload and ingest, because data loss should never be a workflow problem."
- },
- {
-  "id": "B-CONTENT-60",
-  "file": "systems/src/data/content.ts",
-  "de": "Programmatische Grafik-Templates: Specs und Vergleiche kommen aus der Tabelle, nicht aus Handarbeit.",
-  "en": "Programmatic graphics templates: specs and comparisons come from the spreadsheet, not from hand-keying."
- },
- {
-  "id": "B-CONTENT-61",
-  "file": "systems/src/data/content.ts",
-  "de": "Templates, Multicam, Farbmanagement und Export-Presets für beide Systeme.",
-  "en": "Templates, multicam, colour management and export presets for both."
- },
- {
-  "id": "B-CONTENT-62",
-  "file": "systems/src/data/content.ts",
-  "de": "Review-Schleife mit strukturierten Änderungslisten.",
-  "en": "Review loop with structured change lists."
- },
- {
-  "id": "B-CONTENT-63",
-  "file": "systems/src/data/content.ts",
-  "de": "Wie viele Formate hast du schon systematisiert?",
-  "en": "How many formats have you systemised so far?"
- },
- {
-  "id": "B-CONTENT-64",
-  "file": "systems/src/data/content.ts",
-  "de": "Ehrliche Antwort: wenige. Ich habe Auto-Review-Folgen im bestehenden Carwow-Format geschnitten, einen Podcast-Workflow in DaVinci aufgesetzt und einen Produkt-Dreh als Ad-Baukasten geplant und geschnitten. Meine eigenen Produktionen laufen seit Jahren auf Templates und selbst gebauten Tools. Genau deshalb biete ich den Pilot zum Festpreis an: Ihr seht das Ergebnis, bevor ihr euch bindet.",
-  "en": "Honest answer: a few. I edited car-review episodes inside the existing Carwow format, set up a DaVinci podcast workflow and planned and edited a product shoot as an ad kit. My own productions have run on templates and self-built tools for years. That is exactly why I offer the fixed-price pilot: you see the result before you commit."
- },
- {
-  "id": "B-CONTENT-65",
-  "file": "systems/src/data/content.ts",
-  "de": "Ersetzt ihr unseren Editor durch KI?",
-  "en": "Are you replacing our editor with AI?"
- },
- {
-  "id": "B-CONTENT-66",
-  "file": "systems/src/data/content.ts",
-  "de": "Nein. KI hilft bei Transkript-Selects und Vorschlägen, die Schnittentscheidungen trifft ein Mensch. Keine generierten Moderatoren, kein Auto-Slop.",
-  "en": "No. AI helps with transcript selects and suggestions; a human makes the edit decisions. No generated presenters, no auto-generated slop."
- },
- {
-  "id": "B-CONTENT-67",
-  "file": "systems/src/data/content.ts",
-  "de": "Arbeitet ihr mit unserem bestehenden Team?",
-  "en": "Do you work with our existing team?"
- },
- {
-  "id": "B-CONTENT-68",
-  "file": "systems/src/data/content.ts",
-  "de": "Ja, das ist der Normalfall. Das System wird so dokumentiert, dass euer Team es ohne mich weiterführen kann.",
-  "en": "Yes, that is the default. The system is documented so your team can run it without me."
- },
- {
-  "id": "B-CONTENT-69",
-  "file": "systems/src/data/content.ts",
-  "de": "Premiere oder DaVinci Resolve?",
-  "en": "Premiere or DaVinci Resolve?"
- },
- {
-  "id": "B-CONTENT-70",
-  "file": "systems/src/data/content.ts",
-  "de": "Beides. Ich baue im System, das ihr schon nutzt.",
-  "en": "Both. I build in whatever your team already uses."
- },
- {
-  "id": "B-CONTENT-71",
-  "file": "systems/src/data/content.ts",
-  "de": "Wie startet eine Zusammenarbeit?",
-  "en": "How do we start?"
- },
- {
-  "id": "B-CONTENT-72",
-  "file": "systems/src/data/content.ts",
-  "de": "Mit einem 15-Minuten-Call und dann meist dem bezahlten Pilot: eine Folge plus drei Shorts zum Festpreis, voll anrechenbar.",
-  "en": "A 15-minute call, then usually the paid pilot: one episode plus three shorts at a fixed price, fully credited."
- },
- {
-  "id": "B-CONTENT-73",
-  "file": "systems/src/data/content.ts",
-  "de": "Wo sitzt du?",
-  "en": "Where are you based?"
- },
- {
-  "id": "B-CONTENT-74",
-  "file": "systems/src/data/content.ts",
-  "de": "Ich arbeite remote und reise viel; Kommunikation auf Deutsch oder Englisch, Abrechnung über Micha Roessler LLC. Für B2B-Kunden in der EU gilt Reverse-Charge.",
-  "en": "I work remotely and travel a lot; communication in German or English, invoicing via Micha Roessler LLC. EU B2B clients are invoiced under reverse charge."
- },
- {
-  "id": "B-SPECDEMO-01",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "Modell",
-  "en": "Model"
- },
- {
-  "id": "B-SPECDEMO-02",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "Leistung",
-  "en": "Power"
- },
- {
-  "id": "B-SPECDEMO-03",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "Reichweite",
-  "en": "Range"
- },
- {
-  "id": "B-SPECDEMO-04",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "Preis",
-  "en": "Price"
- },
- {
-  "id": "B-SPECDEMO-05",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "fiktive Beispieldaten",
-  "en": "fictional sample data"
- },
- {
-  "id": "B-SPECDEMO-06",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "live",
-  "en": "live"
- },
- {
-  "id": "B-SPECDEMO-07",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "↑ Werte ändern – die Grafik rendert mit.",
-  "en": "↑ Change a value – the graphic re-renders."
- },
- {
-  "id": "B-SPECDEMO-08",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "Format",
-  "en": "Format"
- },
- {
-  "id": "B-SPECDEMO-09",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "Vergleich",
-  "en": "Head to head"
- },
- {
-  "id": "B-SPECDEMO-10",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "Im echten Setup: Remotion- oder MoGRT-Template, befüllt aus eurer Tabelle.",
-  "en": "In production: a Remotion or MoGRT template filled from your sheet."
- },
- {
-  "id": "B-SPECDEMO-11",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": ",",
-  "en": "."
- },
- {
-  "id": "B-SPECDEMO-12",
-  "file": "systems/src/components/SpecDemo.astro",
-  "de": "Unentschieden",
-  "en": "Draw"
- },
- {
-  "id": "B-CALCULATOR-01",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Langform-Folgen pro Monat",
-  "en": "Long-form episodes per month"
- },
- {
-  "id": "B-CALCULATOR-02",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Schnittstunden pro Folge (heute)",
-  "en": "Edit hours per episode (today)"
- },
- {
-  "id": "B-CALCULATOR-03",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Shorts pro Folge",
-  "en": "Shorts per episode"
- },
- {
-  "id": "B-CALCULATOR-04",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Stunden pro Short (heute)",
-  "en": "Hours per short (today)"
- },
- {
-  "id": "B-CALCULATOR-05",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Annahme: Zeitersparnis (unbelegt, im Pilot gemessen)",
-  "en": "Assumption: time saved (unproven, measured in the pilot)"
- },
- {
-  "id": "B-CALCULATOR-06",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Heute",
-  "en": "Today"
- },
- {
-  "id": "B-CALCULATOR-07",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Mit System",
-  "en": "With system"
- },
- {
-  "id": "B-CALCULATOR-08",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Gesparte Stunden / Monat",
-  "en": "Hours saved / month"
- },
- {
-  "id": "B-CALCULATOR-09",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Gegenwert bei 750 € / Tag",
-  "en": "Worth at €750 / day"
- },
- {
-  "id": "B-CALCULATOR-10",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Passendes Paket",
-  "en": "Matching package"
- },
- {
-  "id": "B-CALCULATOR-11",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Damit anfragen",
-  "en": "Enquire with this"
- },
- {
-  "id": "B-CALCULATOR-12",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Schätzung, keine Garantie. Die Ersparnis hängt von eurem Format ab – genau das klärt der Pilot.",
-  "en": "An estimate, not a promise. The saving depends on your format – which is exactly what the pilot measures."
- },
- {
-  "id": "B-CALCULATOR-13",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Pilot, dann Setup (3.500 €) – euer Team schneidet selbst",
-  "en": "Pilot, then setup (€3,500) – your team edits"
- },
- {
-  "id": "B-CALCULATOR-14",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Format-Retainer S · 4.200 € / Monat",
-  "en": "Format retainer S · €4,200 / month"
- },
- {
-  "id": "B-CALCULATOR-15",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Format-Retainer M · 6.750 € / Monat",
-  "en": "Format retainer M · €6,750 / month"
- },
- {
-  "id": "B-CALCULATOR-16",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Individuelles Angebot (über 10 Tage / Monat)",
-  "en": "Custom quote (over 10 days / month)"
- },
- {
-  "id": "B-CALCULATOR-17",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Folgen",
-  "en": "episodes"
- },
- {
-  "id": "B-CALCULATOR-18",
-  "file": "systems/src/components/Calculator.astro",
-  "de": "Monat",
-  "en": "month"
- },
- {
-  "id": "B-BASE-01",
-  "file": "systems/src/layouts/Base.astro",
-  "de": "Zum Inhalt springen",
-  "en": "Skip to content"
- },
- {
-  "id": "B-BASE-02",
-  "file": "systems/src/layouts/Base.astro",
-  "de": "Hauptnavigation",
-  "en": "Main"
- },
- {
-  "id": "B-BASE-03",
-  "file": "systems/src/layouts/Base.astro",
-  "de": "System",
-  "en": "System"
- },
- {
-  "id": "B-BASE-04",
-  "file": "systems/src/layouts/Base.astro",
-  "de": "Pakete",
-  "en": "Packages"
- },
- {
-  "id": "B-BASE-05",
-  "file": "systems/src/layouts/Base.astro",
-  "de": "Schnitt-Systeme für wiederkehrende Videoformate",
-  "en": "Edit systems for recurring video formats"
- },
- {
-  "id": "B-BASE-06",
-  "file": "systems/src/layouts/Base.astro",
-  "de": "Outdoor- & Expeditionsfilm → micharoessler.com",
-  "en": "Outdoor & expedition film → micharoessler.com"
- },
- {
-  "id": "B-BASE-07",
-  "file": "systems/src/layouts/Base.astro",
-  "de": "Impressum",
-  "en": "Legal notice"
- },
- {
-  "id": "B-BASE-08",
-  "file": "systems/src/layouts/Base.astro",
-  "de": "Datenschutz",
-  "en": "Privacy"
- }
+{
+"id": "B-HOME-01",
+"file": "systems/src/views/Home.astro",
+"de": "Formatschnitt – Freelance-Cutter für YouTube-Formate von Unternehmen",
+"en": "Formatschnitt – Freelance Video Editor for Company YouTube Formats"
+},
+{
+"id": "B-HOME-02",
+"file": "systems/src/views/Home.astro",
+"de": "Videoschnitt für Unternehmen mit eigenem YouTube-Format: gleiche Qualität in jeder Folge, Feedback einmal statt zehnmal. Festpreise ab 1.950 €.",
+"en": "Video editing for companies with their own YouTube format: the same quality every episode, feedback once instead of ten times. Fixed prices from €1,950."
+},
+{
+"id": "B-HOME-03",
+"file": "systems/src/views/Home.astro",
+"de": "Abspielen",
+"en": "Play"
+},
+{
+"id": "B-HOME-04",
+"file": "systems/src/views/Home.astro",
+"de": "Pause",
+"en": "Pause"
+},
+{
+"id": "B-HOME-05",
+"file": "systems/src/views/Home.astro",
+"de": "Nochmal abspielen",
+"en": "Replay"
+},
+{
+"id": "B-HOME-06",
+"file": "systems/src/views/Home.astro",
+"de": "Film-Position",
+"en": "Film position"
+},
+{
+"id": "B-HOME-07",
+"file": "systems/src/views/Home.astro",
+"de": "Pilot (1.950 €)",
+"en": "Pilot (€1,950)"
+},
+{
+"id": "B-HOME-08",
+"file": "systems/src/views/Home.astro",
+"de": "bis 5.000 €",
+"en": "up to €5k"
+},
+{
+"id": "B-HOME-09",
+"file": "systems/src/views/Home.astro",
+"de": "5.000–10.000 € / Monat",
+"en": "€5–10k / month"
+},
+{
+"id": "B-HOME-10",
+"file": "systems/src/views/Home.astro",
+"de": "über 10.000 € / Monat",
+"en": "over €10k / month"
+},
+{
+"id": "B-HOME-11",
+"file": "systems/src/views/Home.astro",
+"de": "Weiß ich noch nicht",
+"en": "Not sure yet"
+},
+{
+"id": "B-HOME-12",
+"file": "systems/src/views/Home.astro",
+"de": "Formatschnitt Pakete",
+"en": "Formatschnitt packages"
+},
+{
+"id": "B-HOME-13",
+"file": "systems/src/views/Home.astro",
+"de": "Videoschnitt für Unternehmen mit eigenem YouTube-Format",
+"en": "Video editing for companies with their own YouTube format"
+},
+{
+"id": "B-HOME-14",
+"file": "systems/src/views/Home.astro",
+"de": "Euer YouTube-Format als Schnitt-System.",
+"en": "Your YouTube format as an edit system."
+},
+{
+"id": "B-HOME-15",
+"file": "systems/src/views/Home.astro",
+"de": "Euer Format wird einmal festgelegt – danach entsteht jede Folge im gleichen Standard. Feedback gebt ihr einmal, und es bleibt. Zum festen Preis.",
+"en": "Your format gets defined once – after that, every episode is made to the same standard. You give feedback once, and it sticks. At a fixed price."
+},
+{
+"id": "B-HOME-16",
+"file": "systems/src/views/Home.astro",
+"de": "Erstgespräch buchen",
+"en": "Book an intro call"
+},
+{
+"id": "B-HOME-17",
+"file": "systems/src/views/Home.astro",
+"de": "Pakete ansehen",
+"en": "See packages"
+},
+{
+"id": "B-HOME-18",
+"file": "systems/src/views/Home.astro",
+"de": "Film: So entsteht eine Folge",
+"en": "Film: how an episode gets made"
+},
+{
+"id": "B-HOME-19",
+"file": "systems/src/views/Home.astro",
+"de": "Film: Countdown „Video fertig in 3 · 2 · 1“. Das Material wird geschnitten, eine Feedback-Notiz wird einmal erledigt, dann kommen Titel, Grafiken, Untertitel, Musik und Sound dazu. Am Ende: das fertige Video im Quer- und im Hochformat.",
+"en": "Film: countdown “Video ready in 3 · 2 · 1”. The footage gets cut, one feedback note is handled once, then titles, graphics, captions, music and sound are added. At the end: the finished video in landscape and vertical."
+},
+{
+"id": "B-HOME-20",
+"file": "systems/src/views/Home.astro",
+"de": "Für wen",
+"en": "Who it’s for"
+},
+{
+"id": "B-HOME-21",
+"file": "systems/src/views/Home.astro",
+"de": "Kommt euch das bekannt vor?",
+"en": "Sound familiar?"
+},
+{
+"id": "B-HOME-22",
+"file": "systems/src/views/Home.astro",
+"de": "Was sich ändert",
+"en": "What changes"
+},
+{
+"id": "B-HOME-23",
+"file": "systems/src/views/Home.astro",
+"de": "Weniger Schleifen. Mehr Folgen.",
+"en": "Fewer loops. More episodes."
+},
+{
+"id": "B-HOME-24",
+"file": "systems/src/views/Home.astro",
+"de": "So läuft’s",
+"en": "How it works"
+},
+{
+"id": "B-HOME-25",
+"file": "systems/src/views/Home.astro",
+"de": "Klein anfangen, dann skalieren",
+"en": "Start small, then scale"
+},
+{
+"id": "B-HOME-26",
+"file": "systems/src/views/Home.astro",
+"de": "Vorher: 15 Minuten Erstgespräch, kostenlos.",
+"en": "Before that: a free 15-minute intro call."
+},
+{
+"id": "B-HOME-27",
+"file": "systems/src/views/Home.astro",
+"de": "Pakete & Preise",
+"en": "Packages & pricing"
+},
+{
+"id": "B-HOME-28",
+"file": "systems/src/views/Home.astro",
+"de": "Festpreise. Schriftlich. Vorab.",
+"en": "Fixed prices. In writing. Upfront."
+},
+{
+"id": "B-HOME-29",
+"file": "systems/src/views/Home.astro",
+"de": "Tagessatz 750 €. Pakete sind günstiger – das System macht die Arbeit schneller.",
+"en": "Day rate €750. Packages cost less – the system makes the work faster."
+},
+{
+"id": "B-HOME-30",
+"file": "systems/src/views/Home.astro",
+"de": "Empfohlener Einstieg",
+"en": "Recommended start"
+},
+{
+"id": "B-HOME-31",
+"file": "systems/src/views/Home.astro",
+"de": "Für wen",
+"en": "For"
+},
+{
+"id": "B-HOME-32",
+"file": "systems/src/views/Home.astro",
+"de": "Ihr bekommt",
+"en": "You get"
+},
+{
+"id": "B-HOME-33",
+"file": "systems/src/views/Home.astro",
+"de": "Ergebnis",
+"en": "Result"
+},
+{
+"id": "B-HOME-34",
+"file": "systems/src/views/Home.astro",
+"de": "Anfragen",
+"en": "Enquire"
+},
+{
+"id": "B-HOME-35",
+"file": "systems/src/views/Home.astro",
+"de": "Alle Preise netto. Abrechnung über Micha Roessler LLC (USA); B2B-Kunden in der EU: Reverse-Charge, keine deutsche USt. auf der Rechnung. USD-Preise auf Anfrage.",
+"en": "All prices net. Invoiced by Micha Roessler LLC (USA); EU B2B clients: reverse charge. USD pricing on request."
+},
+{
+"id": "B-HOME-36",
+"file": "systems/src/views/Home.astro",
+"de": "Rechner",
+"en": "Calculator"
+},
+{
+"id": "B-HOME-37",
+"file": "systems/src/views/Home.astro",
+"de": "Was spart euch ein System?",
+"en": "What would a system save you?"
+},
+{
+"id": "B-HOME-38",
+"file": "systems/src/views/Home.astro",
+"de": "Arbeiten",
+"en": "Work"
+},
+{
+"id": "B-HOME-39",
+"file": "systems/src/views/Home.astro",
+"de": "Was ich gebaut und geschnitten habe",
+"en": "What I have built and edited"
+},
+{
+"id": "B-HOME-40",
+"file": "systems/src/views/Home.astro",
+"de": "Ehrlich: junger Schwerpunkt, keine Agentur-Logos. Deshalb startet alles mit einem bezahlten Pilot.",
+"en": "Honestly: a young focus, no agency logos. That is why everything starts with a paid pilot."
+},
+{
+"id": "B-HOME-41",
+"file": "systems/src/views/Home.astro",
+"de": "Selbst prüfen:",
+"en": "Check for yourself:"
+},
+{
+"id": "B-HOME-42",
+"file": "systems/src/views/Home.astro",
+"de": "Wer dahinter steht",
+"en": "Who is behind it"
+},
+{
+"id": "B-HOME-43",
+"file": "systems/src/views/Home.astro",
+"de": "Eine Person. Schnitt und System.",
+"en": "One person. Edit and system."
+},
+{
+"id": "B-HOME-44",
+"file": "systems/src/views/Home.astro",
+"de": "Ich bin Micha Rössler, Editor und Filmemacher. Ich schneide Serienformate für Unternehmen – so, dass jede Folge im gleichen Standard entsteht und euer Team weniger abstimmen muss.",
+"en": "I am Micha Rössler, editor and filmmaker. I edit series formats for companies – so every episode is made to the same standard and your team has less to coordinate."
+},
+{
+"id": "B-HOME-45",
+"file": "systems/src/views/Home.astro",
+"de": "Häufige Fragen",
+"en": "Common questions"
+},
+{
+"id": "B-HOME-46",
+"file": "systems/src/views/Home.astro",
+"de": "Kontakt",
+"en": "Contact"
+},
+{
+"id": "B-HOME-47",
+"file": "systems/src/views/Home.astro",
+"de": "Erzählt mir von eurem Format.",
+"en": "Tell me about your format."
+},
+{
+"id": "B-HOME-48",
+"file": "systems/src/views/Home.astro",
+"de": "antwortet persönlich",
+"en": "replies personally"
+},
+{
+"id": "B-HOME-49",
+"file": "systems/src/views/Home.astro",
+"de": "Antwort innerhalb von zwei Werktagen. Oder direkt: ",
+"en": "Reply within two working days. Or directly: "
+},
+{
+"id": "B-HOME-50",
+"file": "systems/src/views/Home.astro",
+"de": "Direkt mit mir – keine Agentur, kein Vertrieb.",
+"en": "Directly with me – no agency, no sales team."
+},
+{
+"id": "B-HOME-51",
+"file": "systems/src/views/Home.astro",
+"de": "Festpreis schriftlich vor Start. Überzeugt der Pilot nicht, endet es dort – ohne Folgekosten.",
+"en": "Fixed price in writing before we start. If the pilot does not convince you, it ends there – no follow-on costs."
+},
+{
+"id": "B-HOME-52",
+"file": "systems/src/views/Home.astro",
+"de": "Remote, auf Deutsch oder Englisch. Abrechnung über Micha Roessler LLC.",
+"en": "Remote, in German or English. Invoiced via Micha Roessler LLC."
+},
+{
+"id": "B-HOME-53",
+"file": "systems/src/views/Home.astro",
+"de": "Anfrage Formatschnitt",
+"en": "Formatschnitt enquiry"
+},
+{
+"id": "B-HOME-54",
+"file": "systems/src/views/Home.astro",
+"de": "Name",
+"en": "Name"
+},
+{
+"id": "B-HOME-55",
+"file": "systems/src/views/Home.astro",
+"de": "Firma / Kanal",
+"en": "Company / channel"
+},
+{
+"id": "B-HOME-56",
+"file": "systems/src/views/Home.astro",
+"de": "Firma",
+"en": "Company"
+},
+{
+"id": "B-HOME-57",
+"file": "systems/src/views/Home.astro",
+"de": "Link zum Format",
+"en": "Link to the format"
+},
+{
+"id": "B-HOME-58",
+"file": "systems/src/views/Home.astro",
+"de": "Format-Link",
+"en": "Format link"
+},
+{
+"id": "B-HOME-59",
+"file": "systems/src/views/Home.astro",
+"de": "Folgen pro Monat",
+"en": "Episodes per month"
+},
+{
+"id": "B-HOME-60",
+"file": "systems/src/views/Home.astro",
+"de": "Folgen/Monat",
+"en": "Episodes/month"
+},
+{
+"id": "B-HOME-61",
+"file": "systems/src/views/Home.astro",
+"de": "Budget",
+"en": "Budget"
+},
+{
+"id": "B-HOME-62",
+"file": "systems/src/views/Home.astro",
+"de": "Start",
+"en": "Start"
+},
+{
+"id": "B-HOME-63",
+"file": "systems/src/views/Home.astro",
+"de": "z. B. Januar",
+"en": "e.g. January"
+},
+{
+"id": "B-HOME-64",
+"file": "systems/src/views/Home.astro",
+"de": "Was soll besser werden?",
+"en": "What should get better?"
+},
+{
+"id": "B-HOME-65",
+"file": "systems/src/views/Home.astro",
+"de": "Ziel",
+"en": "Goal"
+},
+{
+"id": "B-HOME-66",
+"file": "systems/src/views/Home.astro",
+"de": "E-Mail vorbereiten",
+"en": "Prepare email"
+},
+{
+"id": "B-HOME-67",
+"file": "systems/src/views/Home.astro",
+"de": "Öffnet euer Mailprogramm. Auf dieser Seite wird nichts gespeichert.",
+"en": "Opens your email app. Nothing is stored on this site."
+},
+{
+"id": "B-CONTENT-01",
+"file": "systems/src/data/content.ts",
+"de": "Bezahlter Pilot",
+"en": "Paid pilot"
+},
+{
+"id": "B-CONTENT-02",
+"file": "systems/src/data/content.ts",
+"de": "Eine Testfolge zum Festpreis",
+"en": "One test episode at a fixed price"
+},
+{
+"id": "B-CONTENT-03",
+"file": "systems/src/data/content.ts",
+"de": "Ihr wollt sehen, wie es läuft, bevor ihr euch bindet.",
+"en": "You want to see how it works before you commit."
+},
+{
+"id": "B-CONTENT-04",
+"file": "systems/src/data/content.ts",
+"de": "1.950 €",
+"en": "€1,950"
+},
+{
+"id": "B-CONTENT-05",
+"file": "systems/src/data/content.ts",
+"de": "Festpreis",
+"en": "fixed"
+},
+{
+"id": "B-CONTENT-06",
+"file": "systems/src/data/content.ts",
+"de": "≈ 2,6 Tage",
+"en": "≈ 2.6 days"
+},
+{
+"id": "B-CONTENT-07",
+"file": "systems/src/data/content.ts",
+"de": "1 fertige Folge + 3 Shorts aus eurem Material",
+"en": "1 finished episode + 3 shorts from your footage"
+},
+{
+"id": "B-CONTENT-08",
+"file": "systems/src/data/content.ts",
+"de": "Ihr seht Qualität und Tempo am echten Beispiel",
+"en": "You see quality and turnaround on a real example"
+},
+{
+"id": "B-CONTENT-09",
+"file": "systems/src/data/content.ts",
+"de": "Eine sichere Entscheidung – und der Preis wird zu 100 % auf den ersten Monat angerechnet.",
+"en": "A safe decision – and the price is 100% credited to your first month."
+},
+{
+"id": "B-CONTENT-10",
+"file": "systems/src/data/content.ts",
+"de": "Format-System Setup",
+"en": "Format system setup"
+},
+{
+"id": "B-CONTENT-11",
+"file": "systems/src/data/content.ts",
+"de": "Euer Format einmal sauber festgelegt",
+"en": "Your format, defined properly once"
+},
+{
+"id": "B-CONTENT-12",
+"file": "systems/src/data/content.ts",
+"de": "Euer eigenes Team schneidet – aber jede Folge wird neu erfunden.",
+"en": "Your own team edits – but every episode gets reinvented."
+},
+{
+"id": "B-CONTENT-13",
+"file": "systems/src/data/content.ts",
+"de": "3.500 €",
+"en": "€3,500"
+},
+{
+"id": "B-CONTENT-14",
+"file": "systems/src/data/content.ts",
+"de": "einmalig",
+"en": "one-off"
+},
+{
+"id": "B-CONTENT-15",
+"file": "systems/src/data/content.ts",
+"de": "≈ 5 Tage",
+"en": "≈ 5 days"
+},
+{
+"id": "B-CONTENT-16",
+"file": "systems/src/data/content.ts",
+"de": "Analyse eurer Show: was sich in jeder Folge wiederholt",
+"en": "A review of your show: what repeats in every episode"
+},
+{
+"id": "B-CONTENT-17",
+"file": "systems/src/data/content.ts",
+"de": "Feste Standards für Aufbau, Titel und Look",
+"en": "Fixed standards for structure, titles and look"
+},
+{
+"id": "B-CONTENT-18",
+"file": "systems/src/data/content.ts",
+"de": "Grafiken, die ihr selbst per Tabelle befüllt",
+"en": "Graphics your team fills in from a simple sheet"
+},
+{
+"id": "B-CONTENT-19",
+"file": "systems/src/data/content.ts",
+"de": "Ablauf für Shorts aus jeder Folge, schriftliche Anleitung und Übergabe-Gespräch",
+"en": "A routine for shorts from every episode, a written guide and a handover call"
+},
+{
+"id": "B-CONTENT-20",
+"file": "systems/src/data/content.ts",
+"de": "Euer Team startet jede Folge vom selben Standard – statt bei null.",
+"en": "Your team starts every episode from the same standard – not from scratch."
+},
+{
+"id": "B-CONTENT-21",
+"file": "systems/src/data/content.ts",
+"de": "Format-Retainer S",
+"en": "Format retainer S"
+},
+{
+"id": "B-CONTENT-22",
+"file": "systems/src/data/content.ts",
+"de": "Ich schneide eure Folgen – jeden Monat",
+"en": "I edit your episodes – every month"
+},
+{
+"id": "B-CONTENT-23",
+"file": "systems/src/data/content.ts",
+"de": "Ihr veröffentlicht regelmäßig und wollt den Schnitt abgeben.",
+"en": "You publish regularly and want to hand off the editing."
+},
+{
+"id": "B-CONTENT-24",
+"file": "systems/src/data/content.ts",
+"de": "4.200 €",
+"en": "€4,200"
+},
+{
+"id": "B-CONTENT-25",
+"file": "systems/src/data/content.ts",
+"de": "pro Monat",
+"en": "per month"
+},
+{
+"id": "B-CONTENT-26",
+"file": "systems/src/data/content.ts",
+"de": "6 Schnitttage",
+"en": "6 edit days"
+},
+{
+"id": "B-CONTENT-27",
+"file": "systems/src/data/content.ts",
+"de": "z. B. 2 lange Folgen + 8–12 Shorts",
+"en": "e.g. 2 long episodes + 8–12 shorts"
+},
+{
+"id": "B-CONTENT-28",
+"file": "systems/src/data/content.ts",
+"de": "Geschnitten nach eurem festgelegten Standard",
+"en": "Edited to your agreed standard"
+},
+{
+"id": "B-CONTENT-29",
+"file": "systems/src/data/content.ts",
+"de": "3 Monate Mindestlaufzeit",
+"en": "3-month minimum"
+},
+{
+"id": "B-CONTENT-30",
+"file": "systems/src/data/content.ts",
+"de": "Fester Monatspreis, gleichbleibende Qualität – euer Team hat den Kopf frei.",
+"en": "A fixed monthly price, consistent quality – your team is free for other work."
+},
+{
+"id": "B-CONTENT-31",
+"file": "systems/src/data/content.ts",
+"de": "Format-Retainer M",
+"en": "Format retainer M"
+},
+{
+"id": "B-CONTENT-32",
+"file": "systems/src/data/content.ts",
+"de": "Für Formate mit hohem Takt",
+"en": "For high-frequency formats"
+},
+{
+"id": "B-CONTENT-33",
+"file": "systems/src/data/content.ts",
+"de": "Ihr veröffentlicht oft und braucht verlässliches Tempo.",
+"en": "You publish often and need reliable pace."
+},
+{
+"id": "B-CONTENT-34",
+"file": "systems/src/data/content.ts",
+"de": "6.750 €",
+"en": "€6,750"
+},
+{
+"id": "B-CONTENT-35",
+"file": "systems/src/data/content.ts",
+"de": "10 Schnitttage",
+"en": "10 edit days"
+},
+{
+"id": "B-CONTENT-36",
+"file": "systems/src/data/content.ts",
+"de": "z. B. 4 lange Folgen + 16–24 Shorts",
+"en": "e.g. 4 long episodes + 16–24 shorts"
+},
+{
+"id": "B-CONTENT-37",
+"file": "systems/src/data/content.ts",
+"de": "Eure Folgen haben Vorrang",
+"en": "Your episodes get priority"
+},
+{
+"id": "B-CONTENT-38",
+"file": "systems/src/data/content.ts",
+"de": "Monatlicher Rückblick: was wirkt, was wir ändern",
+"en": "A monthly review: what works, what we change"
+},
+{
+"id": "B-CONTENT-39",
+"file": "systems/src/data/content.ts",
+"de": "Ein volles Programm zum festen Monatspreis.",
+"en": "A full publishing schedule at a fixed monthly price."
+},
+{
+"id": "B-CONTENT-40",
+"file": "systems/src/data/content.ts",
+"de": "Schnitt + Social",
+"en": "Edit + social"
+},
+{
+"id": "B-CONTENT-41",
+"file": "systems/src/data/content.ts",
+"de": "Schnitt plus Betreuung eurer Kanäle",
+"en": "Editing plus channel management"
+},
+{
+"id": "B-CONTENT-42",
+"file": "systems/src/data/content.ts",
+"de": "Ihr wollt Schnitt und Veröffentlichung aus einer Hand.",
+"en": "You want editing and publishing from one source."
+},
+{
+"id": "B-CONTENT-43",
+"file": "systems/src/data/content.ts",
+"de": "ab 7.800 €",
+"en": "from €7,800"
+},
+{
+"id": "B-CONTENT-44",
+"file": "systems/src/data/content.ts",
+"de": "10 Schnitttage + Social",
+"en": "10 edit days + social"
+},
+{
+"id": "B-CONTENT-45",
+"file": "systems/src/data/content.ts",
+"de": "Redaktionsplan, Planung der Posts, Beitragstexte",
+"en": "Content calendar, post scheduling, post copy"
+},
+{
+"id": "B-CONTENT-46",
+"file": "systems/src/data/content.ts",
+"de": "Kommentare im Blick (leichtes Community-Management)",
+"en": "An eye on comments (light community management)"
+},
+{
+"id": "B-CONTENT-47",
+"file": "systems/src/data/content.ts",
+"de": "Monatlicher Zahlen-Report; Preis nach Anzahl der Kanäle",
+"en": "Monthly numbers report; priced by number of channels"
+},
+{
+"id": "B-CONTENT-48",
+"file": "systems/src/data/content.ts",
+"de": "Ein Ansprechpartner vom Rohmaterial bis zum veröffentlichten Post.",
+"en": "One contact from raw footage to published post."
+},
+{
+"id": "B-CONTENT-49",
+"file": "systems/src/data/content.ts",
+"de": "Ihr habt ein wiederkehrendes Videoformat – und jede Folge fühlt sich an wie die erste.",
+"en": "You run a recurring video format – and every episode feels like the first."
+},
+{
+"id": "B-CONTENT-50",
+"file": "systems/src/data/content.ts",
+"de": "Euer Team verbringt zu viel Zeit mit Feedback-Runden.",
+"en": "Your team spends too much time in feedback rounds."
+},
+{
+"id": "B-CONTENT-51",
+"file": "systems/src/data/content.ts",
+"de": "Ihr wollt mehr aus jedem Dreh holen: Folge, Shorts, Anzeigen.",
+"en": "You want more from every shoot: episode, shorts, ads."
+},
+{
+"id": "B-CONTENT-52",
+"file": "systems/src/data/content.ts",
+"de": "Zehn Korrekturschleifen.",
+"en": "Ten revision rounds."
+},
+{
+"id": "B-CONTENT-53",
+"file": "systems/src/data/content.ts",
+"de": "Feedback gebt ihr einmal, gebündelt an einer Stelle.",
+"en": "You give feedback once, in one place."
+},
+{
+"id": "B-CONTENT-54",
+"file": "systems/src/data/content.ts",
+"de": "Dasselbe Feedback. Jede Folge.",
+"en": "Same feedback. Every episode."
+},
+{
+"id": "B-CONTENT-55",
+"file": "systems/src/data/content.ts",
+"de": "Einmal entschieden – und in jeder Folge umgesetzt.",
+"en": "Decided once – and applied in every episode."
+},
+{
+"id": "B-CONTENT-56",
+"file": "systems/src/data/content.ts",
+"de": "Jede Folge ein Überraschungspaket.",
+"en": "Every episode a surprise."
+},
+{
+"id": "B-CONTENT-57",
+"file": "systems/src/data/content.ts",
+"de": "Fester Standard, fester Preis, planbare Lieferung.",
+"en": "A fixed standard, a fixed price, predictable delivery."
+},
+{
+"id": "B-CONTENT-58",
+"file": "systems/src/data/content.ts",
+"de": "Pilot",
+"en": "Pilot"
+},
+{
+"id": "B-CONTENT-59",
+"file": "systems/src/data/content.ts",
+"de": "Eine Testfolge plus drei Shorts aus eurem Material.",
+"en": "One test episode plus three shorts from your footage."
+},
+{
+"id": "B-CONTENT-60",
+"file": "systems/src/data/content.ts",
+"de": "1.950 € · ≈ 1 Woche",
+"en": "€1,950 · ≈ 1 week"
+},
+{
+"id": "B-CONTENT-61",
+"file": "systems/src/data/content.ts",
+"de": "Setup",
+"en": "Setup"
+},
+{
+"id": "B-CONTENT-62",
+"file": "systems/src/data/content.ts",
+"de": "Ich lege euer Format einmal fest – mit Anleitung für euer Team.",
+"en": "I define your format once – with a guide for your team."
+},
+{
+"id": "B-CONTENT-63",
+"file": "systems/src/data/content.ts",
+"de": "3.500 € · 3–4 Wochen",
+"en": "€3,500 · 3–4 weeks"
+},
+{
+"id": "B-CONTENT-64",
+"file": "systems/src/data/content.ts",
+"de": "Retainer",
+"en": "Retainer"
+},
+{
+"id": "B-CONTENT-65",
+"file": "systems/src/data/content.ts",
+"de": "Ich schneide jeden Monat nach diesem Standard. Fester Preis.",
+"en": "I edit to that standard every month. Fixed price."
+},
+{
+"id": "B-CONTENT-66",
+"file": "systems/src/data/content.ts",
+"de": "ab 4.200 € / Monat",
+"en": "from €4,200 / month"
+},
+{
+"id": "B-CONTENT-67",
+"file": "systems/src/data/content.ts",
+"de": "Carwow DE – Review-Serie",
+"en": "Carwow DE – review series"
+},
+{
+"id": "B-CONTENT-68",
+"file": "systems/src/data/content.ts",
+"de": "Serie · 2025",
+"en": "Series · 2025"
+},
+{
+"id": "B-CONTENT-69",
+"file": "systems/src/data/content.ts",
+"de": "Drei Folgen einer laufenden Auto-Review-Serie – im bestehenden Format, exakt nach Vorgabe.",
+"en": "Three episodes of a running car-review series – in the existing format, exactly to spec."
+},
+{
+"id": "B-CONTENT-70",
+"file": "systems/src/data/content.ts",
+"de": "Langform-Dokus mit 1,2 und 1,4 Mio. Aufrufen",
+"en": "Long-form docs with 1.2M and 1.4M views"
+},
+{
+"id": "B-CONTENT-71",
+"file": "systems/src/data/content.ts",
+"de": "Doku · YouTube",
+"en": "Documentary · YouTube"
+},
+{
+"id": "B-CONTENT-72",
+"file": "systems/src/data/content.ts",
+"de": "Zwei lange YouTube-Dokus für Felix von der Laden – gedreht und geschnitten.",
+"en": "Two long YouTube documentaries for Felix von der Laden – shot and edited."
+},
+{
+"id": "B-CONTENT-73",
+"file": "systems/src/data/content.ts",
+"de": "D2C-Produktmarke – Anzeigen-Bibliothek aus einem Dreh",
+"en": "D2C product brand – an ad library from one shoot"
+},
+{
+"id": "B-CONTENT-74",
+"file": "systems/src/data/content.ts",
+"de": "Dreh + Schnitt · 2026",
+"en": "Shoot + edit · 2026"
+},
+{
+"id": "B-CONTENT-75",
+"file": "systems/src/data/content.ts",
+"de": "Ein Dreh, geplant als Baukasten. Ziel des Kunden: Material für viele Anzeigen, Anleitungen und ein Gründer-Interview.",
+"en": "One shoot, planned as a kit. The client’s goal: material for many ads, how-to videos and a founder interview."
+},
+{
+"id": "B-CONTENT-76",
+"file": "systems/src/data/content.ts",
+"de": "Wöchentlicher Podcast – fester Produktionsablauf",
+"en": "Weekly podcast – a fixed production routine"
+},
+{
+"id": "B-CONTENT-77",
+"file": "systems/src/data/content.ts",
+"de": "Beratung · 2025",
+"en": "Consulting · 2025"
+},
+{
+"id": "B-CONTENT-78",
+"file": "systems/src/data/content.ts",
+"de": "Ein klarer Ablauf vom Material bis zur fertigen Folge – aufgesetzt und an das Team übergeben.",
+"en": "A clear routine from footage to finished episode – set up and handed over to the team."
+},
+{
+"id": "B-CONTENT-79",
+"file": "systems/src/data/content.ts",
+"de": "Was kostet das und wie wird abgerechnet?",
+"en": "What does it cost and how is it invoiced?"
+},
+{
+"id": "B-CONTENT-80",
+"file": "systems/src/data/content.ts",
+"de": "Festpreise, schriftlich vor Start: Pilot 1.950 €, Setup 3.500 € einmalig, laufender Schnitt ab 4.200 € pro Monat (3 Monate Mindestlaufzeit). Basis ist ein Tagessatz von 750 €. Alle Preise netto, Abrechnung über Micha Roessler LLC (USA); für B2B-Kunden in der EU gilt Reverse-Charge.",
+"en": "Fixed prices, in writing before we start: pilot €1,950, setup €3,500 one-off, ongoing editing from €4,200 per month (3-month minimum). The base is a day rate of €750. All prices net, invoiced by Micha Roessler LLC (USA); EU B2B clients are invoiced under reverse charge."
+},
+{
+"id": "B-CONTENT-81",
+"file": "systems/src/data/content.ts",
+"de": "Wie viel Aufwand bleibt bei unserem Team?",
+"en": "How much work stays with our team?"
+},
+{
+"id": "B-CONTENT-82",
+"file": "systems/src/data/content.ts",
+"de": "Ihr liefert das Material und gebt Feedback – gebündelt an einer Stelle, als klare Änderungsliste. Was einmal entschieden ist, gilt für die nächsten Folgen. Wie viel Zeit das bei euch spart, messen wir im Pilot.",
+"en": "You supply the footage and give feedback – in one place, as a clear list of changes. What is decided once applies to the next episodes. How much time that saves you is what the pilot measures."
+},
+{
+"id": "B-CONTENT-83",
+"file": "systems/src/data/content.ts",
+"de": "Ersetzt ihr unser bestehendes Team?",
+"en": "Do you replace our existing team?"
+},
+{
+"id": "B-CONTENT-84",
+"file": "systems/src/data/content.ts",
+"de": "Nein. Die Zusammenarbeit mit eurem Team ist der Normalfall, und alles wird so dokumentiert, dass euer Team es auch ohne mich weiterführen kann. KI hilft bei Vorschlägen – die Entscheidungen trifft ein Mensch.",
+"en": "No. Working with your team is the default, and everything is documented so your team can run it without me. AI helps with suggestions – a human makes the decisions."
+},
+{
+"id": "B-CONTENT-85",
+"file": "systems/src/data/content.ts",
+"de": "Wie starten wir?",
+"en": "How do we start?"
+},
+{
+"id": "B-CONTENT-86",
+"file": "systems/src/data/content.ts",
+"de": "Mit einem 15-Minuten-Call und dann meist dem bezahlten Pilot: eine Folge plus drei Shorts zum Festpreis, voll anrechenbar.",
+"en": "A 15-minute call, then usually the paid pilot: one episode plus three shorts at a fixed price, fully credited."
+},
+{
+"id": "B-CALCULATOR-01",
+"file": "systems/src/components/Calculator.astro",
+"de": "Langform-Folgen pro Monat",
+"en": "Long-form episodes per month"
+},
+{
+"id": "B-CALCULATOR-02",
+"file": "systems/src/components/Calculator.astro",
+"de": "Stunden pro Folge inkl. Shorts (heute)",
+"en": "Hours per episode incl. shorts (today)"
+},
+{
+"id": "B-CALCULATOR-03",
+"file": "systems/src/components/Calculator.astro",
+"de": "Annahme: Zeitersparnis (unbelegt, im Pilot gemessen)",
+"en": "Assumption: time saved (unproven, measured in the pilot)"
+},
+{
+"id": "B-CALCULATOR-04",
+"file": "systems/src/components/Calculator.astro",
+"de": "Gesparte Stunden / Monat",
+"en": "Hours saved / month"
+},
+{
+"id": "B-CALCULATOR-05",
+"file": "systems/src/components/Calculator.astro",
+"de": "Gegenwert bei 750 € / Tag",
+"en": "Worth at €750 / day"
+},
+{
+"id": "B-CALCULATOR-06",
+"file": "systems/src/components/Calculator.astro",
+"de": "Beträge netto.",
+"en": "Amounts net."
+},
+{
+"id": "B-CALCULATOR-07",
+"file": "systems/src/components/Calculator.astro",
+"de": "Passendes Paket",
+"en": "Matching package"
+},
+{
+"id": "B-CALCULATOR-08",
+"file": "systems/src/components/Calculator.astro",
+"de": "Damit anfragen",
+"en": "Enquire with this"
+},
+{
+"id": "B-CALCULATOR-09",
+"file": "systems/src/components/Calculator.astro",
+"de": "Schätzung, keine Garantie. Genau das klärt der Pilot.",
+"en": "An estimate, not a promise. That is exactly what the pilot measures."
+},
+{
+"id": "B-CALCULATOR-10",
+"file": "systems/src/components/Calculator.astro",
+"de": "Pilot, dann Setup (3.500 €) – euer Team schneidet selbst",
+"en": "Pilot, then setup (€3,500) – your team edits"
+},
+{
+"id": "B-CALCULATOR-11",
+"file": "systems/src/components/Calculator.astro",
+"de": "Format-Retainer S · 4.200 € / Monat",
+"en": "Format retainer S · €4,200 / month"
+},
+{
+"id": "B-CALCULATOR-12",
+"file": "systems/src/components/Calculator.astro",
+"de": "Format-Retainer M · 6.750 € / Monat",
+"en": "Format retainer M · €6,750 / month"
+},
+{
+"id": "B-CALCULATOR-13",
+"file": "systems/src/components/Calculator.astro",
+"de": "Individuelles Angebot (über 10 Tage / Monat)",
+"en": "Custom quote (over 10 days / month)"
+},
+{
+"id": "B-CALCULATOR-14",
+"file": "systems/src/components/Calculator.astro",
+"de": "Folgen",
+"en": "episodes"
+},
+{
+"id": "B-CALCULATOR-15",
+"file": "systems/src/components/Calculator.astro",
+"de": "Monat",
+"en": "month"
+},
+{
+"id": "B-BASE-01",
+"file": "systems/src/layouts/Base.astro",
+"de": "Zum Inhalt springen",
+"en": "Skip to content"
+},
+{
+"id": "B-BASE-02",
+"file": "systems/src/layouts/Base.astro",
+"de": "Hauptnavigation",
+"en": "Main"
+},
+{
+"id": "B-BASE-03",
+"file": "systems/src/layouts/Base.astro",
+"de": "Ablauf",
+"en": "Process"
+},
+{
+"id": "B-BASE-04",
+"file": "systems/src/layouts/Base.astro",
+"de": "Pakete",
+"en": "Packages"
+},
+{
+"id": "B-BASE-05",
+"file": "systems/src/layouts/Base.astro",
+"de": "Erstgespräch",
+"en": "Intro call"
+},
+{
+"id": "B-BASE-06",
+"file": "systems/src/layouts/Base.astro",
+"de": "Schnitt-Systeme für wiederkehrende Videoformate",
+"en": "Edit systems for recurring video formats"
+},
+{
+"id": "B-BASE-07",
+"file": "systems/src/layouts/Base.astro",
+"de": "Outdoor- & Expeditionsfilm → micharoessler.com",
+"en": "Outdoor & expedition film → micharoessler.com"
+},
+{
+"id": "B-BASE-08",
+"file": "systems/src/layouts/Base.astro",
+"de": "Impressum",
+"en": "Legal notice"
+},
+{
+"id": "B-BASE-09",
+"file": "systems/src/layouts/Base.astro",
+"de": "Datenschutz",
+"en": "Privacy"
+},
+{
+"id": "B-FILM-01",
+"file": "systems/src/remotion/strings.ts",
+"de": "Video fertig in",
+"en": "Video ready in"
+},
+{
+"id": "B-FILM-02",
+"file": "systems/src/remotion/strings.ts",
+"de": "Video fertig.",
+"en": "Video ready."
+},
+{
+"id": "B-FILM-03",
+"file": "systems/src/remotion/strings.ts",
+"de": "Material",
+"en": "Footage"
+},
+{
+"id": "B-FILM-04",
+"file": "systems/src/remotion/strings.ts",
+"de": "Schnitt",
+"en": "Cut"
+},
+{
+"id": "B-FILM-05",
+"file": "systems/src/remotion/strings.ts",
+"de": "Feedback",
+"en": "Feedback"
+},
+{
+"id": "B-FILM-06",
+"file": "systems/src/remotion/strings.ts",
+"de": "Feinschliff",
+"en": "Polish"
+},
+{
+"id": "B-FILM-07",
+"file": "systems/src/remotion/strings.ts",
+"de": "Fertig",
+"en": "Ready"
+},
+{
+"id": "B-FILM-08",
+"file": "systems/src/remotion/strings.ts",
+"de": "Folge 12",
+"en": "Episode 12"
+},
+{
+"id": "B-FILM-09",
+"file": "systems/src/remotion/strings.ts",
+"de": "Szene kürzen",
+"en": "Trim this scene"
+},
+{
+"id": "B-FILM-10",
+"file": "systems/src/remotion/strings.ts",
+"de": "Erledigt",
+"en": "Done"
+},
+{
+"id": "B-FILM-11",
+"file": "systems/src/remotion/strings.ts",
+"de": "Wird fertig",
+"en": "Finishing"
+},
+{
+"id": "B-FILM-12",
+"file": "systems/src/remotion/strings.ts",
+"de": "Titel",
+"en": "Titles"
+},
+{
+"id": "B-FILM-13",
+"file": "systems/src/remotion/strings.ts",
+"de": "Grafik",
+"en": "Graphics"
+},
+{
+"id": "B-FILM-14",
+"file": "systems/src/remotion/strings.ts",
+"de": "Szenen",
+"en": "Scenes"
+},
+{
+"id": "B-FILM-15",
+"file": "systems/src/remotion/strings.ts",
+"de": "Untertitel",
+"en": "Captions"
+},
+{
+"id": "B-FILM-16",
+"file": "systems/src/remotion/strings.ts",
+"de": "Musik",
+"en": "Music"
+},
+{
+"id": "B-FILM-17",
+"file": "systems/src/remotion/strings.ts",
+"de": "Sound",
+"en": "Sound"
+},
+{
+"id": "B-FILM-18",
+"file": "systems/src/remotion/strings.ts",
+"de": "Szene",
+"en": "Scene"
+},
+{
+"id": "B-FILM-19",
+"file": "systems/src/remotion/strings.ts",
+"de": "Quer",
+"en": "Landscape"
+},
+{
+"id": "B-FILM-20",
+"file": "systems/src/remotion/strings.ts",
+"de": "Hoch",
+"en": "Vertical"
+},
+{
+"id": "B-FILM-21",
+"file": "systems/src/remotion/strings.ts",
+"de": "Der Vergleich",
+"en": "The comparison"
+},
+{
+"id": "B-FILM-22",
+"file": "systems/src/remotion/strings.ts",
+"de": "Einmal entschieden. In jeder Folge.",
+"en": "Decided once. In every episode."
+},
+{
+"id": "B-FILM-23",
+"file": "systems/src/remotion/strings.ts",
+"de": "Tempo",
+"en": "Pace"
+},
+{
+"id": "B-FILM-24",
+"file": "systems/src/remotion/strings.ts",
+"de": "Klarheit",
+"en": "Clarity"
+},
+{
+"id": "B-FILM-25",
+"file": "systems/src/remotion/strings.ts",
+"de": "Rhythmus",
+"en": "Rhythm"
+}
 ]
