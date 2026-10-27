@@ -1,6 +1,6 @@
 // Shared constants for the edit film (Remotion) and the page player.
 export const FPS = 30;
-export const DURATION = 450; // 15 s
+export const DURATION = 600; // 20 s
 export const WIDE = { width: 1920, height: 1080 };
 export const TALL = { width: 1080, height: 1920 };
 

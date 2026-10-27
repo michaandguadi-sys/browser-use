@@ -1,528 +1,565 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { AbsoluteFill, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { C, FONT, type FilmProps } from './theme';
 import { t } from './strings';
-import { Abs, Check, FinishedFrame, Ground, HUES, Mono, ease, easeOut, footage, glass, kf, lerp, textStyle } from './parts';
+import { Check, Ground, HUES, ease, easeOut, footage, glass, kf, lerp } from './parts';
 
 /*
- * "Video ready in 3 · 2 · 1" — an edit, start to finish, in 15 seconds (450 f @ 30 fps).
- *   0– 96  countdown, then the camera dives into the timeline
- *  96–132  raw clips slide in            (close-up, camera follows the playhead)
- * 132–250  blade cuts snap, gaps ripple-close; a feedback pin is resolved by a cut
- * 245–330  layers stack on top in 3D     (b-roll, titles + data card, captions, music, sfx)
- * 330–385  camera pulls back to the whole glass editor, export bar fills
- * 385–450  "Video ready." — finished frame in 16:9 + 9:16, CTA pressed
- * Everything is generic and fictional. The countdown is a metaphor, not a turnaround promise.
+ * The pitch film — 20 s (600 f @ 30 fps), kinetic type, DE + EN, 16:9 + 9:16.
+ *   0– 70  "Keine Zeit fürs Editing?"           words snap in behind masks
+ *  64–178  hours roll up: 6 h, + 6 h, + 6 h …   odometer gets heavier, glass chips pile up
+ * 172–210  camera flies through the numbers     they shatter into glass shards
+ * 190–335  a fast timeline, camera locked on the cursor, accelerating → speed lines → one light line
+ * 330–410  the light line writes "Wir nehmen euch diese Zeit ab."
+ * 410–532  three benefit beats
+ * 532–600  end card + CTA click
+ * Rhetorical illustration only: no measured numbers, no promises of turnaround.
  */
 
-// ---------- world (editor window) geometry, in world px ----------
-const WIN = { w: 1600, h: 900 };
-const LANE_X = 132;
-const U = 24; // px per timeline unit
-const TRACK_Y0 = 566;
-const TRACK_H = 44;
-const trackY = (i: number) => TRACK_Y0 + i * 50; // 0 titles, 1 b-roll, 2 video, 3 captions, 4 music, 5 sfx
-const V1 = 2;
+const sp = (f: number, fps: number, cfg = { damping: 16, stiffness: 190, mass: 0.7 }) => spring({ frame: f, fps, config: cfg });
 
-// V1 pieces in raw units; `cut` = frame at which the piece is bladed off and removed.
-type Piece = { s: number; e: number; hue: number; cut?: number; group: number };
-const PIECES: Piece[] = [
-	{ s: 0, e: 10, hue: 0, group: 0 },
-	{ s: 10, e: 14, hue: 0, cut: 140, group: 0 },
-	{ s: 14, e: 19, hue: 1, cut: 172, group: 1 },
-	{ s: 19, e: 32, hue: 1, group: 1 },
-	{ s: 32, e: 40, hue: 2, group: 2 },
-	{ s: 40, e: 44, hue: 2, cut: 206, group: 2 },
-	{ s: 44, e: 60, hue: 3, group: 3 },
-];
-const CUTS = PIECES.filter((p) => p.cut).map((p) => p.cut!);
-const ripple = (f: number, p: Piece) => kf(f, [p.cut! + 9, p.cut! + 19], [0, 1]);
-const pieceX = (f: number, piece: Piece) =>
-	piece.s - PIECES.filter((p) => p.cut && p.e <= piece.s).reduce((a, p) => a + (p.e - p.s) * ripple(f, p), 0);
+// deterministic pseudo-random
+const rnd = (i: number) => {
+	const x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+	return x - Math.floor(x);
+};
 
-// Playhead, in current (rippled) units.
-const playU = (f: number) => kf(f, [96, 140, 172, 206, 250], [0, 10, 15, 31, 47], (x) => x);
+const T = (size: number, weight = 700, color: string = C.ink): CSSProperties => ({
+	fontFamily: FONT,
+	fontSize: size,
+	fontWeight: weight,
+	color,
+	letterSpacing: size > 60 ? '-0.045em' : '-0.015em',
+	lineHeight: 1,
+	whiteSpace: 'nowrap',
+});
 
-// Layers added after the cut, in final units.
-const LAYERS: { track: number; at: number; clips: [number, number, number][] }[] = [
-	{ track: 1, at: 252, clips: [[6, 12, 4], [24, 30, 5], [38, 44, 2]] },
-	{ track: 0, at: 260, clips: [[1, 7, -1], [20, 26, -2], [36, 41, -1]] },
-	{ track: 3, at: 268, clips: Array.from({ length: 11 }, (_, i) => [0.5 + i * 4.2, 3.9 + i * 4.2, -3] as [number, number, number]) },
-	{ track: 4, at: 276, clips: [[0, 47, -4]] },
-	{ track: 5, at: 284, clips: [[10, 11, -5], [15, 16, -5], [31, 32, -5], [40, 41, -5]] },
-];
-
-const Wave = ({ w, h, f }: { w: number; h: number; f: number }) => {
-	const n = Math.floor(w / 5);
-	const d = Array.from({ length: n }, (_, i) => {
-		const a = 0.25 + 0.75 * Math.abs(Math.sin(i * 0.37) * Math.cos(i * 0.11 + f * 0.02));
-		const y = (h / 2) * a * 0.9;
-		return `M${i * 5 + 2} ${h / 2 - y}V${h / 2 + y}`;
-	}).join('');
+/** A word that slides up from behind a mask, and out again. */
+const MaskWord = ({ f, at, out, children, style, fps }: { f: number; at: number; out?: number; children: ReactNode; style?: CSSProperties; fps: number }) => {
+	const i = sp(f - at, fps);
+	const o = out === undefined ? 0 : kf(f, [out, out + 9], [0, 1], (x) => x * x);
 	return (
-		<svg width={w} height={h} style={{ position: 'absolute', inset: 0 }}>
-			<path d={d} stroke="rgba(255,255,255,0.9)" strokeWidth={2.4} strokeLinecap="round" />
-		</svg>
+		<span style={{ display: 'inline-block', overflow: 'hidden', padding: '0.06em 0.04em 0.14em', margin: '-0.06em -0.04em -0.14em', verticalAlign: 'top' }}>
+			<span style={{ display: 'inline-block', transform: `translateY(${(1 - i) * 112 - o * 112}%) rotate(${(1 - i) * 4}deg)`, ...style }}>{children}</span>
+		</span>
 	);
 };
 
-const Editor = ({ f, lang, depth }: { f: number; lang: FilmProps['lang']; depth: number }) => {
-	const s = t(lang);
-	const u = playU(f);
-	const phX = LANE_X + u * U;
-	const cutting = CUTS.some((c) => f >= c - 2 && f < c + 8);
-	const tc = (x: number) => {
-		const sec = x * 2;
-		return `00:${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}:${String(Math.floor((sec % 1) * 25)).padStart(2, '0')}`;
-	};
-	const layerOn = (at: number) => kf(f, [at, at + 14], [0, 1], easeOut);
-	const z = (i: number) => (5 - i) * 26 * depth; // tracks separate in depth while the camera tilts
+const accent: CSSProperties = {
+	backgroundImage: `linear-gradient(170deg, ${C.irisSoft} 0%, ${C.iris} 50%, #2f22c9 100%)`,
+	WebkitBackgroundClip: 'text',
+	backgroundClip: 'text',
+	color: 'transparent',
+};
 
-	return (
-		<div style={{ position: 'absolute', width: WIN.w, height: WIN.h, ...glass(0.6, 28), fontFamily: FONT, transformStyle: 'preserve-3d' }}>
-			{/* title bar */}
-			<Abs style={{ left: 22, top: 18, display: 'flex', gap: 8 }}>
-				{[0, 1, 2].map((i) => (
-					<span key={i} style={{ width: 12, height: 12, borderRadius: 6, background: 'rgba(29,29,31,0.14)' }} />
-				))}
-			</Abs>
-			<Abs style={{ left: 0, right: 0, top: 14, textAlign: 'center', ...textStyle(15, 560, C.ink2) }}>{s.file}</Abs>
-			<Abs style={{ left: 0, right: 0, top: 48, height: 1, background: C.line }} />
+// ---------- hours ----------
+const STEPS = [72, 94, 112, 126, 138, 148, 156, 163, 169, 174]; // 6 … 60
+const hoursAt = (f: number) => {
+	let v = 0;
+	STEPS.forEach((st) => (v += 6 * kf(f, [st, st + 7], [0, 1], easeOut)));
+	return v;
+};
 
-			{/* media bin */}
-			<Abs style={{ left: 24, top: 72, width: 250, height: 360, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, alignContent: 'start' }}>
-				{HUES.map((h, i) => (
-					<span key={i} style={{ height: 62, borderRadius: 10, ...footage(h, i * 30), boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' }} />
-				))}
-			</Abs>
-
-			{/* program monitors: 16:9 + 9:16, showing the layers as they are added */}
-			{[
-				{ left: 296, w: 640 },
-				{ left: 956, w: 203 },
-			].map((m, i) => (
-				<Abs key={i} style={{ left: m.left, top: 72, width: m.w, height: 360, borderRadius: 14, overflow: 'hidden', background: '#16141f', boxShadow: '0 0 0 1px rgba(29,29,31,0.08)' }}>
-					<FinishedFrame
-						w={m.w}
-						h={360}
-						f={f}
-						title={layerOn(260)}
-						data={layerOn(264)}
-						caps={layerOn(268)}
-						broll={layerOn(252)}
-						labels={{ title: s.title, subtitle: s.subtitle, caption: s.caption, data: s.data }}
-					/>
-				</Abs>
-			))}
-
-			{/* inspector */}
-			<Abs style={{ left: 1182, top: 72, width: 394, height: 360, display: 'grid', gap: 14, alignContent: 'start' }}>
-				{[0.9, 0.6, 0.75, 0.45, 0.82, 0.55].map((w, i) => (
-					<div key={i} style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12, alignItems: 'center' }}>
-						<span style={{ height: 10, width: 70 + (i % 3) * 18, borderRadius: 5, background: 'rgba(29,29,31,0.1)' }} />
-						<span style={{ height: 6, borderRadius: 3, background: 'rgba(29,29,31,0.08)', position: 'relative' }}>
-							<span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${w * 100}%`, borderRadius: 3, background: i === 2 ? C.iris : 'rgba(29,29,31,0.22)' }} />
-						</span>
-					</div>
-				))}
-			</Abs>
-
-			{/* timeline toolbar */}
-			<Abs style={{ left: 0, right: 0, top: 456, height: 1, background: C.line }} />
-			<Abs style={{ left: 24, top: 470, display: 'flex', gap: 10, alignItems: 'center' }}>
-				{['M5 5l14 7-6 1-2 6z', 'M7 4l10 16M17 4L7 20', 'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4'].map((d, i) => (
-					<span
-						key={i}
-						style={{
-							width: 40,
-							height: 32,
-							borderRadius: 10,
-							display: 'grid',
-							placeItems: 'center',
-							background: i === 1 && cutting ? C.iris : 'rgba(255,255,255,0.7)',
-							boxShadow: 'inset 0 1px 0 #fff, 0 0 0 1px rgba(29,29,31,0.06)',
-						}}
-					>
-						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={i === 1 && cutting ? '#fff' : C.ink} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-							<path d={d} />
-						</svg>
+const Odometer = ({ v, size, weight }: { v: number; size: number; weight: number }) => {
+	const lh = size * 1.0;
+	const tens = Math.floor(v / 10) + Math.min(1, Math.max(0, (v % 10) - 9));
+	const col = (pos: number, n: number, key: string) => (
+		<span key={key} style={{ display: 'inline-block', height: lh, overflow: 'hidden', width: '0.62em' }}>
+			<span style={{ display: 'block', transform: `translateY(${-pos * lh}px)` }}>
+				{Array.from({ length: n }, (_, i) => (
+					<span key={i} style={{ display: 'block', height: lh, lineHeight: `${lh}px`, textAlign: 'center' }}>
+						{i % 10}
 					</span>
 				))}
-			</Abs>
-			<Abs style={{ right: 24, top: 474 }}>
-				<Mono style={{ fontSize: 20, color: C.ink, fontWeight: 500 }}>{tc(u)}</Mono>
-			</Abs>
-
-			{/* ruler */}
-			<Abs style={{ left: LANE_X, top: 520, width: 47 * U + 280, height: 30 }}>
-				{Array.from({ length: 60 }, (_, i) => (
-					<span key={i} style={{ position: 'absolute', left: i * U, bottom: 0, width: 1, height: i % 5 ? 6 : 12, background: 'rgba(29,29,31,0.25)' }} />
-				))}
-				{Array.from({ length: 12 }, (_, i) => (
-					<Mono key={i} style={{ position: 'absolute', left: i * 5 * U + 4, top: 0, fontSize: 11, color: C.ink2 }}>
-						{`${Math.floor((i * 10) / 60)}:${String((i * 10) % 60).padStart(2, '0')}`}
-					</Mono>
-				))}
-			</Abs>
-
-			{/* tracks */}
-			<div style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d' }}>
-				{s.tracks.map((name, i) => (
-					<div key={name} style={{ position: 'absolute', left: 0, top: trackY(i), width: WIN.w, height: TRACK_H, transform: `translateZ(${z(i)}px)`, transformStyle: 'preserve-3d' }}>
-						<Abs style={{ left: 24, top: 0, height: TRACK_H, display: 'flex', alignItems: 'center', ...textStyle(14, 560, C.ink2) }}>{name}</Abs>
-						<Abs style={{ left: LANE_X, right: 24, top: 0, height: TRACK_H, borderRadius: 10, background: 'rgba(29,29,31,0.035)', boxShadow: depth > 0.05 ? `0 ${18 * depth}px ${40 * depth}px -16px rgba(16,24,40,${0.25 * depth})` : 'none' }} />
-					</div>
-				))}
-
-				{/* V1: raw clips → blade → lift → ripple */}
-				<div style={{ position: 'absolute', left: 0, top: trackY(V1), width: WIN.w, height: TRACK_H, transform: `translateZ(${z(V1)}px)` }}>
-					{PIECES.map((p, k) => {
-						const intro = spring({ frame: f - 98 - p.group * 6, fps: 30, config: { damping: 20, stiffness: 140, mass: 0.9 } });
-						const x = LANE_X + pieceX(f, p) * U + (1 - intro) * 700;
-						const split = (c?: number) => (c !== undefined && f >= c ? 1 : 0);
-						const prev = PIECES[k - 1];
-						const next = PIECES[k + 1];
-						const leftOpen = prev && prev.group === p.group && !split(p.cut) && !split(prev.cut);
-						const rightOpen = next && next.group === p.group && !split(next.cut) && !split(p.cut);
-						const lift = p.cut ? kf(f, [p.cut + 3, p.cut + 13], [0, 1], easeOut) : 0;
-						const gapL = leftOpen ? 0 : 2;
-						const gapR = rightOpen ? 0 : 2;
-						return (
-							<div
-								key={k}
-								style={{
-									position: 'absolute',
-									left: x + gapL,
-									top: 0,
-									width: (p.e - p.s) * U - gapL - gapR,
-									height: TRACK_H,
-									borderRadius: `${leftOpen ? 0 : 10}px ${rightOpen ? 0 : 10}px ${rightOpen ? 0 : 10}px ${leftOpen ? 0 : 10}px`,
-									...footage(HUES[p.hue], p.s * U),
-									boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55), inset 0 0 0 1px rgba(255,255,255,0.25)',
-									opacity: intro * (1 - lift),
-									transform: `translateY(${-lift * 64}px) scale(${1 - lift * 0.12}) rotate(${-lift * 4}deg)`,
-								}}
-							>
-								{!p.cut && p.e - p.s > 6 && (
-									<span style={{ position: 'absolute', left: 10, top: 12, ...textStyle(12, 600, 'rgba(255,255,255,0.95)') }}>{`${s.scene} ${p.group + 1}`}</span>
-								)}
-							</div>
-						);
-					})}
-				</div>
-
-				{/* added layers */}
-				{LAYERS.map((L) => (
-					<div key={L.track} style={{ position: 'absolute', left: 0, top: trackY(L.track), width: WIN.w, height: TRACK_H, transform: `translateZ(${z(L.track)}px)` }}>
-						{L.clips.map(([a, b, hue], i) => {
-							const on = spring({ frame: f - L.at - i * 2, fps: 30, config: { damping: 18, stiffness: 170, mass: 0.8 } });
-							const w = (b - a) * U - 4;
-							const style: CSSProperties =
-								hue >= 0
-									? footage(HUES[hue], a * U)
-									: hue === -1
-										? { background: 'linear-gradient(180deg, #6d61ff, #5546ff)' }
-										: hue === -2
-											? { background: 'linear-gradient(180deg, #a69dff, #8b80ff)' }
-											: hue === -3
-												? { background: 'rgba(29,29,31,0.72)' }
-												: hue === -4
-													? { background: 'linear-gradient(180deg, #4fd1b5, #2bb3a3)' }
-													: { background: 'linear-gradient(180deg, #ffb38a, #ff8a5c)' };
-							return (
-								<div
-									key={i}
-									style={{
-										position: 'absolute',
-										left: LANE_X + a * U + 2,
-										top: hue === -3 ? 10 : 0,
-										width: w,
-										height: hue === -3 ? TRACK_H - 20 : TRACK_H,
-										borderRadius: hue === -3 ? 6 : 10,
-										overflow: 'hidden',
-										...style,
-										boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
-										opacity: on,
-										transform: `translateY(${(1 - on) * -46}px) scale(${0.92 + 0.08 * on})`,
-									}}
-								>
-									{hue === -4 && <Wave w={w} h={TRACK_H} f={f} />}
-									{(hue === -1 || hue === -2) && w > 90 && (
-										<span style={{ position: 'absolute', left: 10, top: 13, ...textStyle(13, 600, '#fff') }}>{hue === -1 && i === 0 ? s.title : hue === -2 ? s.data[0] : s.subtitle}</span>
-									)}
-								</div>
-							);
-						})}
-					</div>
-				))}
-			</div>
-
-			{/* feedback pin: one note, solved once, in the system */}
-			{(() => {
-				const show = kf(f, [180, 190], [0, 1], easeOut) * kf(f, [236, 248], [1, 0]);
-				const solved = kf(f, [210, 218], [0, 1], easeOut);
-				const x = LANE_X + 33 * U;
-				return (
-					<div style={{ position: 'absolute', left: x, top: 452, opacity: show, transform: `translateY(${(1 - show) * 10}px) translateZ(${z(0) + 4}px)` }}>
-						<div style={{ position: 'absolute', left: -6, top: 70, width: 12, height: 12, borderRadius: 6, background: solved > 0.5 ? C.green : C.iris, boxShadow: '0 0 0 4px rgba(255,255,255,0.9)' }} />
-						<div
-							style={{
-								position: 'absolute',
-								left: -20,
-								top: 0,
-								display: 'flex',
-								alignItems: 'center',
-								gap: 10,
-								padding: '10px 16px 10px 10px',
-								...glass(0.85, 999),
-								transform: 'translateY(-4px)',
-							}}
-						>
-							<span style={{ width: 28, height: 28, borderRadius: 14, display: 'grid', placeItems: 'center', background: lerpColor(solved) }}>
-								{solved > 0.5 ? <Check size={18} /> : <span style={{ ...textStyle(14, 700, '#fff') }}>1</span>}
-							</span>
-							<span style={{ ...textStyle(16, 600, C.ink) }}>{solved > 0.5 ? s.done : s.pin}</span>
-						</div>
-					</div>
-				);
-			})()}
-
-			{/* playhead */}
-			<div style={{ position: 'absolute', left: phX - 1, top: 512, width: 2, height: 360, background: C.iris, transform: `translateZ(${z(0) + 8}px)`, opacity: kf(f, [94, 100], [0, 1]) * kf(f, [300, 330], [1, 0]) }}>
-				<span style={{ position: 'absolute', left: -7, top: -6, width: 16, height: 16, borderRadius: 4, background: C.iris, transform: 'rotate(45deg)' }} />
-				{CUTS.map((c) => {
-					const fl = kf(f, [c - 2, c, c + 8], [0, 1, 0], (x) => x);
-					return fl > 0 ? (
-						<span key={c} style={{ position: 'absolute', left: -14, top: 140, width: 30, height: 70, borderRadius: 15, background: `rgba(85,70,255,${0.35 * fl})`, filter: 'blur(8px)' }} />
-					) : null;
-				})}
-			</div>
-		</div>
+			</span>
+		</span>
+	);
+	return (
+		<span style={{ ...T(size, weight), display: 'inline-flex', alignItems: 'flex-start', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+			<span style={{ display: 'inline-flex', width: v >= 9 ? undefined : 0, opacity: Math.min(1, Math.max(0, v - 8)), overflow: 'hidden' }}>{col(tens, 10, 't')}</span>
+			{col(v, 70, 'u')}
+			<span style={{ marginLeft: '0.12em', ...accent }}>h</span>
+		</span>
 	);
 };
 
-const lerpColor = (k: number) => (k > 0.5 ? C.green : C.iris);
+// ---------- timeline ----------
+type Clip = { a: number; b: number; hue: number };
+const TRACKS: Clip[][] = Array.from({ length: 6 }, (_, ti) => {
+	const out: Clip[] = [];
+	let x = ti === 2 ? 0 : 160 + rnd(ti * 7) * 400;
+	let k = 0;
+	while (x < 30000) {
+		const len = ti === 2 ? 260 + rnd(ti * 100 + k) * 420 : ti === 3 ? 150 + rnd(ti * 100 + k) * 120 : ti === 5 ? 40 + rnd(k) * 40 : ti === 4 ? 1400 : 220 + rnd(ti * 100 + k) * 360;
+		out.push({ a: x, b: x + len, hue: ti === 2 ? k % HUES.length : ti });
+		x += len + (ti === 2 ? 6 : ti === 3 ? 18 : ti === 4 ? 10 : 120 + rnd(ti * 33 + k) * 520);
+		k++;
+	}
+	return out;
+});
+const travel = (f: number) => {
+	const d = Math.max(0, f - 188);
+	return 34 * d + 0.0042 * d * d * d;
+};
+const speed = (f: number) => travel(f + 1) - travel(f);
+
+const clipStyle = (ti: number, c: Clip): CSSProperties =>
+	ti === 2
+		? footage(HUES[c.hue], c.a)
+		: ti === 0
+			? { background: 'linear-gradient(180deg, #6d61ff, #5546ff)' }
+			: ti === 1
+				? { background: 'linear-gradient(180deg, #b3aaff, #8b80ff)' }
+				: ti === 3
+					? { background: 'rgba(29,29,31,0.72)' }
+					: ti === 4
+						? { background: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.85) 0 2px, transparent 2px 7px), linear-gradient(180deg, #4fd1b5, #2bb3a3)' }
+						: { background: 'linear-gradient(180deg, #ffb38a, #ff8a5c)' };
 
 export const EditFilm = ({ lang }: FilmProps) => {
 	const f = useCurrentFrame();
-	const { width, height, fps } = useVideoConfig();
-	const tall = height > width;
+	const { width: W, height: H, fps } = useVideoConfig();
+	const tall = H > W;
 	const s = t(lang);
+	const u = W / 100; // 1 % of width
 
-	// ---------- camera ----------
-	const closeS = tall ? 3.0 : 2.8;
-	const midS = tall ? 1.2 : 1.55;
-	const endS = tall ? (width - 80) / WIN.w : (width - 240) / WIN.w;
-	const follow = (fr: number) => LANE_X + playU(fr) * U + (tall ? 40 : 140);
-	const t1 = kf(f, [236, 292], [0, 1]);
-	const t2 = kf(f, [330, 364], [0, 1]);
-	const camX = f < 236 ? follow(f) : lerp(lerp(follow(236), LANE_X + 47 * U * 0.5, t1), WIN.w / 2, t2);
-	const camY = lerp(lerp(tall ? 690 : 640, 700, t1), tall ? WIN.h / 2 + 40 : WIN.h / 2 + 30, t2);
-	const camS = f < 100 ? kf(f, [80, 100], [7, closeS], easeOut) : lerp(lerp(closeS, midS, t1), endS, t2);
-	const rx = 30 * t1 * (1 - t2);
-	const rz = -6 * t1 * (1 - t2);
-	const depth = kf(f, [250, 292, 322, 352], [0, 1, 1, 0]);
-	const worldIn = kf(f, [82, 98], [0, 1]);
+	// ============ A: question ============
+	const qSize = tall ? 17.5 * u : 10.4 * u;
+	const qLines = tall ? s.q.flat().map((w) => [w]) : s.q;
+	let wi = 0;
+	const qOut = 62;
 
-	// ---------- countdown ----------
-	const cd = [-14, 30, 60].map((st, i) => {
-		const inn = spring({ frame: f - st, fps, config: { damping: 14, stiffness: 160, mass: 0.7 } });
-		const out = i === 0 ? kf(f, [24, 32], [0, 1]) : i === 1 ? kf(f, [st + 24, st + 32], [0, 1]) : kf(f, [st + 18, st + 34], [0, 1], (x) => x * x);
-		return { n: 3 - i, inn, out };
-	});
-	const cdShow = kf(f, [80, 96], [1, 0]);
-	const disc = tall ? 760 : 560;
+	// ============ B: hours ============
+	const v = hoursAt(f);
+	const heavy = v / 60;
+	const shakeAmp = STEPS.reduce((a, st, i) => a + kf(f, [st, st + 3, st + 12], [0, 1, 0], (x) => x) * (2 + i * 1.6), 0);
+	const shake = { x: Math.sin(f * 2.3) * shakeAmp, y: Math.cos(f * 3.1) * shakeAmp * 0.6 };
+	const hoursIn = kf(f, [64, 76], [0, 1], easeOut);
+	const fly = kf(f, [178, 206], [0, 1], (x) => x * x);
+	const shatter = f >= 178;
+	const numSize = tall ? 30 * u : 17 * u;
 
-	// ---------- final ----------
-	const fin = kf(f, [380, 396], [0, 1], easeOut);
-	const cta = spring({ frame: f - 410, fps, config: { damping: 15, stiffness: 150 } });
-	const press = kf(f, [430, 434, 440], [0, 1, 0], (x) => x);
-	const cursor = kf(f, [414, 430], [0, 1], easeOut);
-	const exp = kf(f, [340, 376], [0, 1], (x) => x);
-	const expShow = kf(f, [334, 342], [0, 1], easeOut) * kf(f, [384, 394], [1, 0]);
+	// ============ D: timeline ============
+	const X = travel(f);
+	const vel = speed(f);
+	const deckIn = kf(f, [186, 206], [0, 1], easeOut);
+	const deckOut = kf(f, [306, 330], [1, 0]);
+	const blur = Math.min(6, Math.max(0, (vel - 60) / 45));
+	const th = tall ? 110 : 84;
+	const tg = tall ? 16 : 12;
+	const phx = tall ? W * 0.5 : W * 0.42; // cursor x on screen
+	const deckH = 6 * (th + tg) + 70;
+	const deckTop = H / 2 - deckH / 2;
+	const lineGrow = kf(f, [296, 330], [0, 1], ease);
 
-	// ---------- step chip ----------
-	const stepAt = [96, 132, 180, 250, 334];
-	const step = stepAt.reduce((a, st, i) => (f >= st ? i : a), -1);
-	const chipShow = kf(f, [96, 104], [0, 1]) * kf(f, [380, 390], [1, 0]);
+	// ============ E: write-on ============
+	const pSize = tall ? 9.6 * u : 6.2 * u;
+	const lines = tall ? s.promise : [s.promise.join(' ')];
+	const writeA = 338;
+	const writeB = 402;
+	const perLine = (writeB - writeA) / lines.length;
+	const promiseOut = kf(f, [408, 418], [0, 1], (x) => x * x);
+	const lineH = pSize * 1.25;
+	const blockTop = H / 2 - (lines.length * lineH) / 2;
 
-	const labels = { title: s.title, subtitle: s.subtitle, caption: s.caption, data: s.data };
-	const mon = tall
-		? [
-				{ x: 90, y: 330, w: 900, h: 506 },
-				{ x: 324, y: 880, w: 432, h: 768 },
-			]
-		: [
-				{ x: 270, y: 236, w: 1000, h: 562 },
-				{ x: 1306, y: 236, w: 316, h: 562 },
-			];
+	// ============ G: end ============
+	const endIn = sp(f - 534, fps, { damping: 18, stiffness: 140, mass: 0.9 });
+	const cursor = kf(f, [552, 572], [0, 1], easeOut);
+	const press = kf(f, [574, 578, 586], [0, 1, 0], (x) => x);
+	const ripple = kf(f, [576, 600], [0, 1], easeOut);
 
 	return (
 		<AbsoluteFill style={{ fontFamily: FONT, overflow: 'hidden' }}>
 			<Ground f={f} />
 
-			{/* world */}
-			<AbsoluteFill style={{ perspective: 2200, perspectiveOrigin: '50% 40%', opacity: worldIn }}>
-				<div
-					style={{
-						position: 'absolute',
-						left: width / 2 - camX,
-						top: height / 2 - camY,
-						width: WIN.w,
-						height: WIN.h,
-						transformOrigin: `${camX}px ${camY}px`,
-						transform: `scale(${camS}) rotateX(${rx}deg) rotateZ(${rz}deg)`,
-						transformStyle: 'preserve-3d',
-					}}
-				>
-					<Editor f={f} lang={lang} depth={depth} />
-				</div>
-			</AbsoluteFill>
+			{/* A — question */}
+			{f < 76 && (
+				<AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: tall ? 0.6 * u : 0.4 * u }}>
+					{qLines.map((line, li) => (
+						<div key={li} style={{ display: 'flex', gap: '0.24em', ...T(qSize, 760) }}>
+							{line.map((w) => {
+								const k = wi++;
+								const last = li === qLines.length - 1 && w === line[line.length - 1];
+								return (
+									<MaskWord key={w} f={f} at={k === 0 ? -14 : k * 7} out={qOut + k * 2} fps={fps} style={last ? accent : undefined}>
+										{w}
+									</MaskWord>
+								);
+							})}
+						</div>
+					))}
+				</AbsoluteFill>
+			)}
 
-			{/* countdown */}
-			{cdShow > 0 && (
-				<AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', opacity: cdShow, transform: `scale(${1 + (1 - cdShow) * 2.2})` }}>
-					<div style={{ position: 'absolute', top: height / 2 - disc / 2 - (tall ? 170 : 110), ...glass(0.72, 999), padding: tall ? '22px 44px' : '16px 30px', ...textStyle(tall ? 58 : 34, 600, C.ink) }}>{s.readyIn}</div>
-					<div style={{ width: disc, height: disc, borderRadius: disc / 2, position: 'relative', ...glass(0.42, disc / 2), boxShadow: `${glass(0.42).boxShadow}, inset 0 24px 60px rgba(255,255,255,0.55), inset 0 -30px 60px rgba(85,70,255,0.10)` }}>
-						{/* specular rim: bright arc top-left, faint shade bottom-right */}
-						<div style={{ position: 'absolute', inset: 6, borderRadius: '50%', boxShadow: 'inset 10px 14px 18px -10px rgba(255,255,255,0.95), inset -12px -16px 24px -14px rgba(29,29,31,0.14)' }} />
-						{/* progress ring */}
-						<svg width={disc} height={disc} style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-							<circle cx={disc / 2} cy={disc / 2} r={disc / 2 - 14} fill="none" stroke="rgba(85,70,255,0.12)" strokeWidth={6} />
-							<circle
-								cx={disc / 2}
-								cy={disc / 2}
-								r={disc / 2 - 14}
-								fill="none"
-								stroke={C.iris}
-								strokeWidth={6}
-								strokeLinecap="round"
-								strokeDasharray={Math.PI * (disc - 28)}
-								strokeDashoffset={Math.PI * (disc - 28) * (1 - kf(f, [0, 84], [0, 1], (x) => x))}
-							/>
-						</svg>
-						{cd.map(({ n, inn, out }) =>
-							inn > 0.001 && out < 0.999 ? (
+			{/* B + C — hours, then fly-through */}
+			{f >= 64 && f < 212 && (
+				<AbsoluteFill style={{ perspective: 1600, opacity: hoursIn }}>
+					<AbsoluteFill
+						style={{
+							transform: `translate(${shake.x}px, ${shake.y}px) scale(${(1 + heavy * 0.12) * (1 + fly * fly * 5)})`,
+							opacity: 1 - kf(f, [190, 208], [0, 1]),
+							filter: fly > 0.05 ? `blur(${fly * 10}px)` : 'none',
+						}}
+					>
+						{/* "+ 6 h" chips piling up in depth */}
+						{STEPS.slice(1).map((st, i) => {
+							const k = sp(f - st, fps, { damping: 13, stiffness: 200, mass: 0.6 });
+							const ang = rnd(i + 3) * Math.PI * 2;
+							const r = (tall ? 30 : 20) * u + rnd(i + 9) * (tall ? 10 : 9) * u;
+							const x = W / 2 + Math.cos(ang) * r * (tall ? 0.85 : 1.35);
+							const y = H / 2 + Math.sin(ang) * r * (tall ? 1.25 : 0.7);
+							return (
 								<div
-									key={n}
+									key={st}
 									style={{
 										position: 'absolute',
-										inset: 0,
-										display: 'grid',
-										placeItems: 'center',
-										opacity: Math.min(1, inn * 1.4) * (1 - out),
-										transform: `scale(${0.7 + 0.3 * inn + out * 0.35})`,
-										filter: out > 0 ? `blur(${out * 12}px)` : 'none',
+										left: x,
+										top: y,
+										transform: `translate(-50%, -50%) scale(${0.4 + 0.6 * k}) rotate(${(rnd(i) - 0.5) * 16}deg)`,
+										opacity: k,
+										padding: tall ? '22px 34px' : '16px 26px',
+										...glass(0.72, 999),
+										...T(tall ? 5.6 * u : 2.6 * u, 700, C.ink),
 									}}
 								>
-									<span
-										style={{
-											...textStyle(disc * 0.62, 650, 'transparent'),
-											letterSpacing: '-0.06em',
-											backgroundImage: 'linear-gradient(170deg, #8b80ff 0%, #5546ff 45%, #2f22c9 100%)',
-											WebkitBackgroundClip: 'text',
-											backgroundClip: 'text',
-											filter: 'drop-shadow(0 18px 30px rgba(85,70,255,0.35))',
-											transform: `translateY(${-disc * 0.02}px)`,
-										}}
-									>
-										{n}
-									</span>
+									{s.plus}
 								</div>
-							) : null,
+							);
+						})}
+						{/* odometer */}
+						{!shatter && (
+							<AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
+								<Odometer v={v} size={numSize} weight={Math.round(520 + heavy * 380)} />
+							</AbsoluteFill>
 						)}
+						<div style={{ position: 'absolute', left: 0, right: 0, top: H / 2 + numSize * 0.62, display: 'flex', justifyContent: 'center', opacity: kf(f, [84, 96], [0, 1]) }}>
+							<span style={{ ...T(tall ? 4.6 * u : 2.3 * u, 560, C.ink2) }}>{s.hours}</span>
+						</div>
+					</AbsoluteFill>
+
+					{/* shatter: the numerals break into glass shards as the camera passes through */}
+					{shatter && (
+						<AbsoluteFill style={{ transformStyle: 'preserve-3d' }}>
+							{(() => {
+								const bw = numSize * 2.6;
+								const bh = numSize * 1.1;
+								const cols = 7;
+								const rows = 3;
+								const cw = bw / cols;
+								const ch = bh / rows;
+								const ox = W / 2 - bw / 2;
+								const oy = H / 2 - bh / 2;
+								const p = kf(f, [178, 210], [0, 1], (x) => 1 - (1 - x) * (1 - x));
+								return Array.from({ length: cols * rows * 2 }, (_, n) => {
+									const c = Math.floor(n / 2) % cols;
+									const r = Math.floor(n / 2 / cols);
+									const tri = n % 2 ? 'polygon(100% 0, 100% 100%, 0 100%)' : 'polygon(0 0, 100% 0, 0 100%)';
+									const cx = ox + c * cw;
+									const cy = oy + r * ch;
+									const dx = (c - cols / 2 + 0.5) / cols;
+									const dy = (r - rows / 2 + 0.5) / rows;
+									const z = 1 + p * (2.5 + rnd(n) * 4);
+									return (
+										<div
+											key={n}
+											style={{
+												position: 'absolute',
+												left: cx,
+												top: cy,
+												width: cw + 1,
+												height: ch + 1,
+												overflow: 'hidden',
+												clipPath: tri,
+												transform: `translate(${dx * p * W * 1.4 + (rnd(n + 5) - 0.5) * p * 200}px, ${dy * p * H * 1.4 + (rnd(n + 8) - 0.5) * p * 200}px) scale(${z}) rotate(${(rnd(n + 2) - 0.5) * p * 140}deg)`,
+												opacity: 1 - kf(p, [0.55, 1], [0, 1], (x) => x),
+												background: 'linear-gradient(135deg, rgba(255,255,255,0.55), rgba(255,255,255,0.12))',
+												boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.7)',
+											}}
+										>
+											<div style={{ position: 'absolute', left: -c * cw, top: -r * ch, width: bw, height: bh, display: 'grid', placeItems: 'center' }}>
+												<Odometer v={60} size={numSize} weight={900} />
+											</div>
+										</div>
+									);
+								});
+							})()}
+						</AbsoluteFill>
+					)}
+				</AbsoluteFill>
+			)}
+
+			{/* D — timeline: camera locked on the racing cursor */}
+			{f >= 184 && f < 336 && (
+				<AbsoluteFill style={{ perspective: 1800, perspectiveOrigin: `${(phx / W) * 100}% 45%`, opacity: deckIn * deckOut }}>
+					<div
+						style={{
+							position: 'absolute',
+							left: -W * 0.3,
+							top: deckTop,
+							width: W * 1.6,
+							height: deckH,
+							transform: `rotateX(${tall ? 14 : 18}deg) rotateZ(-4deg) scale(${lerp(0.7, 1.08, deckIn) + (f - 200) * 0.0012})`,
+							transformOrigin: `${phx + W * 0.3}px 50%`,
+							...glass(0.58, 36),
+							filter: blur > 0.2 ? `blur(${blur}px)` : 'none',
+							overflow: 'hidden',
+						}}
+					>
+						{/* ruler ticks scrolling */}
+						<div style={{ position: 'absolute', left: 0, right: 0, top: 18, height: 26 }}>
+							{Array.from({ length: 60 }, (_, i) => {
+								const x = (((i * 80 - X) % 4800) + 4800) % 4800;
+								return <span key={i} style={{ position: 'absolute', left: x, top: 0, width: 2, height: i % 5 ? 10 : 20, background: 'rgba(29,29,31,0.22)' }} />;
+							})}
+						</div>
+						{TRACKS.map((clips, ti) => (
+							<div key={ti} style={{ position: 'absolute', left: 0, right: 0, top: 60 + ti * (th + tg), height: th, background: 'rgba(29,29,31,0.035)', borderRadius: 16 }}>
+								{clips
+									.filter((c) => c.b - X + phx + W * 0.3 > -200 && c.a - X + phx + W * 0.3 < W * 1.8)
+									.map((c, k) => {
+										const sx = c.a - X + phx + W * 0.3;
+										const ahead = c.a - X; // distance of clip start to the cursor
+										const pop = ti === 2 || ti === 4 ? 1 : Math.min(1, Math.max(0, (900 - ahead) / 260));
+										return (
+											<div
+												key={k}
+												style={{
+													position: 'absolute',
+													left: sx,
+													top: ti === 3 ? th * 0.22 : 0,
+													width: c.b - c.a,
+													height: ti === 3 ? th * 0.56 : th,
+													borderRadius: ti === 3 ? 10 : 16,
+													...clipStyle(ti, c),
+													boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55)',
+													opacity: pop,
+													transform: `translateY(${(1 - pop) * -th * 0.8}px) scale(${0.85 + 0.15 * pop})`,
+												}}
+											>
+												{ti === 2 && c.b - c.a > 300 && (
+													<span style={{ position: 'absolute', left: 14, top: th / 2 - 12, ...T(tall ? 30 : 22, 650, 'rgba(255,255,255,0.95)') }}>{`${s.scene} ${(c.hue % 9) + 1}`}</span>
+												)}
+											</div>
+										);
+									})}
+								{/* blade flashes where scene cuts pass the cursor */}
+								{ti === 2 &&
+									clips
+										.filter((c) => Math.abs(c.a - X) < Math.max(40, vel * 1.5))
+										.map((c, k) => (
+											<span key={`b${k}`} style={{ position: 'absolute', left: c.a - X + phx + W * 0.3 - 3, top: -14, width: 6, height: th + 28, borderRadius: 3, background: '#fff', boxShadow: `0 0 24px 8px rgba(85,70,255,0.55)` }} />
+										))}
+							</div>
+						))}
+						{/* track labels, pinned */}
+						{s.tracks.map((n, ti) => (
+							<span key={n} style={{ position: 'absolute', left: W * 0.3 + (tall ? 30 : 40), top: 60 + ti * (th + tg) + th / 2 - 12, ...T(tall ? 26 : 19, 600, C.ink2), padding: '4px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.8)' }}>
+								{n}
+							</span>
+						))}
+						{/* cursor / playhead */}
+						<div style={{ position: 'absolute', left: phx + W * 0.3 - 2, top: 8, width: 4, height: deckH - 16, background: C.iris, borderRadius: 2, boxShadow: '0 0 30px 6px rgba(85,70,255,0.45)' }}>
+							<span style={{ position: 'absolute', left: -12, top: -2, width: 28, height: 28, borderRadius: 7, background: C.iris, transform: 'rotate(45deg)', boxShadow: '0 0 30px 10px rgba(85,70,255,0.5)' }} />
+						</div>
 					</div>
 				</AbsoluteFill>
 			)}
 
-			{/* step chip */}
-			{chipShow > 0 && (
-				<div style={{ position: 'absolute', left: tall ? '50%' : 56, ...(tall ? { top: 120 } : { bottom: 48 }), transform: `translateX(${tall ? '-50%' : '0'}) translateY(${(1 - chipShow) * (tall ? -12 : 12)}px)`, opacity: chipShow, display: 'flex', alignItems: 'center', gap: 16, padding: '12px 22px 12px 14px', ...glass(0.82, 999) }}>
-					<span style={{ display: 'flex', gap: 6 }}>
-						{s.steps.map((_, i) => (
-							<span key={i} style={{ width: i === step ? (tall ? 34 : 22) : tall ? 12 : 8, height: tall ? 12 : 8, borderRadius: 6, background: i <= step ? C.iris : 'rgba(29,29,31,0.15)' }} />
-						))}
-					</span>
-					<span style={{ ...textStyle(tall ? 44 : 24, 600, C.ink) }}>{s.steps[Math.max(0, step)]}</span>
-				</div>
-			)}
-
-			{/* export bar */}
-			{expShow > 0 && (
-				<div style={{ position: 'absolute', left: '50%', bottom: tall ? 260 : 96, width: tall ? 720 : 560, transform: `translateX(-50%) translateY(${(1 - expShow) * 20}px)`, opacity: expShow, padding: '18px 22px', ...glass(0.86, 22) }}>
-					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-						<span style={{ ...textStyle(tall ? 28 : 22, 600) }}>{s.export}</span>
-						<Mono style={{ fontSize: tall ? 26 : 20, color: exp >= 1 ? C.green : C.ink }}>{`${Math.round(exp * 100)} %`}</Mono>
-					</div>
-					<div style={{ height: 10, borderRadius: 5, background: 'rgba(29,29,31,0.08)', overflow: 'hidden' }}>
-						<div style={{ height: '100%', width: `${exp * 100}%`, borderRadius: 5, background: exp >= 1 ? C.green : `linear-gradient(90deg, ${C.irisSoft}, ${C.iris})` }} />
-					</div>
-				</div>
-			)}
-
-			{/* finished */}
-			{fin > 0 && (
-				<AbsoluteFill>
-					<AbsoluteFill style={{ background: `rgba(238,240,245,${0.78 * fin})` }} />
-					<div style={{ position: 'absolute', left: 0, right: 0, top: tall ? 170 : 92, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 22, opacity: fin, transform: `translateY(${(1 - fin) * 24}px)` }}>
-						<span style={{ width: tall ? 72 : 64, height: tall ? 72 : 64, borderRadius: 40, background: C.green, display: 'grid', placeItems: 'center', boxShadow: '0 10px 30px -8px rgba(31,168,79,0.6)' }}>
-							<Check size={tall ? 40 : 36} />
-						</span>
-						<span style={{ ...textStyle(tall ? 96 : 92, 650) }}>{s.ready}</span>
-					</div>
-					{mon.map((m, i) => {
-						const k = kf(f, [384 + i * 5, 404 + i * 5], [0, 1], easeOut);
+			{/* speed lines */}
+			{f >= 230 && f < 336 && (
+				<AbsoluteFill style={{ pointerEvents: 'none' }}>
+					{Array.from({ length: 34 }, (_, i) => {
+						const k = Math.min(1, Math.max(0, (vel - 40 - rnd(i) * 80) / 120));
+						const len = (0.15 + rnd(i + 1) * 0.5) * W * (0.4 + k);
+						const x = ((rnd(i + 2) * W * 2 - X * (0.6 + rnd(i + 3))) % (W + len) + (W + len)) % (W + len) - len;
+						const y = (0.08 + rnd(i + 4) * 0.84) * H;
 						return (
-							<div
+							<span
 								key={i}
 								style={{
 									position: 'absolute',
-									left: m.x,
-									top: m.y,
-									width: m.w,
-									height: m.h,
-									padding: 10,
-									...glass(0.7, 30),
-									opacity: k,
-									transform: `translateY(${(1 - k) * 60}px) scale(${0.94 + 0.06 * k})`,
+									left: x,
+									top: y,
+									width: len,
+									height: 2 + rnd(i + 6) * 3,
+									borderRadius: 3,
+									background: `linear-gradient(90deg, transparent, ${i % 3 ? 'rgba(255,255,255,0.95)' : 'rgba(85,70,255,0.8)'}, transparent)`,
+									opacity: k * deckOut,
 								}}
-							>
-								<div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 21, overflow: 'hidden' }}>
-									<FinishedFrame w={m.w - 20} h={m.h - 20} f={f - 384} labels={labels} />
+							/>
+						);
+					})}
+				</AbsoluteFill>
+			)}
+
+			{/* the cursor turns into one light line … */}
+			{f >= 296 && f < 346 && (
+				<div
+					style={{
+						position: 'absolute',
+						left: lerp(phx, 0, lineGrow),
+						width: lerp(4, W, lineGrow) * (1 - kf(f, [332, 344], [0, 1], ease)),
+						top: lerp(H * 0.45, blockTop + lineH * (lines.length - 1) + pSize * 1.12, kf(f, [318, 336], [0, 1], ease)) - 2,
+						height: 4,
+						borderRadius: 2,
+						background: `linear-gradient(90deg, rgba(85,70,255,0), ${C.iris} 18%, #fff 50%, ${C.iris} 82%, rgba(85,70,255,0))`,
+						boxShadow: '0 0 28px 6px rgba(85,70,255,0.5)',
+						opacity: kf(f, [296, 304], [0, 1]),
+					}}
+				/>
+			)}
+
+			{/* E — … which writes the promise */}
+			{f >= 334 && f < 420 && (
+				<AbsoluteFill style={{ opacity: 1 - promiseOut, transform: `translateY(${-promiseOut * 40}px)` }}>
+					{lines.map((line, li) => {
+						const p = kf(f, [writeA + li * perLine, writeA + (li + 1) * perLine], [0, 1], (x) => x);
+						const top = blockTop + li * lineH;
+						return (
+							<div key={li} style={{ position: 'absolute', left: 0, right: 0, top, height: lineH, display: 'flex', justifyContent: 'center' }}>
+								<div style={{ position: 'relative' }}>
+									{/* stroke outline drawing on */}
+									<span style={{ ...T(pSize, 750, 'transparent'), WebkitTextStroke: `2px ${C.iris}`, clipPath: `inset(-20% ${(1 - p) * 100}% -20% -2%)`, display: 'block' }}>{line}</span>
+									{/* fill follows the pen */}
+									<span style={{ position: 'absolute', inset: 0, ...T(pSize, 750, C.ink), clipPath: `inset(-20% ${(1 - kf(p, [0.08, 1], [0, 1], (x) => x)) * 100}% -20% -2%)`, display: 'block' }}>{line}</span>
+									{/* underline left behind by the pen */}
+									<span style={{ position: 'absolute', left: 0, top: pSize * 1.1, height: 4, width: `${p * 100}%`, borderRadius: 2, background: `linear-gradient(90deg, ${C.irisSoft}, ${C.iris})`, opacity: li === lines.length - 1 ? 1 : 0.35 }} />
+									{/* pen tip */}
+									{p > 0 && p < 1 && (
+										<span style={{ position: 'absolute', left: `calc(${p * 100}% - 9px)`, top: pSize * 1.1 - 7, width: 18, height: 18, borderRadius: 9, background: '#fff', boxShadow: `0 0 0 4px ${C.iris}, 0 0 34px 12px rgba(85,70,255,0.6)` }} />
+									)}
 								</div>
-								<Mono style={{ position: 'absolute', right: 22, top: 20, fontSize: tall ? 22 : 18, color: '#fff', padding: '4px 10px', borderRadius: 999, background: 'rgba(20,16,60,0.35)' }}>{s.formats[i]}</Mono>
 							</div>
 						);
 					})}
-					{/* CTA */}
-					<div style={{ position: 'absolute', left: 0, right: 0, bottom: tall ? 120 : 64, display: 'flex', justifyContent: 'center', opacity: cta, transform: `translateY(${(1 - cta) * 30}px)` }}>
+				</AbsoluteFill>
+			)}
+
+			{/* F — benefit beats */}
+			{f >= 410 && f < 456 && (
+				<AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: tall ? 3 * u : 1.6 * u }}>
+					<div style={{ display: 'flex', flexDirection: tall ? 'column' : 'row', alignItems: 'center', gap: tall ? 0 : '0.26em', ...T(tall ? 11 * u : 6.6 * u, 760) }}>
+						<MaskWord f={f} at={412} out={446} fps={fps}>
+							{s.b1[0]}
+						</MaskWord>
+						<MaskWord f={f} at={417} out={447} fps={fps} style={accent}>
+							{s.b1[1]}
+						</MaskWord>
+					</div>
+					<div style={{ display: 'flex', gap: tall ? 1.6 * u : 1 * u, flexWrap: 'wrap', justifyContent: 'center' }}>
+						{s.b1sub.map((w, i) => {
+							const k = sp(f - 424 - i * 5, fps, { damping: 12, stiffness: 220, mass: 0.6 });
+							const o = kf(f, [446 + i, 454 + i], [0, 1]);
+							return (
+								<span key={w} style={{ ...glass(0.8, 999), padding: tall ? '20px 36px' : '14px 28px', ...T(tall ? 5.4 * u : 2.6 * u, 650), transform: `scale(${0.5 + 0.5 * k}) translateY(${o * -30}px)`, opacity: k * (1 - o) }}>
+									{w}
+								</span>
+							);
+						})}
+					</div>
+				</AbsoluteFill>
+			)}
+			{f >= 452 && f < 496 && (
+				<AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 0.6 * u }}>
+					<div style={{ ...T(tall ? 10.4 * u : 6.6 * u, 760) }}>
+						<MaskWord f={f} at={454} out={486} fps={fps}>
+							{s.b2[0]}
+						</MaskWord>
+					</div>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.3em', ...T(tall ? 10.4 * u : 6.6 * u, 760) }}>
+						<MaskWord f={f} at={464} out={487} fps={fps} style={accent}>
+							{s.b2[1]}
+						</MaskWord>
+						{(() => {
+							const k = sp(f - 472, fps, { damping: 11, stiffness: 220, mass: 0.6 });
+							const o = kf(f, [487, 494], [0, 1]);
+							const d = tall ? 9 * u : 4.6 * u;
+							return (
+								<span style={{ width: d, height: d, borderRadius: d, background: C.green, display: 'grid', placeItems: 'center', transform: `scale(${k * (1 - o)})`, boxShadow: '0 14px 30px -8px rgba(31,168,79,0.6)' }}>
+									<Check size={d * 0.56} />
+								</span>
+							);
+						})()}
+					</div>
+				</AbsoluteFill>
+			)}
+			{f >= 492 && f < 540 && (
+				<AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: tall ? 2.6 * u : 1.4 * u }}>
+					{s.b3.map((w, i) => {
+						const k = sp(f - 494 - i * 7, fps, { damping: 13, stiffness: 200, mass: 0.7 });
+						const o = kf(f, [526 + i * 2, 536 + i * 2], [0, 1], (x) => x * x);
+						const icons = ['M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z', 'M12 5v14M6 13l6 6 6-6', 'M12 3l2.6 5.6 6 .6-4.5 4 1.3 6L12 16.3 6.6 19.2l1.3-6-4.5-4 6-.6z'];
+						const d = tall ? 8.6 * u : 4.4 * u;
+						return (
+							<div key={w} style={{ display: 'flex', alignItems: 'center', gap: tall ? 3 * u : 1.4 * u, ...glass(0.78, 999), padding: tall ? '22px 56px 22px 22px' : '14px 40px 14px 14px', transform: `translateX(${(1 - k) * (i % 2 ? 60 : -60)}px) scale(${0.85 + 0.15 * k}) translateY(${-o * 50}px)`, opacity: k * (1 - o) }}>
+								<span style={{ width: d, height: d, borderRadius: d, display: 'grid', placeItems: 'center', background: `linear-gradient(180deg, #6d61ff, ${C.iris})` }}>
+									<svg width={d * 0.55} height={d * 0.55} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+										<path d={icons[i]} />
+									</svg>
+								</span>
+								<span style={{ ...T(tall ? 7.4 * u : 4.4 * u, 740) }}>{w}</span>
+							</div>
+						);
+					})}
+				</AbsoluteFill>
+			)}
+
+			{/* G — end card */}
+			{f >= 532 && (
+				<AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
+					<div
+						style={{
+							position: 'relative',
+							width: tall ? 88 * u : 64 * u,
+							padding: tall ? `${8 * u}px ${6 * u}px` : `${4.4 * u}px ${4 * u}px`,
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							gap: tall ? 4 * u : 2.2 * u,
+							textAlign: 'center',
+							...glass(0.7, tall ? 64 : 48),
+							opacity: endIn,
+							transform: `translateY(${(1 - endIn) * 60}px) scale(${0.94 + 0.06 * endIn})`,
+						}}
+					>
+						<span style={{ display: 'flex', alignItems: 'center', gap: 14, ...T(tall ? 4.4 * u : 1.9 * u, 650) }}>
+							<svg width={tall ? 4.8 * u : 2.2 * u} height={tall ? 4.8 * u : 2.2 * u} viewBox="0 0 24 24">
+								<rect x="2" y="5" width="12" height="6" rx="3" fill={C.iris} />
+								<rect x="9" y="13" width="13" height="6" rx="3" fill={C.ink} />
+								<rect x="15" y="2" width="2" height="20" rx="1" fill={C.iris} />
+							</svg>
+							Formatschnitt
+						</span>
+						<span style={{ ...T(tall ? 8.6 * u : 4 * u, 750), whiteSpace: 'normal', lineHeight: 1.05 }}>{s.end}</span>
 						<div
 							style={{
+								position: 'relative',
 								display: 'flex',
 								alignItems: 'center',
-								gap: 14,
-								padding: tall ? '30px 52px' : '22px 40px',
+								gap: 16,
+								padding: tall ? '34px 60px' : '22px 42px',
 								borderRadius: 999,
 								background: `linear-gradient(180deg, #6d61ff, ${C.iris})`,
-								boxShadow: `inset 0 1px 0 rgba(255,255,255,0.45), 0 18px 40px -12px rgba(85,70,255,${0.55 + 0.3 * press}), 0 0 0 ${press * 10}px rgba(85,70,255,${0.18 * press})`,
+								boxShadow: `inset 0 1px 0 rgba(255,255,255,0.45), 0 18px 40px -12px rgba(85,70,255,${0.55 + 0.3 * press})`,
 								transform: `scale(${1 - press * 0.05})`,
-								...textStyle(tall ? 38 : 30, 600, '#fff'),
+								...T(tall ? 5 * u : 2.1 * u, 620, '#fff'),
 							}}
 						>
-							{s.cta}
-							<span style={{ fontWeight: 400 }}>→</span>
+							{s.cta} <span style={{ fontWeight: 400 }}>→</span>
+							{ripple > 0 && (
+								<span style={{ position: 'absolute', inset: 0, borderRadius: 999, boxShadow: `0 0 0 ${ripple * 40}px rgba(85,70,255,${0.3 * (1 - ripple)})` }} />
+							)}
 						</div>
 					</div>
-					{/* pointer */}
 					<svg
-						width={tall ? 44 : 36}
-						height={tall ? 44 : 36}
+						width={tall ? 70 : 44}
+						height={tall ? 70 : 44}
 						viewBox="0 0 24 24"
 						style={{
 							position: 'absolute',
-							left: lerp(width * 0.78, width / 2 + (tall ? 120 : 110), cursor),
-							top: lerp(height * 0.98, height - (tall ? 160 : 92), cursor),
-							opacity: kf(f, [412, 418], [0, 1]),
+							left: lerp(W * 0.8, W / 2 + (tall ? 16 * u : 7 * u), cursor),
+							top: lerp(H * 0.95, H / 2 + (tall ? 16.5 * u : 5.6 * u), cursor),
+							opacity: kf(f, [550, 556], [0, 1]),
 							transform: `scale(${1 - press * 0.15})`,
 							filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.25))',
 						}}

@@ -39,7 +39,7 @@ if (args.og) {
 	const composition = { ...base, width: 1920, height: 1008 };
 	const png = path.join(root, 'node_modules/.cache/og-film.png');
 	mkdirSync(path.dirname(png), { recursive: true });
-	await renderStill({ composition, serveUrl, frame: 445, output: png, inputProps: { lang: 'de' }, browserExecutable, imageFormat: 'png', logLevel: 'error' });
+	await renderStill({ composition, serveUrl, frame: base.durationInFrames - 1, output: png, inputProps: { lang: 'de' }, browserExecutable, imageFormat: 'png', logLevel: 'error' });
 	await sharp(png).resize(1200, 630).png({ compressionLevel: 9 }).toFile(path.join(root, 'public/og.png'));
 	console.log('public/og.png');
 	process.exit(0);
@@ -69,7 +69,7 @@ for (const lang of ['de', 'en'])
 			composition,
 			serveUrl,
 			codec: 'h264',
-			crf: c.tag === 'wide' ? 22 : 23,
+			crf: c.tag === 'wide' ? 24 : 23,
 			imageFormat: 'png',
 			logLevel: 'error',
 			x264Preset: 'veryslow',

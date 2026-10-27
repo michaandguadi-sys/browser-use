@@ -102,67 +102,65 @@ export const audience: L[] = [
 	{ de: 'Ihr wollt mehr aus jedem Dreh holen: Folge, Shorts, Anzeigen.', en: 'You want more from every shoot: episode, shorts, ads.' },
 ];
 
-export const pains: { pain: L; fix: L; anim: 'loops' | 'repeat' | 'plan' }[] = [
+// The solution in three steps (lead section).
+export const solution: { n: string; title: L; text: L }[] = [
 	{
-		pain: { de: 'Zehn Korrekturschleifen.', en: 'Ten revision rounds.' },
-		fix: { de: 'Feedback gebt ihr einmal, gebündelt an einer Stelle.', en: 'You give feedback once, in one place.' },
-		anim: 'loops',
+		n: '1',
+		title: { de: 'Einmal einrichten', en: 'Set up once' },
+		text: {
+			de: 'Ich lege euer Format als System fest: Aufbau, Look, Titel, Grafiken – und eure Entscheidungen.',
+			en: 'I define your format as a system: structure, look, titles, graphics – and your decisions.',
+		},
 	},
 	{
-		pain: { de: 'Dasselbe Feedback. Jede Folge.', en: 'Same feedback. Every episode.' },
-		fix: { de: 'Einmal entschieden – und in jeder Folge umgesetzt.', en: 'Decided once – and applied in every episode.' },
-		anim: 'repeat',
+		n: '2',
+		title: { de: 'Laufendes System', en: 'A running system' },
+		text: {
+			de: 'Jede Folge entsteht im gleichen Standard. Feedback gebt ihr einmal – es gilt für alle weiteren Folgen.',
+			en: 'Every episode is made to the same standard. You give feedback once – it applies to every episode after.',
+		},
 	},
 	{
-		pain: { de: 'Jede Folge ein Überraschungspaket.', en: 'Every episode a surprise.' },
-		fix: { de: 'Fester Standard, fester Preis, planbare Lieferung.', en: 'A fixed standard, a fixed price, predictable delivery.' },
-		anim: 'plan',
-	},
-];
-
-export const steps: { n: string; title: L; text: L; price: L }[] = [
-	{
-		n: '01',
-		title: { de: 'Pilot', en: 'Pilot' },
-		text: { de: 'Eine Testfolge plus drei Shorts aus eurem Material.', en: 'One test episode plus three shorts from your footage.' },
-		price: { de: '1.950 € · ≈ 1 Woche', en: '€1,950 · ≈ 1 week' },
-	},
-	{
-		n: '02',
-		title: { de: 'Setup', en: 'Setup' },
-		text: { de: 'Ich lege euer Format einmal fest – mit Anleitung für euer Team.', en: 'I define your format once – with a guide for your team.' },
-		price: { de: '3.500 € · 3–4 Wochen', en: '€3,500 · 3–4 weeks' },
-	},
-	{
-		n: '03',
-		title: { de: 'Retainer', en: 'Retainer' },
-		text: { de: 'Ich schneide jeden Monat nach diesem Standard. Fester Preis.', en: 'I edit to that standard every month. Fixed price.' },
-		price: { de: 'ab 4.200 € / Monat', en: 'from €4,200 / month' },
+		n: '3',
+		title: { de: 'Ihr spart Zeit und Geld', en: 'You save time and money' },
+		text: {
+			de: 'Weniger Abstimmung, weniger Korrekturen, mehr fertige Inhalte aus jedem Dreh – zum festen Preis.',
+			en: 'Less coordination, fewer corrections, more finished content from every shoot – at a fixed price.',
+		},
 	},
 ];
 
-export const proof: { title: L; tag: L; text: L; named?: boolean }[] = [
+// Benefits. Every figure is a fact from the offer — nothing measured, nothing promised.
+export const benefits: { key: string; value: number; prefix?: L; suffix: L; title: L; text: L }[] = [
 	{
-		title: { de: 'Carwow DE – Review-Serie', en: 'Carwow DE – review series' },
-		tag: { de: 'Serie · 2025', en: 'Series · 2025' },
-		text: { de: 'Drei Folgen einer laufenden Auto-Review-Serie – im bestehenden Format, exakt nach Vorgabe.', en: 'Three episodes of a running car-review series – in the existing format, exactly to spec.' },
-		named: true,
+		key: 'time',
+		value: 1,
+		suffix: { de: '×', en: '×' },
+		title: { de: 'Zeit', en: 'Time' },
+		text: { de: 'Euer Format wird einmal festgelegt – nicht in jeder Folge neu.', en: 'Your format is defined once – not again in every episode.' },
 	},
 	{
-		title: { de: 'Langform-Dokus mit 1,2 und 1,4 Mio. Aufrufen', en: 'Long-form docs with 1.2M and 1.4M views' },
-		tag: { de: 'Doku · YouTube', en: 'Documentary · YouTube' },
-		text: { de: 'Zwei lange YouTube-Dokus für Felix von der Laden – gedreht und geschnitten.', en: 'Two long YouTube documentaries for Felix von der Laden – shot and edited.' },
-		named: true,
+		key: 'cost',
+		value: 750,
+		suffix: { de: ' €', en: '' },
+		prefix: { de: '', en: '€' },
+		title: { de: 'Kosten', en: 'Cost' },
+		text: { de: 'Tagessatz als Basis. Pakete liegen darunter, weil das System schneller macht.', en: 'The day rate is the base. Packages cost less because the system makes it faster.' },
 	},
 	{
-		title: { de: 'D2C-Produktmarke – Anzeigen-Bibliothek aus einem Dreh', en: 'D2C product brand – an ad library from one shoot' },
-		tag: { de: 'Dreh + Schnitt · 2026', en: 'Shoot + edit · 2026' },
-		text: { de: 'Ein Dreh, geplant als Baukasten. Ziel des Kunden: Material für viele Anzeigen, Anleitungen und ein Gründer-Interview.', en: 'One shoot, planned as a kit. The client’s goal: material for many ads, how-to videos and a founder interview.' },
+		key: 'quality',
+		value: 1,
+		suffix: { de: ' Standard', en: ' standard' },
+		title: { de: 'Qualität', en: 'Quality' },
+		text: { de: 'Jede Folge nach demselben, mit euch abgestimmten Standard.', en: 'Every episode to the same standard, agreed with you.' },
 	},
 	{
-		title: { de: 'Wöchentlicher Podcast – fester Produktionsablauf', en: 'Weekly podcast – a fixed production routine' },
-		tag: { de: 'Beratung · 2025', en: 'Consulting · 2025' },
-		text: { de: 'Ein klarer Ablauf vom Material bis zur fertigen Folge – aufgesetzt und an das Team übergeben.', en: 'A clear routine from footage to finished episode – set up and handed over to the team.' },
+		key: 'plan',
+		value: 0,
+		suffix: { de: ' €', en: '' },
+		prefix: { de: '', en: '€' },
+		title: { de: 'Planbarkeit', en: 'Predictability' },
+		text: { de: 'Keine Folgekosten, wenn der Pilot nicht überzeugt. Danach: fester Monatspreis.', en: 'No follow-on cost if the pilot doesn’t convince you. After that: a fixed monthly price.' },
 	},
 ];
 

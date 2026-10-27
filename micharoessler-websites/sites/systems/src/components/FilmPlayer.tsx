@@ -1,6 +1,6 @@
 // Hero film island: Remotion Player + glass controls.
-// Autoplays once in view (silent), scroll-scrubs inside the sticky stage, draggable scrubber, replay.
-// prefers-reduced-motion: no autoplay, no scroll-scrub, starts on the final frame with a play button.
+// Autoplays once on load (silent), draggable + keyboard scrubber, play/pause, replay.
+// prefers-reduced-motion: no autoplay, starts on the final frame with a play button.
 import { Player, type PlayerRef } from '@remotion/player';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EditFilm } from '../remotion/EditFilm';
@@ -20,8 +20,6 @@ export default function FilmPlayer({ lang, labels }: Props) {
 	const reduce = useMemo(() => mq('(prefers-reduced-motion: reduce)'), []);
 	const [frame, setFrame] = useState(reduce ? LAST : 0);
 	const [playing, setPlaying] = useState(false);
-	const scrub = useRef<{ on: boolean; f0: number; p0: number; lastP: number }>({ on: false, f0: 0, p0: 0, lastP: -1 });
-	const autoplayed = useRef(false);
 
 	useEffect(() => {
 		const m = window.matchMedia('(max-width: 719px)');
@@ -34,7 +32,10 @@ export default function FilmPlayer({ lang, labels }: Props) {
 	useEffect(() => {
 		const p = player.current;
 		if (!p) return;
-		const onFrame = (e: { detail: { frame: number } }) => setFrame(e.detail.frame);
+		const onFrame = (e: { detail: { frame: number } }) => {
+			setFrame(e.detail.frame);
+			setPlaying(p.isPlaying());
+		};
 		const onPlay = () => setPlaying(true);
 		const onPause = () => setPlaying(false);
 		p.addEventListener('frameupdate', onFrame);
@@ -50,69 +51,20 @@ export default function FilmPlayer({ lang, labels }: Props) {
 		};
 	}, [tall]);
 
-	// Autoplay once, when at least half of the film is visible.
-	useEffect(() => {
-		if (reduce || !root.current) return;
-		const io = new IntersectionObserver(
-			([e]) => {
-				if (e.isIntersecting && !autoplayed.current && !scrub.current.on) {
-					autoplayed.current = true;
-					player.current?.play();
-				}
-			},
-			{ threshold: 0.5 },
-		);
-		io.observe(root.current);
-		return () => io.disconnect();
-	}, [reduce]);
-
-	// Scroll-scrub inside the sticky stage. Anchored at the frame where scrolling starts, so it never jumps.
+	// Autoplay once, straight away: the film is the first thing on the page (Player `autoPlay`, silent).
+	// Safety net: if the browser held it back, start it as soon as the player has mounted.
 	useEffect(() => {
 		if (reduce) return;
-		const stage = root.current?.closest<HTMLElement>('[data-stage]');
-		if (!stage) return;
-		let raf = 0;
-		const tick = () => {
-			raf = 0;
-			const r = stage.getBoundingClientRect();
-			const span = stage.offsetHeight - window.innerHeight;
-			if (span <= 0) return;
-			const p = Math.min(1, Math.max(0, -r.top / span));
-			const s = scrub.current;
-			if (Math.abs(p - s.lastP) < 0.0005) return;
-			const first = s.lastP < 0;
-			s.lastP = p;
-			if (first) return;
-			if (!s.on) {
-				if (p <= 0 || p >= 1) return;
-				const cur = player.current?.getCurrentFrame() ?? 0;
-				s.on = true;
-				s.f0 = cur;
-				s.p0 = p;
-				player.current?.pause();
-			}
-			const target = p >= s.p0 ? s.f0 + ((p - s.p0) / Math.max(0.0001, 1 - s.p0)) * (LAST - s.f0) : s.f0 * (p / Math.max(0.0001, s.p0));
-			player.current?.seekTo(Math.round(target));
-			setFrame(Math.round(target));
-		};
-		const onScroll = () => {
-			if (!raf) raf = requestAnimationFrame(tick);
-		};
-		window.addEventListener('scroll', onScroll, { passive: true });
-		tick();
-		return () => {
-			window.removeEventListener('scroll', onScroll);
-			cancelAnimationFrame(raf);
-		};
-	}, [reduce]);
+		const id = window.setTimeout(() => {
+			const p = player.current;
+			if (p && !p.isPlaying() && p.getCurrentFrame() === 0) p.play();
+		}, 400);
+		return () => window.clearTimeout(id);
+	}, [reduce, tall]);
 
-	const release = () => {
-		scrub.current.on = false;
-	};
 	const toggle = useCallback(() => {
 		const p = player.current;
 		if (!p) return;
-		release();
 		if (p.isPlaying()) p.pause();
 		else {
 			if (p.getCurrentFrame() >= LAST) p.seekTo(0);
@@ -120,12 +72,10 @@ export default function FilmPlayer({ lang, labels }: Props) {
 		}
 	}, []);
 	const replay = useCallback(() => {
-		release();
 		player.current?.seekTo(0);
 		player.current?.play();
 	}, []);
 	const onScrub = (v: number) => {
-		release();
 		player.current?.pause();
 		player.current?.seekTo(v);
 		setFrame(v);
@@ -145,6 +95,7 @@ export default function FilmPlayer({ lang, labels }: Props) {
 					compositionWidth={size.width}
 					compositionHeight={size.height}
 					initialFrame={reduce ? LAST : 0}
+					autoPlay={!reduce}
 					acknowledgeRemotionLicense
 					clickToPlay={false}
 					doubleClickToFullscreen={false}
