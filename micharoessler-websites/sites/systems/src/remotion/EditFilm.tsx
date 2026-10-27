@@ -10,7 +10,7 @@ import { Check, Ground, HUES, ease, easeOut, footage, glass, kf, lerp } from './
  *  64–178  hours roll up: 6 h, + 6 h, + 6 h …   odometer gets heavier, glass chips pile up
  * 172–210  camera flies through the numbers     they shatter into glass shards
  * 190–335  a fast timeline, camera locked on the cursor, accelerating → speed lines → one light line
- * 330–410  the light line writes "Wir nehmen euch diese Zeit ab."
+ * 330–410  the light line writes the promise ("Ich nehme euch das ab.")
  * 410–532  three benefit beats
  * 532–600  end card + CTA click
  * Rhetorical illustration only: no measured numbers, no promises of turnaround.

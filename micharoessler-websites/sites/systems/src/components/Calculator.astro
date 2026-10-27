@@ -10,9 +10,9 @@ const { lang } = Astro.props;
 const de = lang === 'de';
 
 const inputs = [
-	{ id: 'eps', label: de ? 'Langform-Folgen pro Monat' : 'Long-form episodes per month', min: 1, max: 12, step: 1, value: 4, unit: '' },
-	{ id: 'hEp', label: de ? 'Stunden pro Folge inkl. Shorts (heute)' : 'Hours per episode incl. shorts (today)', min: 4, max: 48, step: 1, value: 20, unit: ' h' },
-	{ id: 'save', label: de ? 'Annahme: Zeitersparnis (unbelegt, im Pilot gemessen)' : 'Assumption: time saved (unproven, measured in the pilot)', min: 0, max: 40, step: 5, value: 20, unit: ' %' },
+	{ id: 'eps', label: de ? 'Lange Folgen pro Monat' : 'Long episodes per month', min: 1, max: 12, step: 1, value: 4, unit: '' },
+	{ id: 'hEp', label: de ? 'Stunden pro Folge heute, inkl. Shorts' : 'Hours per episode today, incl. shorts', min: 4, max: 48, step: 1, value: 20, unit: ' h' },
+	{ id: 'save', label: de ? 'Angenommene Ersparnis (unbelegt – misst der Pilot)' : 'Assumed time saved (unproven – the pilot measures it)', min: 0, max: 40, step: 5, value: 20, unit: ' %' },
 ];
 ---
 
@@ -45,16 +45,19 @@ const inputs = [
 				<dd data-o="worth"></dd>
 			</div>
 		</dl>
-		<p class="how"><span data-o="how"></span> {de ? 'Beträge netto.' : 'Amounts net.'}</p>
+		<details class="how">
+			<summary>{de ? 'Rechenweg zeigen' : 'Show the maths'}</summary>
+			<p><span data-o="how"></span> {de ? 'Beträge netto.' : 'Amounts net.'}</p>
+		</details>
 		<div class="rec">
 			<div>
 				<p class="rec-k">{de ? 'Passendes Paket' : 'Matching package'}</p>
 				<p class="rec-name" data-o="pkg"></p>
 			</div>
-			<a class="btn btn--primary" href="#kontakt" data-cta>{de ? 'Damit anfragen' : 'Enquire with this'} <span class="arr">→</span></a>
+			<a class="btn btn--primary" href="#kontakt" data-cta>{de ? 'Damit anfragen' : 'Enquire about this'} <span class="arr">→</span></a>
 		</div>
 		<p class="note">
-			{de ? 'Schätzung, keine Garantie. Genau das klärt der Pilot.' : 'An estimate, not a promise. That is exactly what the pilot measures.'}
+			{de ? 'Schätzung, kein Versprechen. Genau das misst der Pilot.' : 'An estimate, not a promise. The pilot measures it.'}
 		</p>
 	</div>
 </div>
@@ -178,7 +181,36 @@ const inputs = [
 		line-height: 1;
 		white-space: nowrap;
 	}
-	.how {
+	.how summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 32px;
+		cursor: pointer;
+		font-size: 15px;
+		font-weight: 560;
+		color: var(--iris);
+		list-style: none;
+	}
+	.how summary::-webkit-details-marker {
+		display: none;
+	}
+	.how summary::after {
+		content: '';
+		width: 7px;
+		height: 7px;
+		border: solid currentColor;
+		border-width: 0 2px 2px 0;
+		rotate: 45deg;
+		translate: 0 -2px;
+		transition: rotate 0.2s var(--ease);
+	}
+	.how[open] summary::after {
+		rotate: 225deg;
+		translate: 0 2px;
+	}
+	.how p {
+		margin-top: 6px;
 		font-family: var(--mono);
 		font-size: 12.5px;
 		line-height: 1.6;

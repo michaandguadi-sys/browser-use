@@ -10,16 +10,11 @@
     "film:og": "node scripts/render-film.mjs --og"
   },
   "dependencies": {
-    "@astrojs/react": "4.4.2",
     "@astrojs/sitemap": "3.7.4",
     "@fontsource-variable/geist-mono": "5.3.0",
     "@fontsource-variable/inter": "5.3.0",
-    "@remotion/player": "4.0.536",
     "astro": "5.18.2",
     "gsap": "3.15.0",
-    "react": "19.2.9",
-    "react-dom": "19.2.9",
-    "remotion": "4.0.536",
     "sharp": "0.34.5",
     "three": "0.186.1"
   },
@@ -27,6 +22,9 @@
     "@remotion/cli": "4.0.536",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "@types/three": "0.186.0"
+    "@types/three": "0.186.0",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "remotion": "4.0.536"
   }
 }

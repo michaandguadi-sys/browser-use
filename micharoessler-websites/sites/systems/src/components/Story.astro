@@ -1,0 +1,634 @@
+---
+// Immersive hero: a full-viewport scroll story rendered live in the browser (no video).
+// DOM kinetic type (crisp, SSR'd — the headline is in the first paint) + a three.js glass scene behind it.
+// Chapters are scrubbed by native scroll (GSAP ScrollTrigger on a CSS-sticky stage; no scroll hijacking).
+// Static hero (same lines + CTA, no pinning) for: no JS, prefers-reduced-motion, Save-Data, no (hardware) WebGL2.
+// QA: ?story=live forces the live story on software WebGL (e.g. headless capture).
+import { type Lang } from '../i18n';
+import { hero, booking } from '../data/content';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+type K = Exclude<keyof typeof hero, 'promiseLines' | 'proof'>;
+const h = (k: K) => hero[k][lang];
+const proof = hero.proof[lang];
+// the H1 breaks after its first sentence: "Euer Format." / "Ohne eure Schnittzeit."
+const [h1a, ...h1rest] = h('h1').split(/(?<=\.)\s/);
+const h1b = h1rest.join(' ');
+const ctaHref = booking.bookingUrl || '#kontakt';
+const qWords = h('question').split(' ');
+const pLines = hero.promiseLines[lang];
+// chip positions in % of the stage: [x, y] wide, then [x, y] on phones (kept clear of the numerals + caption)
+const chips = [
+	[14, 22, 16, 16],
+	[78, 18, 80, 13],
+	[86, 62, 84, 78],
+	[10, 70, 14, 74],
+	[66, 82, 58, 90],
+	[28, 86, 26, 88],
+	[90, 38, 86, 26],
+	[6, 44, 10, 28],
+	[52, 12, 48, 21],
+];
+---
+
+<script is:inline>
+	(function () {
+		var d = document.documentElement;
+		var s = 'live';
+		try {
+			if (matchMedia('(prefers-reduced-motion: reduce)').matches) s = 'static';
+			else if (navigator.connection && navigator.connection.saveData) s = 'static';
+			// software-rendered WebGL (no GPU, blocked GPU, VMs) counts as "no WebGL": the 3D chapters would stutter
+			else if (!/[?&]story=live\b/.test(location.search)) {
+				var g = document.createElement('canvas').getContext('webgl2', { failIfMajorPerformanceCaveat: true });
+				if (!g) s = 'static';
+				else {
+					var x = g.getExtension('WEBGL_debug_renderer_info');
+					if (x && /swiftshader|llvmpipe|softpipe|software|basic render/i.test(g.getParameter(x.UNMASKED_RENDERER_WEBGL))) s = 'static';
+					var l = g.getExtension('WEBGL_lose_context');
+					if (l) l.loseContext();
+				}
+			}
+		} catch (e) {
+			s = 'static';
+		}
+		d.setAttribute('data-story', s);
+	})();
+</script>
+
+<section class="story" data-story-root aria-labelledby="story-h">
+	<div class="story-stage">
+		<div class="story-bg" aria-hidden="true"></div>
+		<canvas class="story-canvas" aria-hidden="true"></canvas>
+		<div class="story-veil" aria-hidden="true"></div>
+		<div class="story-art" aria-hidden="true">
+			<span class="pane p1"></span><span class="pane p2"></span><span class="pane p3"></span><i class="ph"></i>
+		</div>
+
+		<p class="sq" data-q>
+			{
+				qWords.map((w, i) => (
+					<span class="wm">
+						<span class="wo">
+							<span class:list={['wi', { acc: i === qWords.length - 1 }]} style={`--d:${i * 90}ms`}>
+								{w}
+							</span>
+						</span>
+					</span>
+				))
+			}
+		</p>
+		<p class="sp">{h('promise')}</p>
+
+		<div class="s-hours" data-hours aria-hidden="true">
+			<div class="s-chips">
+				{
+					chips.map(([x, y, mx, my], i) => (
+						<span class="s-chip" data-chip style={`--x:${x}%;--y:${y}%;--mx:${mx}%;--my:${my}%`}>
+							<span style={`--b:${i * 0.37}s`}>{h('chip')}</span>
+						</span>
+					))
+				}
+			</div>
+			<div class="s-odo" data-odo>
+				<span class="s-col s-tens" data-tens>
+					<span class="s-strip">{Array.from({ length: 10 }, (_, i) => <span>{i}</span>)}</span>
+				</span>
+				<span class="s-col" data-units>
+					<span class="s-strip">{Array.from({ length: 70 }, (_, i) => <span>{i % 10}</span>)}</span>
+				</span>
+				<span class="s-h">h</span>
+			</div>
+			<p class="s-cap">{h('hoursCaption')}</p>
+		</div>
+
+		<div class="s-line" data-line aria-hidden="true"></div>
+
+		<div class="s-write" aria-hidden="true">
+			<svg class="sw sw-wide" data-write="wide" viewBox="0 0 1200 170" preserveAspectRatio="xMidYMid meet">
+				<defs><clipPath id={`swc-wide-${lang}`}><rect data-reveal x="0" y="0" width="0" height="170"></rect></clipPath></defs>
+				<text class="sw-fill" x="600" y="122" text-anchor="middle" clip-path={`url(#swc-wide-${lang})`}>{h('promise')}</text>
+				<text class="sw-stroke" data-stroke x="600" y="122" text-anchor="middle">{h('promise')}</text>
+				<rect class="sw-under" data-under x="0" y="146" width="0" height="4" rx="2"></rect>
+			</svg>
+			<svg class="sw sw-tall" data-write="tall" viewBox="0 0 720 300" preserveAspectRatio="xMidYMid meet">
+				<defs><clipPath id={`swc-tall-${lang}`}><rect data-reveal x="0" y="0" width="0" height="300"></rect></clipPath></defs>
+				{
+					pLines.map((l, i) => (
+						<>
+							<text class="sw-fill" x="360" y={i ? 232 : 112} text-anchor="middle" clip-path={`url(#swc-tall-${lang})`}>
+								{l}
+							</text>
+							<text class="sw-stroke" data-stroke x="360" y={i ? 232 : 112} text-anchor="middle">
+								{l}
+							</text>
+						</>
+					))
+				}
+				<rect class="sw-under" data-under x="0" y="262" width="0" height="5" rx="2.5"></rect>
+			</svg>
+			<span class="s-pen" data-pen></span>
+		</div>
+
+		<div class="s-end" data-end>
+			<h1 id="story-h" class="s-h1" data-h1>{h1a}<br />{h1b}</h1>
+			<p class="s-sub">{h('sub')}</p>
+			<div class="s-cta">
+				<a class="btn btn--primary" data-magnetic data-book href={ctaHref}>{h('cta')} <span class="arr">→</span></a>
+				<a class="btn" href="#pakete">{h('cta2')}</a>
+			</div>
+			<p class="s-micro">{h('ctaMicro')}</p>
+			<p class="s-proof">
+				{proof.before}<a href={hero.proof.href} target="_blank" rel="noopener">{proof.link}<span class="sr-only"> {lang === 'de' ? '(YouTube, neuer Tab)' : '(YouTube, new tab)'}</span></a>{proof.after}
+			</p>
+		</div>
+
+		<p class="s-hint" data-hint aria-hidden="true"><span>{h('hint')}</span><i></i></p>
+	</div>
+</section>
+
+<script>
+	import { initStory } from '../scripts/story';
+	if (document.documentElement.dataset.story === 'live') initStory();
+</script>
+
+<style>
+	/* ---------- stage ---------- */
+	.story {
+		position: relative;
+		margin-top: -66px; /* run under the floating glass nav, edge to edge */
+	}
+	:global(html[data-story='live']) .story {
+		height: 480vh;
+	}
+	@media (max-width: 719px) {
+		:global(html[data-story='live']) .story {
+			height: 360vh;
+		}
+	}
+	.story-stage {
+		position: sticky;
+		top: 0;
+		height: 100svh;
+		min-height: 540px;
+		overflow: hidden;
+		isolation: isolate;
+	}
+	.story-bg,
+	.story-canvas,
+	.story-veil {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.story-bg {
+		background:
+			radial-gradient(42% 52% at 22% 26%, rgba(85, 70, 255, 0.22), transparent 70%),
+			radial-gradient(40% 50% at 80% 30%, rgba(255, 150, 100, 0.24), transparent 70%),
+			radial-gradient(46% 50% at 58% 86%, rgba(80, 210, 190, 0.22), transparent 70%),
+			#eef0f5;
+	}
+	.story-canvas {
+		opacity: 0;
+		transition: opacity 1.2s var(--ease);
+	}
+	.story-canvas:global(.is-live) {
+		opacity: 1;
+	}
+	.story-veil {
+		background: #f3f3f6;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	/* ---------- headline: question (first paint) + promise (screen readers / static mode) ---------- */
+	.sq {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		translate: -50% -50%;
+		width: max-content;
+		margin: 0;
+		pointer-events: none;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0 0.24em;
+		max-width: min(11.5em, 92vw);
+		padding-inline: 4vw;
+		font-size: clamp(54px, 10.5vw, 168px);
+		font-weight: 760;
+		letter-spacing: -0.05em;
+		line-height: 0.98;
+		text-align: center;
+	}
+	.wm {
+		display: inline-block;
+		overflow: hidden;
+		padding: 0.04em 0.03em 0.16em;
+		margin: -0.04em -0.03em -0.16em;
+	}
+	.wo {
+		display: inline-block;
+	}
+	.wi {
+		display: inline-block;
+		animation: wordIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+		animation-delay: calc(120ms + var(--d));
+	}
+	.acc {
+		background: linear-gradient(170deg, #8b80ff 0%, #5546ff 50%, #2f22c9 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+	@keyframes wordIn {
+		from {
+			transform: translateY(112%) rotate(4deg);
+		}
+		to {
+			transform: none;
+		}
+	}
+	.sp {
+		margin: 0;
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	/* ---------- hours ---------- */
+	.s-hours {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		align-content: center;
+		gap: 1.2vh;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.s-chips {
+		position: absolute;
+		inset: 8% 4%;
+	}
+	.s-chip {
+		position: absolute;
+		left: var(--x);
+		top: var(--y);
+		transform: translate(-50%, -50%) scale(0);
+	}
+	@media (max-width: 719px) {
+		.s-chip {
+			left: var(--mx);
+			top: var(--my);
+		}
+	}
+	.s-chip span {
+		display: inline-block;
+		padding: 0.5em 0.95em;
+		border-radius: 999px;
+		font-size: clamp(18px, 2.2vw, 34px);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		white-space: nowrap;
+		background: var(--glass-bg);
+		border: var(--glass-edge);
+		box-shadow: var(--glass-shadow);
+		animation: bob 3.2s ease-in-out infinite alternate;
+		animation-delay: calc(var(--b) * -1);
+	}
+	@keyframes bob {
+		to {
+			transform: translateY(-8px) rotate(-2deg);
+		}
+	}
+	.s-odo {
+		display: flex;
+		align-items: flex-start;
+		font-size: clamp(120px, 21vw, 320px);
+		font-weight: 560;
+		letter-spacing: -0.03em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+	.s-col {
+		display: inline-block;
+		height: 1em;
+		overflow: hidden;
+		width: 0.62em;
+	}
+	.s-tens {
+		width: 0;
+		transition: width 0.25s var(--ease);
+	}
+	.s-tens:global(.on) {
+		width: 0.62em;
+	}
+	.s-strip {
+		display: block;
+		will-change: transform;
+	}
+	.s-strip span {
+		display: block;
+		height: 1em;
+		text-align: center;
+	}
+	.s-h {
+		margin-left: 0.1em;
+		background: linear-gradient(170deg, #8b80ff 0%, #5546ff 50%, #2f22c9 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+	.s-cap {
+		font-size: clamp(18px, 2vw, 30px);
+		font-weight: 560;
+		color: var(--ink-2);
+		letter-spacing: -0.02em;
+	}
+
+	/* ---------- light line → pen ---------- */
+	.s-line {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 50%;
+		height: 4px;
+		margin-top: -2px;
+		border-radius: 2px;
+		background: linear-gradient(90deg, rgba(85, 70, 255, 0), #5546ff 18%, #fff 50%, #5546ff 82%, rgba(85, 70, 255, 0));
+		box-shadow: 0 0 28px 6px rgba(85, 70, 255, 0.45);
+		transform: scaleX(0);
+		opacity: 0;
+	}
+	.s-write {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: min(92vw, 1240px);
+		transform: translate(-50%, -50%);
+		opacity: 0;
+	}
+	.sw {
+		display: block;
+		width: 100%;
+		height: auto;
+		overflow: visible;
+	}
+	.sw-tall {
+		display: none;
+	}
+	@media (max-width: 719px) {
+		.sw-wide {
+			display: none;
+		}
+		.sw-tall {
+			display: block;
+		}
+	}
+	.sw text {
+		font-family: var(--sans);
+		font-size: 104px;
+		font-weight: 760;
+		letter-spacing: -0.045em;
+	}
+	.sw-tall text {
+		font-size: 96px;
+	}
+	.sw-fill {
+		fill: var(--ink);
+	}
+	.sw-stroke {
+		fill: none;
+		stroke: #5546ff;
+		stroke-width: 2.2;
+		stroke-dasharray: 1600;
+		stroke-dashoffset: 1600;
+	}
+	.sw-under {
+		fill: #5546ff;
+	}
+	.s-pen {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 18px;
+		height: 18px;
+		margin: -9px 0 0 -9px;
+		border-radius: 50%;
+		background: #fff;
+		box-shadow:
+			0 0 0 4px #5546ff,
+			0 0 34px 12px rgba(85, 70, 255, 0.55);
+		opacity: 0;
+	}
+
+	/* ---------- end: promise settles + CTA ---------- */
+	.s-end {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: 0;
+		padding: 76px 6vw 24px;
+		text-align: center;
+		opacity: 0;
+	}
+	.s-h1 {
+		font-size: clamp(40px, 6.6vw, 104px);
+		font-weight: 740;
+		letter-spacing: -0.05em;
+		line-height: 0.98;
+		max-width: 11.5em;
+		text-wrap: balance;
+	}
+	.s-sub {
+		margin-top: clamp(16px, 2.4vh, 26px);
+		font-size: clamp(17px, 1.6vw, 23px);
+		line-height: 1.4;
+		color: var(--ink-2);
+		max-width: 33em;
+		text-wrap: pretty;
+	}
+	.s-cta {
+		margin-top: clamp(20px, 3.4vh, 34px);
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 12px;
+	}
+	.s-micro {
+		margin-top: 10px;
+		font-size: 14px;
+		font-weight: 560;
+		color: var(--ink-2);
+	}
+	.s-proof {
+		margin-top: clamp(18px, 3vh, 30px);
+		padding: 9px 16px;
+		border-radius: 999px;
+		font-size: 14.5px;
+		line-height: 1.4;
+		color: var(--ink-2);
+		background: rgba(255, 255, 255, 0.62);
+		box-shadow:
+			inset 0 1px 0 #fff,
+			0 0 0 1px rgba(29, 29, 31, 0.06);
+		max-width: 40em;
+	}
+	.s-proof a {
+		color: var(--ink);
+		font-weight: 600;
+		text-decoration-color: rgba(85, 70, 255, 0.45);
+		text-underline-offset: 3px;
+	}
+	.s-proof a:hover {
+		color: var(--iris);
+	}
+	@media (max-width: 719px) {
+		.s-proof {
+			border-radius: 16px;
+			font-size: 13.5px;
+		}
+	}
+
+	.s-hint {
+		position: absolute;
+		left: 50%;
+		bottom: 28px;
+		transform: translateX(-50%);
+		display: grid;
+		justify-items: center;
+		gap: 8px;
+		font-size: 14px;
+		font-weight: 560;
+		color: var(--ink-2);
+		animation: hintIn 0.8s 1.2s both;
+	}
+	.s-hint i {
+		width: 22px;
+		height: 34px;
+		border-radius: 12px;
+		box-shadow: inset 0 0 0 2px rgba(29, 29, 31, 0.35);
+		position: relative;
+	}
+	.s-hint i::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 7px;
+		width: 4px;
+		height: 7px;
+		margin-left: -2px;
+		border-radius: 2px;
+		background: #5546ff;
+		animation: wheel 1.6s ease-in-out infinite;
+	}
+	@keyframes wheel {
+		60% {
+			transform: translateY(9px);
+			opacity: 0;
+		}
+		61% {
+			transform: none;
+			opacity: 0;
+		}
+	}
+	@keyframes hintIn {
+		from {
+			opacity: 0;
+		}
+	}
+
+	.story-art {
+		display: none;
+	}
+
+	/* ---------- static hero (no JS / reduced motion / Save-Data / no WebGL2) ---------- */
+	:global(html:not([data-story='live'])) .story-stage {
+		position: relative;
+		height: auto;
+		min-height: min(100svh, 920px);
+		display: grid;
+		align-content: center;
+		justify-items: center;
+		gap: 14px;
+		padding: 120px var(--gutter) 72px;
+	}
+	:global(html:not([data-story='live'])) .sq {
+		position: relative; /* positioned, so it paints above the absolutely placed background */
+		left: auto;
+		top: auto;
+		translate: none;
+		width: auto;
+		font-size: clamp(20px, 2.4vw, 30px);
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		color: var(--ink-2);
+		max-width: none;
+	}
+	:global(html:not([data-story='live'])) .wi {
+		animation: none;
+	}
+	:global(html:not([data-story='live'])) .s-end {
+		position: relative;
+		inset: auto;
+		padding: 0;
+		opacity: 1;
+	}
+	:global(html:not([data-story='live'])) .s-h1 {
+		font-size: clamp(42px, 6.6vw, 96px);
+	}
+	:global(html:not([data-story='live'])) :is(.s-hours, .s-line, .s-write, .s-hint, .story-canvas, .story-veil, .sp) {
+		display: none;
+	}
+	:global(html:not([data-story='live'])) .story-art {
+		display: block;
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		perspective: 900px;
+		opacity: 0.55;
+	}
+	.pane {
+		position: absolute;
+		width: 30vw;
+		height: 20vw;
+		border-radius: 28px;
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.15));
+		border: 1px solid rgba(255, 255, 255, 0.9);
+		box-shadow: 0 30px 60px -30px rgba(16, 24, 40, 0.3);
+	}
+	.p1 {
+		left: -6vw;
+		top: 12%;
+		transform: rotateY(28deg) rotateX(8deg);
+	}
+	.p2 {
+		right: -8vw;
+		top: 22%;
+		transform: rotateY(-30deg) rotateX(-6deg);
+	}
+	.p3 {
+		left: 34vw;
+		bottom: -12vw;
+		transform: rotateX(48deg);
+	}
+	.ph {
+		position: absolute;
+		left: 50%;
+		top: 0;
+		bottom: 0;
+		width: 3px;
+		background: linear-gradient(180deg, transparent, rgba(85, 70, 255, 0.5), transparent);
+	}
+</style>

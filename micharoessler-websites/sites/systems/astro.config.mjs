@@ -1,7 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import react from '@astrojs/react';
 
 export default defineConfig({
 	site: 'https://formatschnitt.de',
@@ -12,7 +11,6 @@ export default defineConfig({
 		routing: { prefixDefaultLocale: false },
 	},
 	integrations: [
-		react(),
 		sitemap({
 			i18n: { defaultLocale: 'de', locales: { de: 'de-DE', en: 'en' } },
 		}),

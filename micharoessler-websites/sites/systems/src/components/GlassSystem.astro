@@ -22,7 +22,13 @@
 		if (matchMedia('(pointer: coarse)').matches && (nav.hardwareConcurrency ?? 8) <= 4) return false;
 		try {
 			const c = document.createElement('canvas');
-			return !!c.getContext('webgl2');
+			if (/[?&]story=live\b/.test(location.search)) return true;
+			const g = c.getContext('webgl2', { failIfMajorPerformanceCaveat: true });
+			if (!g) return false;
+			const x = g.getExtension('WEBGL_debug_renderer_info');
+			const soft = !!x && /swiftshader|llvmpipe|softpipe|software|basic render/i.test(String(g.getParameter(x.UNMASKED_RENDERER_WEBGL)));
+			g.getExtension('WEBGL_lose_context')?.loseContext();
+			return !soft;
 		} catch {
 			return false;
 		}

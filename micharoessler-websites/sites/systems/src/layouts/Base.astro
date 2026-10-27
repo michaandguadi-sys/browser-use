@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { getImage } from 'astro:assets';
 import { href, other, type Lang } from '../i18n';
 import portrait from '../assets/micha-portrait.jpg';
+import { booking } from '../data/content';
 
 interface Props {
 	lang: Lang;
@@ -76,12 +77,12 @@ const org = {
 					<span>Formatschnitt</span>
 				</a>
 				<nav aria-label={de ? 'Hauptnavigation' : 'Main'}>
-					<a class="nl" href={`${home}#loesung`}>{de ? 'Lösung' : 'Solution'}</a>
-					<a class="nl" href={`${home}#vorteile`}>{de ? 'Vorteile' : 'Benefits'}</a>
-					<a class="nl" href={`${home}#pakete`}>{de ? 'Pakete' : 'Packages'}</a>
+					<a class="nl" href={`${home}#ablauf`}>{de ? 'So läuft’s' : 'How it works'}</a>
+					<a class="nl" href={`${home}#pakete`}>{de ? 'Preise' : 'Pricing'}</a>
+					<a class="nl" href={`${home}#rechner`}>{de ? 'Rechner' : 'Calculator'}</a>
 					<a class="nl" href={`${home}#faq`}>FAQ</a>
 					<a class="lang" href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>{other(lang).toUpperCase()}</a>
-					<a class="btn btn--primary hd-cta" href={`${home}#kontakt`}>{de ? 'Erstgespräch' : 'Intro call'}</a>
+					<a class="btn btn--primary hd-cta" href={booking.bookingUrl || `${home}#kontakt`}>{de ? 'Erstgespräch' : 'Intro call'}</a>
 				</nav>
 			</div>
 		</header>
@@ -94,7 +95,7 @@ const org = {
 			<div class="wrap ft-in">
 				<div>
 					<p class="ft-brand">Formatschnitt</p>
-					<p class="muted">{de ? 'Schnitt-Systeme für wiederkehrende Videoformate' : 'Edit systems for recurring video formats'}</p>
+					<p class="muted">{de ? 'Schnitt-Systeme für wiederkehrende Videoformate' : 'Editing systems for recurring video shows'}</p>
 				</div>
 				<ul>
 					<li><a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a></li>

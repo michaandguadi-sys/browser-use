@@ -6,69 +6,110 @@ type L = { de: string; en: string };
 // Copy rule (Oct 2026, owner): written for the buyer (marketing, brand, founders) — outcomes in plain
 // words, no tool names, no editing jargon. Prices, units and terms are fixed; never invent results.
 
+// All page copy lives here (merged copy review, Oct 2026). Voice: "ich" = Micha, "ihr/euch" = the buyer,
+// "wir" only for the two of us together. EN says "show" for the buyer's series and "editing system" throughout.
+
+// Hero: scroll story → H1. Swap lines here; the story, the static hero and the meta all read from this object.
+export const hero = {
+	question: { de: 'Keine Zeit fürs Editing?', en: 'No time for editing?' },
+	hoursCaption: { de: 'Stunden. Jede Woche. Jede Folge.', en: 'Hours. Every week. Every episode.' },
+	chip: { de: '+ 6 h', en: '+ 6 h' },
+	promise: { de: 'Ich nehme euch das ab.', en: 'I’ll take it off your plate.' },
+	// line break used for the write-on on narrow screens
+	promiseLines: { de: ['Ich nehme', 'euch das ab.'], en: ['I’ll take it', 'off your plate.'] },
+	h1: { de: 'Euer Format. Ohne eure Schnittzeit.', en: 'Your show. Without the editing hours.' },
+	sub: {
+		de: 'Euer YouTube-Format wird einmal zum Schnitt-System. Dann schneide ich jede Folge – zum Festpreis.',
+		en: 'Your YouTube show, set up once as an editing system. Then I edit every episode at a fixed price.',
+	},
+	cta: { de: 'Erstgespräch anfragen', en: 'Request an intro call' },
+	ctaMicro: { de: '15 Minuten, kostenlos.', en: '15 minutes, free.' },
+	cta2: { de: 'Preise ansehen', en: 'See pricing' },
+	// Proof: one named example, framed as one of many. The link names the channel, the line says what was edited.
+	proof: {
+		de: { before: 'Unter anderem für ', link: 'Carwow Deutschland', after: ' – Review-Serie, 2025.' },
+		en: { before: 'Among others for ', link: 'Carwow Germany', after: ' – review series, 2025.' },
+		href: 'https://www.youtube.com/@carwowDeutschland',
+	},
+	hint: { de: 'Scrollen', en: 'Scroll' },
+};
+
+// "So läuft's": one mechanism line (H2) + three outcomes.
+export const how = {
+	kicker: { de: 'So läuft’s', en: 'How it works' },
+	h2: { de: 'Einmal einrichten. Läuft jede Folge.', en: 'Set up once. Every episode follows.' },
+	cards: [
+		{
+			title: { de: 'Mehr Zeit.', en: 'More time.' },
+			text: { de: 'Feedback gebt ihr einmal – es gilt für jede weitere Folge.', en: 'Give feedback once – it applies to every episode after.' },
+		},
+		{
+			title: { de: 'Weniger Kosten.', en: 'Lower cost.' },
+			text: {
+				de: 'Pakete liegen unter dem Tagessatz von 750 € – das System macht die Arbeit schneller.',
+				en: 'Packages cost less than the €750 day rate – the system makes the work faster.',
+			},
+		},
+		{
+			title: { de: 'Höhere Qualität.', en: 'Higher quality.' },
+			text: {
+				de: 'Aufbau, Look, Titel, Grafiken – einmal mit euch festgelegt, in jeder Folge gleich.',
+				en: 'Structure, look, titles, graphics – agreed with you once, the same in every episode.',
+			},
+		},
+	] as { title: L; text: L }[],
+};
+
+// Packages. Prices, units, day counts and terms are fixed by the offer — never change values here.
+// tier 'card' = one of the three cards; 'more' = the compact "Weitere Optionen" line. JSON-LD lists all five.
 export const packages: {
 	id: string;
+	tier: 'card' | 'more';
 	name: L;
 	sub: L;
-	for: L;
 	price: L;
 	unit: L;
 	days: L;
 	points: L[];
-	result: L;
+	cta?: L;
 	highlight?: boolean;
 }[] = [
 	{
 		id: 'pilot',
+		tier: 'card',
 		name: { de: 'Bezahlter Pilot', en: 'Paid pilot' },
-		sub: { de: 'Eine Testfolge zum Festpreis', en: 'One test episode at a fixed price' },
-		for: { de: 'Ihr wollt sehen, wie es läuft, bevor ihr euch bindet.', en: 'You want to see how it works before you commit.' },
+		sub: { de: 'Erst testen, dann entscheiden.', en: 'Try it before you commit.' },
 		price: { de: '1.950 €', en: '€1,950' },
-		unit: { de: 'Festpreis', en: 'fixed' },
+		unit: { de: 'Festpreis', en: 'fixed price' },
 		days: { de: '≈ 2,6 Tage', en: '≈ 2.6 days' },
 		points: [
 			{ de: '1 fertige Folge + 3 Shorts aus eurem Material', en: '1 finished episode + 3 shorts from your footage' },
-			{ de: 'Ihr seht Qualität und Tempo am echten Beispiel', en: 'You see quality and turnaround on a real example' },
+			{ de: 'Zu 100 % auf den ersten Monat angerechnet', en: '100% credited to your first month' },
+			{ de: 'Überzeugt er nicht, endet es dort – ohne Folgekosten', en: 'If it doesn’t convince you, it ends there – no further costs' },
 		],
-		result: { de: 'Eine sichere Entscheidung – und der Preis wird zu 100 % auf den ersten Monat angerechnet.', en: 'A safe decision – and the price is 100% credited to your first month.' },
+		cta: { de: 'Pilot anfragen', en: 'Request the pilot' },
 		highlight: true,
 	},
 	{
-		id: 'setup',
-		name: { de: 'Format-System Setup', en: 'Format system setup' },
-		sub: { de: 'Euer Format einmal sauber festgelegt', en: 'Your format, defined properly once' },
-		for: { de: 'Euer eigenes Team schneidet – aber jede Folge wird neu erfunden.', en: 'Your own team edits – but every episode gets reinvented.' },
-		price: { de: '3.500 €', en: '€3,500' },
-		unit: { de: 'einmalig', en: 'one-off' },
-		days: { de: '≈ 5 Tage', en: '≈ 5 days' },
-		points: [
-			{ de: 'Analyse eurer Show: was sich in jeder Folge wiederholt', en: 'A review of your show: what repeats in every episode' },
-			{ de: 'Feste Standards für Aufbau, Titel und Look', en: 'Fixed standards for structure, titles and look' },
-			{ de: 'Grafiken, die ihr selbst per Tabelle befüllt', en: 'Graphics your team fills in from a simple sheet' },
-			{ de: 'Ablauf für Shorts aus jeder Folge, schriftliche Anleitung und Übergabe-Gespräch', en: 'A routine for shorts from every episode, a written guide and a handover call' },
-		],
-		result: { de: 'Euer Team startet jede Folge vom selben Standard – statt bei null.', en: 'Your team starts every episode from the same standard – not from scratch.' },
-	},
-	{
 		id: 'retainer-s',
+		tier: 'card',
 		name: { de: 'Format-Retainer S', en: 'Format retainer S' },
-		sub: { de: 'Ich schneide eure Folgen – jeden Monat', en: 'I edit your episodes – every month' },
-		for: { de: 'Ihr veröffentlicht regelmäßig und wollt den Schnitt abgeben.', en: 'You publish regularly and want to hand off the editing.' },
+		sub: { de: 'Ich schneide eure Folgen – jeden Monat.', en: 'I edit your episodes, every month.' },
 		price: { de: '4.200 €', en: '€4,200' },
 		unit: { de: 'pro Monat', en: 'per month' },
 		days: { de: '6 Schnitttage', en: '6 edit days' },
 		points: [
 			{ de: 'z. B. 2 lange Folgen + 8–12 Shorts', en: 'e.g. 2 long episodes + 8–12 shorts' },
-			{ de: 'Geschnitten nach eurem festgelegten Standard', en: 'Edited to your agreed standard' },
+			{ de: 'Nach eurem festgelegten Standard', en: 'To your agreed standard' },
 			{ de: '3 Monate Mindestlaufzeit', en: '3-month minimum' },
+			{ de: 'Einrichtung nicht enthalten – Setup separat (3.500 € einmalig)', en: 'Setup not included – separate (€3,500 one-off)' },
 		],
-		result: { de: 'Fester Monatspreis, gleichbleibende Qualität – euer Team hat den Kopf frei.', en: 'A fixed monthly price, consistent quality – your team is free for other work.' },
 	},
 	{
 		id: 'retainer-m',
+		tier: 'card',
 		name: { de: 'Format-Retainer M', en: 'Format retainer M' },
-		sub: { de: 'Für Formate mit hohem Takt', en: 'For high-frequency formats' },
-		for: { de: 'Ihr veröffentlicht oft und braucht verlässliches Tempo.', en: 'You publish often and need reliable pace.' },
+		sub: { de: 'Für Formate mit hohem Takt.', en: 'For shows that publish often.' },
 		price: { de: '6.750 €', en: '€6,750' },
 		unit: { de: 'pro Monat', en: 'per month' },
 		days: { de: '10 Schnitttage', en: '10 edit days' },
@@ -76,121 +117,122 @@ export const packages: {
 			{ de: 'z. B. 4 lange Folgen + 16–24 Shorts', en: 'e.g. 4 long episodes + 16–24 shorts' },
 			{ de: 'Eure Folgen haben Vorrang', en: 'Your episodes get priority' },
 			{ de: 'Monatlicher Rückblick: was wirkt, was wir ändern', en: 'A monthly review: what works, what we change' },
+			{ de: 'Einrichtung nicht enthalten – Setup separat (3.500 € einmalig)', en: 'Setup not included – separate (€3,500 one-off)' },
 		],
-		result: { de: 'Ein volles Programm zum festen Monatspreis.', en: 'A full publishing schedule at a fixed monthly price.' },
+	},
+	{
+		id: 'setup',
+		tier: 'more',
+		name: { de: 'Format-System Setup', en: 'Format system setup' },
+		sub: { de: 'Euer Team schneidet – nach festem Standard.', en: 'Your team edits – to a fixed standard.' },
+		price: { de: '3.500 €', en: '€3,500' },
+		unit: { de: 'einmalig', en: 'one-off' },
+		days: { de: '≈ 5 Tage', en: '≈ 5 days' },
+		points: [
+			{ de: 'Analyse: was sich in jeder Folge wiederholt', en: 'Review: what repeats in every episode' },
+			{ de: 'Feste Standards für Aufbau, Titel und Look', en: 'Fixed standards for structure, titles and look' },
+			{ de: 'Grafiken, die ihr per Tabelle befüllt', en: 'Graphics your team fills in from a sheet' },
+			{ de: 'Shorts-Ablauf, Anleitung, Übergabe-Gespräch', en: 'Shorts routine, written guide, handover call' },
+		],
 	},
 	{
 		id: 'edit-social',
+		tier: 'more',
 		name: { de: 'Schnitt + Social', en: 'Edit + social' },
-		sub: { de: 'Schnitt plus Betreuung eurer Kanäle', en: 'Editing plus channel management' },
-		for: { de: 'Ihr wollt Schnitt und Veröffentlichung aus einer Hand.', en: 'You want editing and publishing from one source.' },
+		sub: { de: 'Schnitt und Kanäle aus einer Hand. Preis nach Anzahl der Kanäle.', en: 'Editing and your channels, one contact. Priced by number of channels.' },
 		price: { de: 'ab 7.800 €', en: 'from €7,800' },
 		unit: { de: 'pro Monat', en: 'per month' },
 		days: { de: '10 Schnitttage + Social', en: '10 edit days + social' },
 		points: [
-			{ de: 'Redaktionsplan, Planung der Posts, Beitragstexte', en: 'Content calendar, post scheduling, post copy' },
-			{ de: 'Kommentare im Blick (leichtes Community-Management)', en: 'An eye on comments (light community management)' },
-			{ de: 'Monatlicher Zahlen-Report; Preis nach Anzahl der Kanäle', en: 'Monthly numbers report; priced by number of channels' },
+			{ de: 'Redaktionsplan, Post-Planung, Beitragstexte', en: 'Content calendar, scheduling, post copy' },
+			{ de: 'Kommentare im Blick (leichtes Community-Management)', en: 'Comment monitoring (light community management)' },
+			{ de: 'Monatlicher Zahlen-Report; Preis nach Anzahl der Kanäle', en: 'Monthly report; priced by number of channels' },
 		],
-		result: { de: 'Ein Ansprechpartner vom Rohmaterial bis zum veröffentlichten Post.', en: 'One contact from raw footage to published post.' },
 	},
 ];
 
-export const audience: L[] = [
-	{ de: 'Ihr habt ein wiederkehrendes Videoformat – und jede Folge fühlt sich an wie die erste.', en: 'You run a recurring video format – and every episode feels like the first.' },
-	{ de: 'Euer Team verbringt zu viel Zeit mit Feedback-Runden.', en: 'Your team spends too much time in feedback rounds.' },
-	{ de: 'Ihr wollt mehr aus jedem Dreh holen: Folge, Shorts, Anzeigen.', en: 'You want more from every shoot: episode, shorts, ads.' },
-];
-
-// The solution in three steps (lead section).
-export const solution: { n: string; title: L; text: L }[] = [
-	{
-		n: '1',
-		title: { de: 'Einmal einrichten', en: 'Set up once' },
-		text: {
-			de: 'Ich lege euer Format als System fest: Aufbau, Look, Titel, Grafiken – und eure Entscheidungen.',
-			en: 'I define your format as a system: structure, look, titles, graphics – and your decisions.',
-		},
+export const pricing = {
+	h2: { de: 'Festpreise. Schriftlich. Vorab.', en: 'Fixed prices. In writing. Upfront.' },
+	sub: { de: 'Erst ein Pilot zum Festpreis. Danach ein fester Monatspreis.', en: 'First a fixed-price pilot. Then a fixed monthly price.' },
+	tag: { de: 'Hier starten', en: 'Start here' },
+	enquire: { de: 'Anfragen', en: 'Enquire' },
+	more: { de: 'Weitere Optionen', en: 'More options' },
+	discuss: { de: 'Darüber sprechen', en: 'Discuss it' },
+	note: {
+		de: 'Alle Preise netto. Abrechnung über Micha Roessler LLC (USA); EU-B2B-Kunden: Reverse-Charge, keine deutsche USt. auf der Rechnung. USD-Preise auf Anfrage.',
+		en: 'All prices net. Invoiced by Micha Roessler LLC (USA); EU B2B clients: reverse charge. USD pricing on request.',
 	},
-	{
-		n: '2',
-		title: { de: 'Laufendes System', en: 'A running system' },
-		text: {
-			de: 'Jede Folge entsteht im gleichen Standard. Feedback gebt ihr einmal – es gilt für alle weiteren Folgen.',
-			en: 'Every episode is made to the same standard. You give feedback once – it applies to every episode after.',
-		},
-	},
-	{
-		n: '3',
-		title: { de: 'Ihr spart Zeit und Geld', en: 'You save time and money' },
-		text: {
-			de: 'Weniger Abstimmung, weniger Korrekturen, mehr fertige Inhalte aus jedem Dreh – zum festen Preis.',
-			en: 'Less coordination, fewer corrections, more finished content from every shoot – at a fixed price.',
-		},
-	},
-];
-
-// Benefits. Every figure is a fact from the offer — nothing measured, nothing promised.
-export const benefits: { key: string; value: number; prefix?: L; suffix: L; title: L; text: L }[] = [
-	{
-		key: 'time',
-		value: 1,
-		suffix: { de: '×', en: '×' },
-		title: { de: 'Zeit', en: 'Time' },
-		text: { de: 'Euer Format wird einmal festgelegt – nicht in jeder Folge neu.', en: 'Your format is defined once – not again in every episode.' },
-	},
-	{
-		key: 'cost',
-		value: 750,
-		suffix: { de: ' €', en: '' },
-		prefix: { de: '', en: '€' },
-		title: { de: 'Kosten', en: 'Cost' },
-		text: { de: 'Tagessatz als Basis. Pakete liegen darunter, weil das System schneller macht.', en: 'The day rate is the base. Packages cost less because the system makes it faster.' },
-	},
-	{
-		key: 'quality',
-		value: 1,
-		suffix: { de: ' Standard', en: ' standard' },
-		title: { de: 'Qualität', en: 'Quality' },
-		text: { de: 'Jede Folge nach demselben, mit euch abgestimmten Standard.', en: 'Every episode to the same standard, agreed with you.' },
-	},
-	{
-		key: 'plan',
-		value: 0,
-		suffix: { de: ' €', en: '' },
-		prefix: { de: '', en: '€' },
-		title: { de: 'Planbarkeit', en: 'Predictability' },
-		text: { de: 'Keine Folgekosten, wenn der Pilot nicht überzeugt. Danach: fester Monatspreis.', en: 'No follow-on cost if the pilot doesn’t convince you. After that: a fixed monthly price.' },
-	},
-];
+};
 
 export const faq: { q: L; a: L }[] = [
 	{
-		q: { de: 'Was kostet das und wie wird abgerechnet?', en: 'What does it cost and how is it invoiced?' },
+		q: { de: 'Wie viel Arbeit bleibt bei uns?', en: 'How much work stays with us?' },
 		a: {
-			de: 'Festpreise, schriftlich vor Start: Pilot 1.950 €, Setup 3.500 € einmalig, laufender Schnitt ab 4.200 € pro Monat (3 Monate Mindestlaufzeit). Basis ist ein Tagessatz von 750 €. Alle Preise netto, Abrechnung über Micha Roessler LLC (USA); für B2B-Kunden in der EU gilt Reverse-Charge.',
-			en: 'Fixed prices, in writing before we start: pilot €1,950, setup €3,500 one-off, ongoing editing from €4,200 per month (3-month minimum). The base is a day rate of €750. All prices net, invoiced by Micha Roessler LLC (USA); EU B2B clients are invoiced under reverse charge.',
+			de: 'Ihr liefert Material und gebt Feedback – gebündelt, als eine Änderungsliste. Wie viel Zeit das spart, misst der Pilot.',
+			en: 'You send footage and give feedback – as one list of changes. The pilot measures how much time that saves.',
 		},
 	},
 	{
-		q: { de: 'Wie viel Aufwand bleibt bei unserem Team?', en: 'How much work stays with our team?' },
+		q: { de: 'Ersetzt du unser Team?', en: 'Do you replace our team?' },
 		a: {
-			de: 'Ihr liefert das Material und gebt Feedback – gebündelt an einer Stelle, als klare Änderungsliste. Was einmal entschieden ist, gilt für die nächsten Folgen. Wie viel Zeit das bei euch spart, messen wir im Pilot.',
-			en: 'You supply the footage and give feedback – in one place, as a clear list of changes. What is decided once applies to the next episodes. How much time that saves you is what the pilot measures.',
-		},
-	},
-	{
-		q: { de: 'Ersetzt ihr unser bestehendes Team?', en: 'Do you replace our existing team?' },
-		a: {
-			de: 'Nein. Die Zusammenarbeit mit eurem Team ist der Normalfall, und alles wird so dokumentiert, dass euer Team es auch ohne mich weiterführen kann. KI hilft bei Vorschlägen – die Entscheidungen trifft ein Mensch.',
-			en: 'No. Working with your team is the default, and everything is documented so your team can run it without me. AI helps with suggestions – a human makes the decisions.',
-		},
-	},
-	{
-		q: { de: 'Wie starten wir?', en: 'How do we start?' },
-		a: {
-			de: 'Mit einem 15-Minuten-Call und dann meist dem bezahlten Pilot: eine Folge plus drei Shorts zum Festpreis, voll anrechenbar.',
-			en: 'A 15-minute call, then usually the paid pilot: one episode plus three shorts at a fixed price, fully credited.',
+			de: 'Nein. Ich arbeite mit eurem Team und dokumentiere alles, damit ihr ohne mich weitermachen könnt. KI macht Vorschläge, ein Mensch entscheidet.',
+			en: 'No. I work with your team and document everything, so you can carry on without me. AI suggests; a human decides.',
 		},
 	},
 ];
+
+// Intro-call booking. While bookingUrl is empty, the page shows its own request widget (day + 15-min slot →
+// prefilled email + .ics). Set it to a real scheduling page later and every intro-call CTA links there instead.
+export const booking = {
+	bookingUrl: '',
+	timeZone: 'Europe/Berlin',
+	days: 10, // next working days, Mon–Fri
+	from: '10:00',
+	to: '17:00', // last slot starts 15 minutes before
+	slotMinutes: 15,
+	email: 'hello@micharoessler.com',
+	legend: { de: 'Wunschtermin – 15 Minuten', en: 'Pick a time – 15 minutes' },
+	day: { de: 'Tag', en: 'Day' },
+	time: { de: 'Uhrzeit (Berlin)', en: 'Time (Berlin)' },
+	local: { de: 'bei euch', en: 'your time' },
+	none: { de: 'Noch kein Termin gewählt.', en: 'No time picked yet.' },
+	chosen: { de: 'Gewählt', en: 'Picked' },
+	confirm: { de: 'Das ist eine Anfrage. Ich bestätige per E-Mail – meist innerhalb von zwei Werktagen.', en: 'This is a request. I confirm by email – usually within two working days.' },
+	needSlot: { de: 'Bitte wählt zuerst Tag und Uhrzeit.', en: 'Please pick a day and a time first.' },
+	submit: { de: 'Termin anfragen', en: 'Request this time' },
+	sent: { de: 'Euer Mailprogramm ist offen. Termin vorgemerkt – bis zu meiner Bestätigung.', en: 'Your email app is open. Time noted – until I confirm.' },
+	ics: { de: 'Im Kalender vormerken (.ics)', en: 'Add to calendar (.ics)' },
+	icsTitle: { de: 'Vorgemerkt: Erstgespräch Formatschnitt (Anfrage)', en: 'Tentative: Formatschnitt intro call (request)' },
+	icsNote: { de: 'Angefragt – Micha bestätigt per E-Mail.', en: 'Requested – Micha confirms by email.' },
+	open: { de: 'Termin auswählen', en: 'Pick a time' },
+};
+
+export const contact = {
+	h2: { de: 'Erzählt mir von eurem Format.', en: 'Tell me about your show.' },
+	who: { de: 'Micha Rössler – Editor & Filmemacher. Ihr schreibt direkt mit mir.', en: 'Micha Rössler – editor & filmmaker. You write to me directly.' },
+	steps: { de: 'Erst ein 15-Minuten-Call, dann meist der Pilot.', en: 'A 15-minute call first, then usually the pilot.' },
+	risk: { de: 'Überzeugt der Pilot nicht, endet es dort – ohne Folgekosten.', en: 'If the pilot doesn’t convince you, it ends there – no further costs.' },
+	remote: { de: 'Remote, auf Deutsch oder Englisch.', en: 'Remote, in German or English.' },
+	mail: { de: 'Antwort in zwei Werktagen. Oder direkt:', en: 'Reply within two working days. Or email:' },
+	subject: { de: 'Anfrage Formatschnitt', en: 'Formatschnitt enquiry' },
+	name: { de: 'Name', en: 'Name' },
+	company: { de: 'Firma', en: 'Company' },
+	eps: { de: 'Folgen pro Monat', en: 'Episodes per month' },
+	epsOptions: { de: ['1–2', '3–4', '5+', 'Noch offen'], en: ['1–2', '3–4', '5+', 'Not sure yet'] },
+	link: { de: 'Link zum Format', en: 'Link to your show' },
+	msg: { de: 'Nachricht', en: 'Message' },
+	optional: { de: 'optional', en: 'optional' },
+	required: { de: 'Pflichtfeld', en: 'required' },
+	note: { de: 'Öffnet euer Mailprogramm. Hier wird nichts gespeichert.', en: 'Opens your email app. Nothing is stored here.' },
+};
+
+export const meta = {
+	title: {
+		de: 'Formatschnitt – Freelance-Cutter für YouTube-Formate von Unternehmen',
+		en: 'Formatschnitt – Freelance Video Editor for Company YouTube Shows',
+	},
+	description: {
+		de: 'Keine Zeit fürs Editing? Ich richte euer YouTube-Format einmal als Schnitt-System ein und schneide jede Folge. Festpreise ab 1.950 €.',
+		en: 'No time for editing? I turn your company’s YouTube show into an editing system, then edit every episode. Fixed prices from €1,950.',
+	},
+};
