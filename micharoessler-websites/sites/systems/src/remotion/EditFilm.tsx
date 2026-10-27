@@ -204,7 +204,7 @@ const Editor = ({ f, lang, depth }: { f: number; lang: FilmProps['lang']; depth:
 								}}
 							>
 								{!p.cut && p.e - p.s > 6 && (
-									<span style={{ position: 'absolute', left: 10, top: 12, ...textStyle(12, 600, 'rgba(255,255,255,0.95)') }}>{`A0${p.group + 1}`}</span>
+									<span style={{ position: 'absolute', left: 10, top: 12, ...textStyle(12, 600, 'rgba(255,255,255,0.95)') }}>{`${s.scene} ${p.group + 1}`}</span>
 								)}
 							</div>
 						);
@@ -248,7 +248,7 @@ const Editor = ({ f, lang, depth }: { f: number; lang: FilmProps['lang']; depth:
 								>
 									{hue === -4 && <Wave w={w} h={TRACK_H} f={f} />}
 									{(hue === -1 || hue === -2) && w > 90 && (
-										<span style={{ position: 'absolute', left: 10, top: 13, ...textStyle(13, 600, '#fff') }}>{hue === -1 && i === 0 ? s.title : hue === -2 ? s.data[0] : 'Lower third'}</span>
+										<span style={{ position: 'absolute', left: 10, top: 13, ...textStyle(13, 600, '#fff') }}>{hue === -1 && i === 0 ? s.title : hue === -2 ? s.data[0] : s.subtitle}</span>
 									)}
 								</div>
 							);
@@ -490,7 +490,7 @@ export const EditFilm = ({ lang }: FilmProps) => {
 								<div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 21, overflow: 'hidden' }}>
 									<FinishedFrame w={m.w - 20} h={m.h - 20} f={f - 384} labels={labels} />
 								</div>
-								<Mono style={{ position: 'absolute', right: 22, top: 20, fontSize: tall ? 22 : 18, color: '#fff', padding: '4px 10px', borderRadius: 999, background: 'rgba(20,16,60,0.35)' }}>{i ? '9:16' : '16:9'}</Mono>
+								<Mono style={{ position: 'absolute', right: 22, top: 20, fontSize: tall ? 22 : 18, color: '#fff', padding: '4px 10px', borderRadius: 999, background: 'rgba(20,16,60,0.35)' }}>{s.formats[i]}</Mono>
 							</div>
 						);
 					})}

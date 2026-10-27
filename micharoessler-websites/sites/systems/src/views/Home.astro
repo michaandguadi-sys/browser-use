@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { type Lang } from '../i18n';
-import { packages, pains, steps, proof, tools, faq } from '../data/content';
+import { packages, audience, pains, steps, proof, faq } from '../data/content';
 import Calculator from '../components/Calculator.astro';
 import FilmPlayer from '../components/FilmPlayer.tsx';
 import { Image, getImage } from 'astro:assets';
@@ -15,13 +15,13 @@ const { lang } = Astro.props;
 const de = lang === 'de';
 
 const title = de
-	? 'Formatschnitt – Cutter Freelancer für YouTube-Formate & Schnitt-Systeme'
-	: 'Formatschnitt – Format Video Editor & Edit Systems for YouTube Teams';
+	? 'Formatschnitt – Freelance-Cutter für YouTube-Formate von Unternehmen'
+	: 'Formatschnitt – Freelance Video Editor for Company YouTube Formats';
 const description = de
-	? 'Freelance-Cutter für wiederkehrende YouTube-Formate: Schnitt-Templates, datengetriebene Grafiken, Shorts-Pipeline und Retainer. Festpreise ab 1.950 €, Tagessatz 750 €.'
-	: 'Freelance editor for recurring YouTube formats: edit templates, data-driven graphics, shorts pipeline and retainers. Fixed prices from €1,950, day rate €750.';
+	? 'Videoschnitt für Unternehmen mit eigenem YouTube-Format: gleiche Qualität in jeder Folge, Feedback einmal statt zehnmal. Festpreise ab 1.950 €.'
+	: 'Video editing for companies with their own YouTube format: the same quality every episode, feedback once instead of ten times. Fixed prices from €1,950.';
 
-// Posters rendered from the Remotion film (scripts/render-film.mjs) — shown before the Player hydrates.
+// Posters rendered from the hero film (scripts/render-film.mjs) — shown before the player hydrates.
 const files = import.meta.glob<ImageMetadata>('../assets/film/*.webp', { eager: true, import: 'default' });
 const poster = async (tag: 'wide' | 'tall', at: 'start' | 'end') => {
 	const src = files[`../assets/film/${tag}-${lang}-${at}.webp`];
@@ -70,10 +70,10 @@ const offerLd = {
 	<section class="hero">
 		<div class="aura" aria-hidden="true"></div>
 		<div class="wrap hero-in">
-			<p class="eyebrow">{de ? 'Schnitt-Systeme für YouTube-Formate' : 'Edit systems for YouTube formats'}</p>
+			<p class="eyebrow">{de ? 'Videoschnitt für Unternehmen mit eigenem YouTube-Format' : 'Video editing for companies with their own YouTube format'}</p>
 			<h1>{de ? 'Euer YouTube-Format als Schnitt-System.' : 'Your YouTube format as an edit system.'}</h1>
 			<p class="hero-sub">
-				{de ? 'Feedback einmal – im System, nicht zehnmal. Planbare Folgen. Feste Preise.' : 'Feedback once – in the system, not ten times. Predictable episodes. Fixed prices.'}
+				{de ? 'Euer Format wird einmal festgelegt – danach entsteht jede Folge im gleichen Standard. Feedback gebt ihr einmal, und es bleibt. Zum festen Preis.' : 'Your format gets defined once – after that, every episode is made to the same standard. You give feedback once, and it sticks. At a fixed price.'}
 			</p>
 			<div class="hero-cta">
 				<a class="btn btn--primary" href="#kontakt">{de ? 'Erstgespräch buchen' : 'Book an intro call'} <span class="arr">→</span></a>
@@ -82,7 +82,7 @@ const offerLd = {
 		</div>
 	</section>
 
-	<section class="stage" data-stage aria-label={de ? 'Film: So entsteht eine Folge im System' : 'Film: how an episode gets made in the system'}>
+	<section class="stage" data-stage aria-label={de ? 'Film: So entsteht eine Folge' : 'Film: how an episode gets made'}>
 		<div class="stage-pin">
 			<figure class="film" data-film>
 				<div class="film-screen">
@@ -107,18 +107,37 @@ const offerLd = {
 				<figcaption class="sr-only">
 					{
 						de
-							? 'Film: Countdown „Video fertig in 3 · 2 · 1“. Rohmaterial landet in der Timeline, Schnitte sitzen, Lücken schließen sich, eine Feedback-Notiz wird einmal erledigt. Ebenen für B-Roll, Titel, Grafik, Untertitel, Musik und Sounds kommen dazu. Export – fertiges Video in 16:9 und 9:16.'
-							: 'Film: countdown “Video ready in 3 · 2 · 1”. Raw footage lands in the timeline, cuts snap, gaps close, one feedback note gets resolved once. Layers for b-roll, titles, graphics, captions, music and sound effects stack up. Export – finished video in 16:9 and 9:16.'
+							? 'Film: Countdown „Video fertig in 3 · 2 · 1“. Das Material wird geschnitten, eine Feedback-Notiz wird einmal erledigt, dann kommen Titel, Grafiken, Untertitel, Musik und Sound dazu. Am Ende: das fertige Video im Quer- und im Hochformat.'
+							: 'Film: countdown “Video ready in 3 · 2 · 1”. The footage gets cut, one feedback note is handled once, then titles, graphics, captions, music and sound are added. At the end: the finished video in landscape and vertical.'
 					}
 				</figcaption>
 			</figure>
 		</div>
 	</section>
 
+	<section class="sec who" aria-labelledby="who-h">
+		<div class="wrap">
+			<div class="sec-h">
+				<p class="eyebrow">{de ? 'Für wen' : 'Who it’s for'}</p>
+				<h2 id="who-h">{de ? 'Kommt euch das bekannt vor?' : 'Sound familiar?'}</h2>
+			</div>
+			<ul class="who-list">
+				{
+					audience.map((a, i) => (
+						<li class="glass reveal" style={`--i:${i}`}>
+							<span class="who-n" aria-hidden="true">{i + 1}</span>
+							<p>{a[lang]}</p>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</section>
+
 	<section class="sec why">
 		<div class="wrap">
 			<div class="sec-h">
-				<p class="eyebrow">{de ? 'Warum ein System' : 'Why a system'}</p>
+				<p class="eyebrow">{de ? 'Was sich ändert' : 'What changes'}</p>
 				<h2>{de ? 'Weniger Schleifen. Mehr Folgen.' : 'Fewer loops. More episodes.'}</h2>
 			</div>
 			<div class="pains">
@@ -205,15 +224,35 @@ const offerLd = {
 								<h3>{p.name[lang]}</h3>
 								{p.highlight && <span class="pk-tag">{de ? 'Empfohlener Einstieg' : 'Recommended start'}</span>}
 							</div>
+							<p class="pk-sub">{p.sub[lang]}</p>
 							<p class="pk-price">{p.price[lang]}</p>
 							<p class="pk-meta muted">
 								{p.unit[lang]} · {p.days[lang]}
 							</p>
-							<ul>
-								{p.points.map((x) => (
-									<li>{x[lang]}</li>
-								))}
-							</ul>
+							<dl class="pk-dl">
+								<div>
+									<dt>{de ? 'Für wen' : 'For'}</dt>
+									<dd>{p.for[lang]}</dd>
+								</div>
+								<div>
+									<dt>{de ? 'Ihr bekommt' : 'You get'}</dt>
+									<dd>
+										<ul>
+											{p.points.map((x) => (
+												<li>{x[lang]}</li>
+											))}
+										</ul>
+									</dd>
+								</div>
+								<div>
+									<dt>{de ? 'Ergebnis' : 'Result'}</dt>
+									<dd>{p.result[lang]}</dd>
+								</div>
+							</dl>
+							<a class:list={['btn', 'pk-cta', { 'btn--primary': p.highlight }]} href="#kontakt" data-pkg={p.name[lang]}>
+								{de ? 'Anfragen' : 'Enquire'}
+								<span class="sr-only">: {p.name[lang]}</span> <span class="arr" aria-hidden="true">→</span>
+							</a>
 						</article>
 					))
 				}
@@ -263,7 +302,6 @@ const offerLd = {
 				}
 			</div>
 			<div class="proof-foot">
-				<p class="muted">{tools[lang]}</p>
 				<p>
 					<span class="muted">{de ? 'Selbst prüfen:' : 'Check for yourself:'}</span>
 					<a href="https://www.youtube.com/watch?v=7Kt9NFOXqF4" rel="noopener">Drivers Eye ↗</a>
@@ -283,8 +321,8 @@ const offerLd = {
 					<p class="about-p muted">
 						{
 							de
-								? 'Ich bin Micha Rössler, Editor und Filmemacher. Ich schneide Serienformate und baue die Systeme dahinter – Templates, Remotion-Grafiken, eigene Tools.'
-								: 'I am Micha Rössler, editor and filmmaker. I edit series formats and build the systems behind them – templates, Remotion graphics, my own tools.'
+								? 'Ich bin Micha Rössler, Editor und Filmemacher. Ich schneide Serienformate für Unternehmen – so, dass jede Folge im gleichen Standard entsteht und euer Team weniger abstimmen muss.'
+								: 'I am Micha Rössler, editor and filmmaker. I edit series formats for companies – so every episode is made to the same standard and your team has less to coordinate.'
 						}
 					</p>
 					<a class="btn" href={de ? 'https://micharoessler.com/de/' : 'https://micharoessler.com/'}>micharoessler.com <span class="arr">↗</span></a>
@@ -371,6 +409,15 @@ const offerLd = {
 </Base>
 
 <script>
+	// Package CTAs carry the chosen package into the brief.
+	document.querySelectorAll<HTMLAnchorElement>('[data-pkg]').forEach((a) =>
+		a.addEventListener('click', () => {
+			const goal = document.querySelector<HTMLTextAreaElement>('#brief textarea');
+			const line = `${document.documentElement.lang.startsWith('de') ? 'Paket' : 'Package'}: ${a.dataset.pkg}`;
+			if (goal && !goal.value.includes(line)) goal.value = (goal.value ? goal.value + '\n' : '') + line;
+		}),
+	);
+
 	const f = document.getElementById('brief') as HTMLFormElement;
 	f?.addEventListener('submit', (e) => {
 		e.preventDefault();
@@ -794,8 +841,8 @@ const offerLd = {
 	.pk-card {
 		grid-column: span 2;
 		padding: 28px;
-		display: grid;
-		align-content: start;
+		display: flex;
+		flex-direction: column;
 		gap: 6px;
 	}
 	.pk-card:nth-child(-n + 2) {
@@ -828,9 +875,9 @@ const offerLd = {
 		gap: 8px 12px;
 	}
 	.pk-top h3 {
-		font-size: 19px;
-		letter-spacing: -0.02em;
-		font-weight: 620;
+		font-size: 21px;
+		letter-spacing: -0.025em;
+		font-weight: 650;
 	}
 	.pk-tag {
 		padding: 4px 10px;
@@ -840,8 +887,12 @@ const offerLd = {
 		font-size: 13px;
 		font-weight: 600;
 	}
+	.pk-sub {
+		font-size: 16px;
+		color: var(--ink-2);
+	}
 	.pk-price {
-		margin-top: 18px;
+		margin-top: 16px;
 		font-size: clamp(40px, 4.2vw, 56px);
 		font-weight: 680;
 		letter-spacing: -0.045em;
@@ -851,27 +902,90 @@ const offerLd = {
 	.pk-meta {
 		font-size: 15px;
 	}
-	.pk-card ul {
-		list-style: none;
+	.pk-dl {
 		margin: 18px 0 0;
-		padding: 18px 0 0;
+		padding-top: 18px;
 		border-top: 1px solid var(--line);
 		display: grid;
-		gap: 10px;
+		gap: 14px;
 		font-size: 15px;
-		line-height: 1.4;
+		line-height: 1.45;
 	}
-	.pk-card li {
+	.pk-dl dt {
+		font-size: 13px;
+		font-weight: 650;
+		color: var(--iris);
+		margin-bottom: 4px;
+	}
+	.pk-dl dd {
+		margin: 0;
+	}
+	.pk-dl ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 8px;
+	}
+	.pk-dl li {
 		display: grid;
 		grid-template-columns: 22px 1fr;
 	}
-	.pk-card li::before {
+	.pk-dl li::before {
 		content: '';
 		width: 14px;
 		height: 14px;
 		margin-top: 3px;
 		border-radius: 50%;
 		background: rgba(85, 70, 255, 0.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235546ff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4L18 8'/%3E%3C/svg%3E") center / 10px no-repeat;
+	}
+	.pk-dl div:last-child dd {
+		font-weight: 560;
+	}
+	.pk-cta {
+		margin-top: auto;
+		align-self: flex-start;
+		min-height: 44px;
+		padding: 10px 20px;
+		font-size: 16px;
+	}
+	.pk-dl {
+		margin-bottom: 22px;
+	}
+	/* "who it's for" */
+	.who-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 20px;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+	}
+	.who-list li {
+		display: grid;
+		grid-template-columns: 40px 1fr;
+		gap: 14px;
+		align-items: start;
+		padding: 26px 28px;
+	}
+	.who-n {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		background: rgba(85, 70, 255, 0.1);
+		color: var(--iris);
+		font-weight: 650;
+	}
+	.who-list p {
+		font-size: 19px;
+		line-height: 1.35;
+		font-weight: 560;
+		letter-spacing: -0.02em;
+	}
+	.who {
+		padding-bottom: 0;
 	}
 	.pk-note {
 		margin: 28px auto 0;
@@ -907,7 +1021,7 @@ const offerLd = {
 		margin-top: 28px;
 		display: flex;
 		flex-wrap: wrap;
-		justify-content: space-between;
+		justify-content: center;
 		gap: 12px 24px;
 		font-size: 15px;
 	}
