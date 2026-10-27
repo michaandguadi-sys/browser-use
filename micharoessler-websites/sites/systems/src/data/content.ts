@@ -19,8 +19,8 @@ export const hero = {
 	promiseLines: { de: ['Ich nehme', 'euch das ab.'], en: ['I’ll take it', 'off your plate.'] },
 	h1: { de: 'Euer Format. Ohne eure Schnittzeit.', en: 'Your show. Without the editing hours.' },
 	sub: {
-		de: 'Euer YouTube-Format wird einmal zum Schnitt-System. Dann schneide ich jede Folge – zum Festpreis.',
-		en: 'Your YouTube show, set up once as an editing system. Then I edit every episode at a fixed price.',
+		de: 'Ihr liefert das Material. Ich liefere jeden Monat fertige Folgen und Shorts – im gleichen Standard, zum Festpreis.',
+		en: 'You send the footage. I deliver finished episodes and shorts every month – same standard, fixed price.',
 	},
 	cta: { de: 'Erstgespräch anfragen', en: 'Request an intro call' },
 	ctaMicro: { de: '15 Minuten, kostenlos.', en: '15 minutes, free.' },
@@ -34,28 +34,51 @@ export const hero = {
 	hint: { de: 'Scrollen', en: 'Scroll' },
 };
 
-// "So läuft's": one mechanism line (H2) + three outcomes.
+// The benefit, at a glance: before / with Formatschnitt. Plain facts from the offer, no figures.
+export const compare = {
+	h2: { de: 'Was sich für euch ändert', en: 'What changes for you' },
+	before: { de: 'Vorher', en: 'Before' },
+	after: { de: 'Mit Formatschnitt', en: 'With Formatschnitt' },
+	rows: [
+		{
+			k: { de: 'Schnitt', en: 'Editing' },
+			before: { de: 'Euer Team schneidet nebenher', en: 'Your team edits on the side' },
+			after: { de: 'Ich schneide – ihr gebt frei', en: 'I edit – you approve' },
+		},
+		{
+			k: { de: 'Feedback', en: 'Feedback' },
+			before: { de: 'Jede Folge dieselben Korrekturen', en: 'The same fixes, every episode' },
+			after: { de: 'Einmal entschieden, gilt für jede Folge', en: 'Decided once, applies to every episode' },
+		},
+		{
+			k: { de: 'Kosten', en: 'Cost' },
+			before: { de: 'Schwer planbar', en: 'Hard to plan' },
+			after: { de: 'Fester Monatspreis', en: 'A fixed monthly price' },
+		},
+		{
+			k: { de: 'Ergebnis', en: 'Result' },
+			before: { de: 'Jede Folge sieht anders aus', en: 'Every episode looks different' },
+			after: { de: 'Jede Folge im gleichen Standard', en: 'Every episode to the same standard' },
+		},
+	] as { k: L; before: L; after: L }[],
+};
+
+// "So läuft's": the how — three steps, one line each (the benefit lives in `compare`).
 export const how = {
 	kicker: { de: 'So läuft’s', en: 'How it works' },
 	h2: { de: 'Einmal einrichten. Läuft jede Folge.', en: 'Set up once. Every episode follows.' },
-	cards: [
+	steps: [
 		{
-			title: { de: 'Mehr Zeit.', en: 'More time.' },
-			text: { de: 'Feedback gebt ihr einmal – es gilt für jede weitere Folge.', en: 'Give feedback once – it applies to every episode after.' },
+			title: { de: 'Einrichten', en: 'Set up' },
+			text: { de: 'Wir legen einmal fest, wie eure Folgen aussehen: Aufbau, Look, Titel, Grafiken.', en: 'Together we define once how your episodes look: structure, look, titles, graphics.' },
 		},
 		{
-			title: { de: 'Weniger Kosten.', en: 'Lower cost.' },
-			text: {
-				de: 'Pakete liegen unter dem Tagessatz von 750 € – das System macht die Arbeit schneller.',
-				en: 'Packages cost less than the €750 day rate – the system makes the work faster.',
-			},
+			title: { de: 'Ich schneide jeden Monat', en: 'I edit every month' },
+			text: { de: 'Ihr schickt das Material, ich liefere fertige Folgen und Shorts nach diesem Standard.', en: 'You send the footage; I deliver finished episodes and shorts to that standard.' },
 		},
 		{
-			title: { de: 'Höhere Qualität.', en: 'Higher quality.' },
-			text: {
-				de: 'Aufbau, Look, Titel, Grafiken – einmal mit euch festgelegt, in jeder Folge gleich.',
-				en: 'Structure, look, titles, graphics – agreed with you once, the same in every episode.',
-			},
+			title: { de: 'Ihr gebt frei', en: 'You approve' },
+			text: { de: 'Feedback kommt gebündelt als eine Liste – was einmal entschieden ist, gilt weiter.', en: 'Feedback comes as one list – what’s decided once stays decided.' },
 		},
 	] as { title: L; text: L }[],
 };

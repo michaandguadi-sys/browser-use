@@ -12,4 +12,4 @@ export const CH = {
 	home: 0.86, // scene jumps back to the ambient pose (hidden by the veil)
 } as const;
 
-export type StoryState = { p: number; px: number; py: number; odo: () => DOMRect | null };
+export type StoryState = { p: number; px: number; py: number; lite: boolean; odo: () => DOMRect | null };

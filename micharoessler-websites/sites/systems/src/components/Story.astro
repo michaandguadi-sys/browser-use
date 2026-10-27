@@ -32,6 +32,46 @@ const chips = [
 	[6, 44, 10, 28],
 	[52, 12, 48, 21],
 ];
+
+// Lite (phone) shatter: "60 h" pre-cut into fragments that tile the counter exactly (jittered grid, shared corners,
+// some cells split into triangles). Deterministic, so the markup is stable between builds. Values in % of the counter box.
+const rnd = (() => {
+	let x = 7;
+	return () => ((x = (x * 16807) % 2147483647) - 1) / 2147483646;
+})();
+const COLS = 4;
+const ROWS = 3;
+const grid = Array.from({ length: ROWS + 1 }, (_, j) =>
+	Array.from({ length: COLS + 1 }, (_, i) => {
+		const edgeX = i === 0 || i === COLS;
+		const edgeY = j === 0 || j === ROWS;
+		const x = edgeX ? (i === 0 ? -12 : 112) : (i / COLS) * 100 + (rnd() - 0.5) * 14;
+		const y = edgeY ? (j === 0 ? -12 : 112) : (j / ROWS) * 100 + (rnd() - 0.5) * 18;
+		return [x, y] as [number, number];
+	}),
+);
+const frags: { poly: string; cx: number; cy: number; r: number; s: number; d: number }[] = [];
+const addFrag = (pts: [number, number][]) => {
+	const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
+	const cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+	frags.push({
+		poly: pts.map(([x, y]) => `${x.toFixed(1)}% ${y.toFixed(1)}%`).join(','),
+		cx,
+		cy,
+		r: Math.round((rnd() - 0.5) * 90),
+		s: Number((0.55 + rnd() * 1.3).toFixed(2)),
+		d: Number((0.7 + rnd() * 0.8).toFixed(2)),
+	});
+};
+for (let j = 0; j < ROWS; j++)
+	for (let i = 0; i < COLS; i++) {
+		const a = grid[j][i], b = grid[j][i + 1], c = grid[j + 1][i + 1], d = grid[j + 1][i];
+		if ((i + j) % 3 === 1) {
+			addFrag([a, b, c]);
+			addFrag([a, c, d]);
+		} else addFrag([a, b, c, d]);
+	}
+const splinters = Array.from({ length: 8 }, (_, i) => ({ a: (i / 8) * 360 + rnd() * 30, d: 0.8 + rnd() * 0.7, r: Math.round((rnd() - 0.5) * 300), w: Math.round(14 + rnd() * 22) }));
 ---
 
 <script is:inline>
@@ -56,6 +96,8 @@ const chips = [
 			s = 'static';
 		}
 		d.setAttribute('data-story', s);
+		// phones / touch / narrow windows: lighter story (DOM shatter instead of WebGL shards, cheap materials)
+		if (s === 'live' && (matchMedia('(pointer: coarse)').matches || innerWidth < 900)) d.setAttribute('data-story-lite', '');
 	})();
 </script>
 
@@ -101,6 +143,18 @@ const chips = [
 					<span class="s-strip">{Array.from({ length: 70 }, (_, i) => <span>{i % 10}</span>)}</span>
 				</span>
 				<span class="s-h">h</span>
+				<span class="s-frags" data-frags>
+					{
+						frags.map((f) => (
+							<span class="s-frag" data-frag data-cx={f.cx.toFixed(1)} data-cy={f.cy.toFixed(1)} data-r={f.r} data-s={f.s} data-d={f.d} style={`clip-path:polygon(${f.poly})`}>
+								<span class="s-col s-fd">6</span>
+								<span class="s-col s-fd">0</span>
+								<span class="s-h">h</span>
+							</span>
+						))
+					}
+					{splinters.map((x) => <i class="s-spl" data-spl data-a={x.a.toFixed(0)} data-d={x.d.toFixed(2)} data-r={x.r} style={`--w:${x.w}px`} />)}
+				</span>
 			</div>
 			<p class="s-cap">{h('hoursCaption')}</p>
 		</div>
@@ -340,6 +394,44 @@ const chips = [
 		display: block;
 		height: 1em;
 		text-align: center;
+	}
+	/* lite shatter: fragments sit exactly over the counter, hidden until the hand-over */
+	.s-odo {
+		position: relative;
+	}
+	.s-frags {
+		position: absolute;
+		inset: 0;
+		display: none;
+		pointer-events: none;
+	}
+	:global(html[data-story-lite]) .s-frags {
+		display: block;
+	}
+	.s-frag {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: flex-start;
+		opacity: 0;
+		visibility: hidden;
+	}
+	.s-fd {
+		display: block;
+		width: 0.62em;
+		text-align: center;
+	}
+	.s-spl {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: var(--w);
+		height: calc(var(--w) * 0.8);
+		margin: calc(var(--w) * -0.4) 0 0 calc(var(--w) * -0.5);
+		clip-path: polygon(0 100%, 42% 0, 100% 72%);
+		background: linear-gradient(140deg, rgba(255, 255, 255, 0.95), rgba(205, 198, 255, 0.55) 55%, rgba(85, 70, 255, 0.35));
+		opacity: 0;
+		visibility: hidden;
 	}
 	.s-h {
 		margin-left: 0.1em;

@@ -3,7 +3,10 @@
 //  · c: the "60 h" numerals (texture twin of the DOM odometer) shatter into shards; the camera flies through
 //  · d: a 3D glass timeline — clips pop in ahead of an accelerating playhead, speed lines, camera locked on
 // Driven by the scrubbed scroll progress in `state.p`; renders only while the story is on screen,
-// DPR ≤ 1.5 (lower on touch), fewer objects on small screens, adaptive resolution if frames run slow.
+// DPR ≤ 1.5 (lower on touch), fewer objects on small screens, adaptive resolution decided once at start.
+// Lite mode (phones / touch / narrow): no WebGL shards (the DOM counter shatters itself, see story.ts), no
+// transmission passes (cheap reflective materials), fewer objects. Every shader is compiled and every buffer
+// uploaded before the canvas fades in, so nothing compiles mid-scroll.
 import {
 	AdditiveBlending,
 	BoxGeometry,
@@ -152,10 +155,11 @@ function shardGeometry(cols: number, rows: number) {
 	return g;
 }
 
-export function mount(canvas: HTMLCanvasElement, state: StoryState) {
+export async function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	const small = innerWidth < 720;
 	const touch = matchMedia('(pointer: coarse)').matches;
-	const N = small ? { glass: 4, bars: 4, shards: 14, clips: 54, lines: 40, gx: 10, gy: 4 } : { glass: 7, bars: 6, shards: 32, clips: 110, lines: 90, gx: 16, gy: 6 };
+	const lite = state.lite;
+	const N = lite ? { glass: 4, bars: 4, shards: 0, clips: 48, lines: 32, gx: 1, gy: 1 } : small ? { glass: 4, bars: 4, shards: 14, clips: 54, lines: 40, gx: 10, gy: 4 } : { glass: 7, bars: 6, shards: 32, clips: 110, lines: 90, gx: 16, gy: 6 };
 
 	const renderer = new WebGLRenderer({ canvas, antialias: !touch, alpha: false, powerPreference: 'high-performance' });
 	let dpr = Math.min(touch ? 1.25 : 1.5, devicePixelRatio || 1);
@@ -177,7 +181,9 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	bg.renderOrder = -1;
 	camera.add(bg);
 
-	const glass = new MeshPhysicalMaterial({
+	// lite: a reflective, see-through stand-in for glass — no transmission render pass
+	const liteGlass = new MeshStandardMaterial({ color: '#f3f1ff', roughness: 0.06, metalness: 0.12, transparent: true, opacity: 0.42, envMapIntensity: 1.7, depthWrite: false });
+	const fullGlass = new MeshPhysicalMaterial({
 		color: '#ffffff',
 		transmission: 1,
 		roughness: 0.07,
@@ -192,6 +198,7 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		specularIntensity: 1,
 		envMapIntensity: 1.15,
 	});
+	const glass = lite ? liteGlass : fullGlass;
 
 	// ---------- ambient: glass clips + colour bars behind them ----------
 	const amb = new Group();
@@ -257,7 +264,7 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	});
 	const numeral = new Mesh(shardGeometry(N.gx, N.gy), shardMat);
 	numeral.visible = false;
-	scene.add(numeral);
+	if (!lite) scene.add(numeral);
 
 	const splinters = new InstancedMesh(new TetrahedronGeometry(0.22, 0), glass, N.shards);
 	const spl = Array.from({ length: N.shards }, () => ({
@@ -268,7 +275,7 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		k: Math.random(),
 	}));
 	splinters.visible = false;
-	scene.add(splinters);
+	if (!lite) scene.add(splinters);
 
 	// ---------- d: the timeline wall ----------
 	const line = new Group();
@@ -277,7 +284,9 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	scene.add(line);
 	const LANES = small ? 4 : 5;
 	const laneY = (i: number) => 1.15 - i * 0.62;
-	const laneMat = new MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, roughness: 0.22, thickness: 0.3, ior: 1.4, envMapIntensity: 1, specularIntensity: 0.8 });
+	const laneMat = lite
+		? new MeshStandardMaterial({ color: '#ffffff', roughness: 0.2, transparent: true, opacity: 0.38, envMapIntensity: 1.2, depthWrite: false })
+		: new MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, roughness: 0.22, thickness: 0.3, ior: 1.4, envMapIntensity: 1, specularIntensity: 0.8 });
 	for (let i = 0; i < LANES; i++) {
 		const lane = new Mesh(new BoxGeometry(140, 0.5, 0.08), laneMat);
 		lane.position.set(50, laneY(i), -0.12);
@@ -300,6 +309,8 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		clipData.forEach((c, i) => clips.setColorAt(i, col.set(CLIP_COLS[(i * 7 + Math.floor(c.y * 3)) % CLIP_COLS.length])));
 	}
 	line.add(clips);
+	// instanced meshes move far from where they were first bounded → never frustum-cull them on a stale sphere
+	clips.frustumCulled = false;
 	const playhead = new Group();
 	const ph = new Mesh(new BoxGeometry(0.07, 3.9, 0.07), new MeshBasicMaterial({ color: '#5546ff', toneMapped: false }));
 	const glow = (() => {
@@ -314,7 +325,7 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		gr.addColorStop(1, 'rgba(85,70,255,0)');
 		g.fillStyle = gr;
 		g.fillRect(0, 0, 64, 64);
-		const m = new Mesh(new PlaneGeometry(1.1, 5.4), new MeshBasicMaterial({ map: new CanvasTexture(c), transparent: true, blending: AdditiveBlending, depthWrite: false, toneMapped: false }));
+		const m = new Mesh(new PlaneGeometry(1.1, 5.4), new MeshBasicMaterial({ map: new CanvasTexture(c), transparent: true, opacity: lite ? 0.5 : 1, blending: AdditiveBlending, depthWrite: false, toneMapped: false }));
 		m.position.z = 0.05;
 		return m;
 	})();
@@ -324,12 +335,15 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	const speedMat = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
 	const speed = new InstancedMesh(new BoxGeometry(1, 0.018, 0.018), speedMat, N.lines);
 	const sl = Array.from({ length: N.lines }, () => ({ x: Math.random() * 40 - 10, y: (Math.random() - 0.5) * 6, z: Math.random() * 7 - 1, l: 1.5 + Math.random() * 4 }));
+	speed.frustumCulled = false;
+	splinters.frustumCulled = false;
 	line.add(speed);
 
 	// ---------- sizing ----------
 	let vw = 1;
 	let vh = 1;
-	let numeralReady = false;
+	let numeralReady = false; // placed for the current layout
+	let texAspect = 0;
 	const resize = () => {
 		const w = canvas.clientWidth;
 		const h = canvas.clientHeight;
@@ -346,15 +360,31 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		for (const d of drift) d.m.scale.setScalar(k);
 		for (const b of bars) b.m.scale.set(k, k, 1);
 		numeralReady = false;
+		texAspect = 0;
 	};
 	const ro = new ResizeObserver(resize);
 	ro.observe(canvas);
 	resize();
 
+	// the "60 h" texture is drawn once (warm-up / font load / resize), never during the scroll
+	const buildNumeralTexture = () => {
+		if (lite) return;
+		const odo = document.querySelector<HTMLElement>('[data-odo]');
+		if (!odo || !odo.offsetHeight) return;
+		const fs = parseFloat(getComputedStyle(odo).fontSize);
+		const tensOn = !!odo.querySelector('[data-tens].on');
+		const aspect = (odo.offsetWidth + (tensOn ? 0 : 0.62 * fs)) / odo.offsetHeight; // final layout: two digits + h
+		if (Math.abs(aspect - texAspect) < 0.02) return;
+		texAspect = aspect;
+		shardMat.uniforms.map.value?.dispose();
+		shardMat.uniforms.map.value = numeralTexture(aspect);
+		renderer.initTexture(shardMat.uniforms.map.value);
+	};
 	// place the numeral plane exactly over the DOM odometer (home pose, z = 0)
 	const fitNumeral = () => {
 		const r = state.odo();
 		if (!r || !r.width) return;
+		if (!shardMat.uniforms.map.value) buildNumeralTexture();
 		const cw = canvas.clientWidth;
 		const chh = canvas.clientHeight;
 		const cr = canvas.getBoundingClientRect();
@@ -362,8 +392,6 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		const h = (r.height / chh) * vh;
 		const cx = ((r.left - cr.left + r.width / 2) / cw - 0.5) * vw;
 		const cy = -((r.top - cr.top + r.height / 2) / chh - 0.5) * vh;
-		shardMat.uniforms.map.value?.dispose();
-		shardMat.uniforms.map.value = numeralTexture(r.width / r.height);
 		numeral.scale.set(w * 1.02, h * 1.02, 1);
 		numeral.position.set(cx, cy, 0);
 		splinters.position.copy(numeral.position);
@@ -385,6 +413,7 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	let raf = 0;
 	let last = performance.now();
 	let slow = 0;
+	let frames = 0;
 	let first = true;
 	let tlSpeed = 0;
 
@@ -416,7 +445,7 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 
 		// c: numerals → shards
 		const burst = range(p, CH.hoursOut - 0.005, CH.tl[0] - 0.01);
-		const nOn = p > CH.count[1] - 0.04 && p < CH.tl[0] + 0.02;
+		const nOn = !lite && p > CH.count[1] - 0.04 && p < CH.tl[0] + 0.02;
 		if (nOn && !numeralReady) fitNumeral();
 		numeral.visible = nOn && numeralReady;
 		splinters.visible = nOn && numeralReady && burst > 0;
@@ -424,7 +453,8 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		shardMat.uniforms.uO.value = p >= CH.hoursOut - 0.004 ? 1 : 0; // DOM digits on top until the hand-over
 		if (splinters.visible) {
 			const e = ease(burst);
-			spl.forEach((s, i) => {
+			for (let i = 0; i < spl.length; i++) {
+				const s = spl[i];
 				const k = clamp01(e * 1.2 - s.k * 0.2);
 				v.copy(s.o).addScaledVector(s.d, k * 2.4);
 				v.z = s.d.z * k * 5;
@@ -433,7 +463,7 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 				s3.copy(s.s).multiplyScalar(sc);
 				m4.compose(v, q, s3);
 				splinters.setMatrixAt(i, m4);
-			});
+			}
 			splinters.instanceMatrix.needsUpdate = true;
 		}
 
@@ -446,8 +476,9 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		tlSpeed += (vel - tlSpeed) * 0.08;
 		if (tlOn) {
 			playhead.position.x = phx;
-			glow.scale.set(1 + tlSpeed * 1.4, 1, 1);
-			clipData.forEach((c, i) => {
+			glow.scale.set(1 + tlSpeed * (lite ? 0.6 : 1.4), 1, 1);
+			for (let i = 0; i < clipData.length; i++) {
+				const c = clipData[i];
 				const k = clamp01((phx + 9 - c.x) / 2.2);
 				// pop in ahead of the playhead with a small overshoot
 				const sc = k <= 0 ? 0.0001 : Math.min(1, k * 1.6) * (1 + Math.sin(k * Math.PI) * 0.25 * (1 - k));
@@ -455,17 +486,18 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 				s3.set(c.len, sc, sc);
 				m4.compose(v, q.identity(), s3);
 				clips.setMatrixAt(i, m4);
-			});
+			}
 			clips.instanceMatrix.needsUpdate = true;
 			speedMat.opacity = Math.min(0.85, tlSpeed * 0.42);
-			sl.forEach((s, i) => {
+			for (let i = 0; i < sl.length; i++) {
+				const s = sl[i];
 				s.x -= (6 + tlSpeed * 70) * dt;
 				if (s.x < -14) s.x += 46;
 				v.set(phx + s.x, s.y, s.z);
 				s3.set(s.l * (0.4 + tlSpeed * 1.2), 1, 1);
 				m4.compose(v, q.identity(), s3);
 				speed.setMatrixAt(i, m4);
-			});
+			}
 			speed.instanceMatrix.needsUpdate = true;
 		}
 
@@ -501,19 +533,23 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 			canvas.classList.add('is-live');
 		}
 
-		// adaptive resolution: if frames keep running slow, drop the pixel ratio once
-		const ms = performance.now() - now;
-		slow = ms > 22 || dt > 0.03 ? slow + 1 : Math.max(0, slow - 1);
-		if (slow > 45 && dpr > 1) {
-			dpr = 1;
-			renderer.setPixelRatio(dpr);
-			resize();
-			slow = 0;
+		// adaptive resolution, decided once in the first ~90 frames (while the story sits on chapter a), then locked
+		// for the session — the pixel ratio never changes mid-scroll
+		if (frames < 90) {
+			frames++;
+			const ms = performance.now() - now;
+			if (ms > 22 || dt > 0.03) slow++;
+			if (frames === 90 && slow > 30 && dpr > 1) {
+				dpr = 1;
+				renderer.setPixelRatio(dpr);
+				resize();
+			}
 		}
 		if (visible && !document.hidden) raf = requestAnimationFrame(tick);
 	};
+	let ready = false; // the loop must not run before the warm-up below has finished (it toggles visibility)
 	const start = () => {
-		if (!raf && visible && !document.hidden) {
+		if (ready && !raf && visible && !document.hidden) {
 			last = performance.now();
 			raf = requestAnimationFrame(tick);
 		}
@@ -529,6 +565,33 @@ export function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		canvas.classList.remove('is-live');
 	});
 	// numeral texture uses the web font
-	document.fonts?.ready.then(() => (numeralReady = false));
+	document.fonts?.ready.then(() => {
+		texAspect = 0;
+		buildNumeralTexture();
+		numeralReady = false;
+	});
+
+	// warm-up: compile every program and upload every buffer/texture before the first visible frame
+	buildNumeralTexture();
+	const groups = [amb, numeral, splinters, line];
+	const was = groups.map((g) => g.visible);
+	for (const g of groups) g.visible = true;
+	try {
+		await renderer.compileAsync(scene, camera);
+	} catch {
+		renderer.compile(scene, camera);
+	}
+	// draw from the home pose and from inside the timeline, so every pipeline state is exercised on screen
+	// (some drivers finish compiling only at the first real draw); the canvas is still at opacity 0 — never seen
+	camera.position.set(0, 0, 10);
+	camera.lookAt(0, 0, 0);
+	renderer.render(scene, camera);
+	camera.position.set(-3, 0.5, TZ + 8);
+	camera.lookAt(2, 0, TZ);
+	renderer.render(scene, camera);
+	camera.position.set(0, 0, 10);
+	camera.lookAt(0, 0, 0);
+	groups.forEach((g, i) => (g.visible = was[i]));
+	ready = true;
 	start();
 }

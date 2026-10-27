@@ -13,7 +13,7 @@ export function initStory() {
 	const $ = <T extends Element = HTMLElement>(s: string) => root.querySelector<T>(s)!;
 	const $$ = <T extends Element = HTMLElement>(s: string) => [...root.querySelectorAll<T>(s)];
 
-	const state: StoryState = { p: 0, px: 0, py: 0, odo: () => $('[data-odo]').getBoundingClientRect() };
+	const state: StoryState = { p: 0, px: 0, py: 0, lite: false, odo: () => $('[data-odo]').getBoundingClientRect() };
 
 	// odometer: two digit strips, positioned in em so it scales with the type
 	const tens = $('[data-tens]');
@@ -34,6 +34,12 @@ export function initStory() {
 		tens.classList.toggle('on', v >= 9.5);
 	};
 	renderOdo();
+
+	const lite = document.documentElement.hasAttribute('data-story-lite');
+	state.lite = lite;
+	const frags = $$('[data-frag]');
+	const spl = $$('[data-spl]');
+	const odoParts = [...$('[data-odo]').children].filter((c) => !c.hasAttribute('data-frags'));
 
 	const end = $('[data-end]');
 	const h1 = $('[data-h1]');
@@ -110,8 +116,30 @@ export function initStory() {
 			.to(counter, { v: 60, duration: CH.count[1] - CH.count[0], ease: 'power1.in', onUpdate: renderOdo }, CH.count[0])
 			.fromTo('[data-odo]', { fontWeight: 520 }, { fontWeight: 900, duration: CH.count[1] - CH.count[0] }, CH.count[0]);
 		$$('[data-chip]').forEach((c, i) => tl.to(c, { scale: 1, duration: 0.018, ease: 'back.out(2.2)' }, CH.count[0] + 0.02 + i * 0.021));
-		// c: the DOM numerals hand over to their WebGL twin, which shatters
-		tl.to('[data-hours]', { opacity: 0, duration: 0.012 }, CH.hoursOut)
+		if (lite) {
+			// c (phones): the counter itself breaks — pre-cut DOM fragments, transform/opacity only, no WebGL hand-over
+			const S = CH.hoursOut;
+			const D = CH.tl[0] - 0.03 - S; // burst length in scroll progress
+			tl.to(['.s-chips', '.s-cap'], { opacity: 0, duration: 0.012 }, S)
+				.set(odoParts, { visibility: 'hidden' }, S)
+				.set([...frags, ...spl], { visibility: 'visible', opacity: 1 }, S);
+			frags.forEach((f) => {
+				const cx = Number(f.dataset.cx) - 50;
+				const cy = Number(f.dataset.cy) - 50;
+				const k = Number(f.dataset.d);
+				tl.to(f, { xPercent: cx * 1.6 * k, yPercent: cy * 2.6 * k, rotation: Number(f.dataset.r), scale: Number(f.dataset.s), duration: D, ease: 'power2.out' }, S).to(f, { opacity: 0, duration: D * 0.45, ease: 'power1.in' }, S + D * 0.5);
+			});
+			spl.forEach((x) => {
+				const a = (Number(x.dataset.a) * Math.PI) / 180;
+				const k = Number(x.dataset.d);
+				tl.to(x, { x: () => Math.cos(a) * innerWidth * 0.55 * k, y: () => Math.sin(a) * innerHeight * 0.4 * k, rotation: Number(x.dataset.r), scale: 1.8, duration: D, ease: 'power2.out' }, S).to(x, { opacity: 0, duration: D * 0.4 }, S + D * 0.6);
+			});
+			tl.to('[data-hours]', { opacity: 0, duration: 0.01 }, S + D);
+		} else {
+			// c (desktop): the DOM numerals hand over to their WebGL twin, which shatters
+			tl.to('[data-hours]', { opacity: 0, duration: 0.012 }, CH.hoursOut);
+		}
+		tl
 			// d → e: the playhead becomes one light line, the line becomes a pen
 			.to('.story-veil', { opacity: 0.94, duration: 0.05 }, CH.line + 0.01)
 			.fromTo('[data-line]', { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.05, ease: 'power2.out' }, CH.line)

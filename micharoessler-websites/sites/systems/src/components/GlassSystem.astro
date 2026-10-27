@@ -1,6 +1,6 @@
 ---
 // The "system" visual in the solution section: a real-time WebGL glass object, lazy-loaded near the viewport.
-// Static CSS glass fallback for: no WebGL, prefers-reduced-motion, Save-Data, low-end phones (≤ 4 cores).
+// Static CSS glass fallback for: no (hardware) WebGL, prefers-reduced-motion, Save-Data, phones / lite story mode.
 ---
 
 <div class="gs glass" data-glass-system aria-hidden="true">
@@ -17,6 +17,7 @@
 	const ok = () => {
 		if (!host) return false;
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+		if (document.documentElement.hasAttribute('data-story-lite')) return false; // phones: one WebGL scene (the story) is enough
 		const nav = navigator as Navigator & { connection?: { saveData?: boolean }; hardwareConcurrency?: number };
 		if (nav.connection?.saveData) return false;
 		if (matchMedia('(pointer: coarse)').matches && (nav.hardwareConcurrency ?? 8) <= 4) return false;
