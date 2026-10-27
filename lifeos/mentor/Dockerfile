@@ -13,7 +13,7 @@ USER mentor
 
 ENV DB_PATH=/data/mentor.db SEED_PATH=/srv/seed/seed_profile.json
 EXPOSE 8000
-HEALTHCHECK --interval=60s --timeout=5s --start-period=30s \
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s \
 	CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz').status == 200 else 1)"
 
 # One worker on purpose: the scheduler lives in-process and must run exactly once.

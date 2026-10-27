@@ -145,6 +145,8 @@ say "Waiting for the mentor to come up"
 healthy() { python3 -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:$(env_get MENTOR_PORT)/healthz', timeout=5).status == 200 else 1)" 2>/dev/null; }
 for _ in $(seq 1 60); do healthy && break; sleep 2; done
 healthy || die "Mentor did not start. Check: docker compose logs mentor"
+# web servers like Traefik only route to containers Docker reports as healthy
+for _ in $(seq 1 30); do [[ "$(docker inspect -f '{{.State.Health.Status}}' "$(docker compose ps -q mentor)" 2>/dev/null)" == "healthy" ]] && break; sleep 2; done
 [[ -n "$PROXY_KIND" ]] && python3 proxy_setup.py finish "$PROXY_KIND" "$(env_get MENTOR_DOMAIN)"
 
 say "Done."

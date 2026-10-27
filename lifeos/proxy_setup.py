@@ -14,6 +14,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -244,7 +245,7 @@ def diagnose(reason: str) -> None:
 
 
 def prepare(domain: str, port: str) -> str:
-	OVERRIDE.unlink(missing_ok=True)
+	# keep any existing override until a new wiring succeeds: .env's COMPOSE_FILE may point at it
 	web = [c for c in containers() if publishes_web(c)]
 	for c in web:
 		image = c['Config'].get('Image', '').lower()
@@ -254,7 +255,9 @@ def prepare(domain: str, port: str) -> str:
 			return setup_nginx_proxy(c, domain)
 	procs = listeners()
 	if '"nginx"' in procs and shutil.which('nginx'):
-		return setup_host_nginx(domain, port)
+		kind = setup_host_nginx(domain, port)
+		OVERRIDE.unlink(missing_ok=True)  # host nginx talks to the published port; no compose override
+		return kind
 	owner = (
 		', '.join(sorted({c['Name'].lstrip('/') + ' (' + c['Config'].get('Image', '') + ')' for c in web}))
 		or 'a program on the host'
@@ -282,26 +285,19 @@ def finish(kind: str, domain: str) -> None:
 	check_dns(domain)
 	if not shutil.which('curl'):
 		return
-	status = run(
-		'curl',
-		'-sk',
-		'--noproxy',
-		'*',
-		'-o',
-		'/dev/null',
-		'-w',
-		'%{http_code}',
-		'--max-time',
-		'10',
-		'--resolve',
-		f'{domain}:443:127.0.0.1',
-		f'https://{domain}/healthz',
-	)
+	curl = ['curl', '-sk', '--noproxy', '*', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '10']
+	url = ['--resolve', f'{domain}:443:127.0.0.1', f'https://{domain}/healthz']
+	status = ''
+	for _ in range(10):  # the web server picks up a new container within a few seconds
+		status = run(*curl, *url)
+		if status == '200':
+			break
+		time.sleep(3)
 	if status == '200':
 		say(f'Routing check: https://{domain} reaches the mentor.')
 	else:
 		say(
-			f'Routing check: https://{domain} answered {status or "nothing"} from this server. The certificate can take a minute; if it stays, send Claude: docker compose logs --tail 50 mentor'
+			f'Routing check: https://{domain} answered {status or "nothing"} from this server. Run ./doctor.sh to see which link is broken.'
 		)
 
 
