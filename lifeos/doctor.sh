@@ -64,7 +64,13 @@ fi
 echo; echo "5. From the internet"
 if [[ -n "$DNS_IP" ]]; then
 	CODE=$(curl -s --noproxy '*' -o /dev/null -w '%{http_code}' --max-time 10 "https://$DOMAIN/healthz")
-	[[ "$CODE" == "200" ]] && ok "https://$DOMAIN works from outside" || bad "https://$DOMAIN from outside -> ${CODE:-no answer}"
+	if [[ "$CODE" == "200" ]]; then
+		ok "https://$DOMAIN works from outside"
+	elif [[ "$(curl -sk --noproxy '*' -o /dev/null -w '%{http_code}' --max-time 10 "https://$DOMAIN/healthz")" == "200" ]]; then
+		bad "https://$DOMAIN is reachable, but browsers will refuse it until the certificate is issued (see 4)"
+	else
+		bad "https://$DOMAIN from outside -> ${CODE:-no answer}"
+	fi
 fi
 if command -v ufw >/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
 	ufw status | grep -qE '(^| )(80|443)(/tcp)? +ALLOW|Nginx Full|WWW Full' && ok "firewall allows 80/443" || bad "firewall (ufw) may block 80/443. Fix: ufw allow 80,443/tcp"
