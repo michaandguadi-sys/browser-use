@@ -5,7 +5,7 @@
 // Static hero (same lines + CTA, no pinning) for: no JS, prefers-reduced-motion, Save-Data, no (hardware) WebGL2.
 // QA: ?story=live forces the live story on software WebGL (e.g. headless capture).
 import { type Lang } from '../i18n';
-import { hero, booking } from '../data/content';
+import { hero, booking, cinema } from '../data/content';
 
 interface Props {
 	lang: Lang;
@@ -101,10 +101,15 @@ const splinters = Array.from({ length: 8 }, (_, i) => ({ a: (i / 8) * 360 + rnd(
 	})();
 </script>
 
-<section class="story" data-story-root aria-labelledby="story-h">
+<section class="story" data-story-root data-tunnel-phones={String(cinema.tunnelOnPhones)} data-ambient={String(cinema.ambientOnDesktop)} aria-labelledby="story-h">
 	<div class="story-stage">
 		<div class="story-bg" aria-hidden="true"></div>
 		<canvas class="story-canvas" aria-hidden="true"></canvas>
+		<!-- generated footage: a slow glass macro for chapters a + f (desktop), and the tunnel the camera flies
+		     through in chapter c (scrubbed by scroll). Posters only until the story runs; nothing autoplays otherwise. -->
+		<video class="story-amb" data-amb muted loop playsinline preload="none" poster="/media/bg/glass-ambient.jpg" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>
+		<video class="story-tunnel" data-tunnel muted playsinline preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>
+		<div class="story-grain" aria-hidden="true"></div>
 		<div class="story-veil" aria-hidden="true"></div>
 		<div class="story-art" aria-hidden="true">
 			<span class="pane p1"></span><span class="pane p2"></span><span class="pane p3"></span><i class="ph"></i>
@@ -253,6 +258,61 @@ const splinters = Array.from({ length: 8 }, (_, i) => ({ a: (i / 8) * 360 + rnd(
 	.story-canvas:global(.is-live) {
 		opacity: 1;
 	}
+	/* footage layers sit over the WebGL canvas and under the type */
+	.story-amb,
+	.story-tunnel {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		pointer-events: none;
+		opacity: 0;
+	}
+	.story-amb {
+		mix-blend-mode: soft-light;
+		filter: blur(14px) saturate(0.9);
+		transform: scale(1.08); /* hide the blurred edge */
+	}
+	.story-tunnel {
+		mix-blend-mode: multiply;
+		transform: scale(1.05);
+		-webkit-mask-image: radial-gradient(120% 120% at 50% 50%, #000 55%, transparent 100%);
+		mask-image: radial-gradient(120% 120% at 50% 50%, #000 55%, transparent 100%);
+	}
+	:global(html:not([data-story='live'])) .story-tunnel,
+	:global(html[data-story-lite]) .story-amb {
+		display: none;
+	}
+	/* static hero: the ambient footage as a still (poster only, never plays) */
+	:global(html:not([data-story='live'])) .story-amb {
+		opacity: 0.55;
+	}
+	/* phones: plain alpha compositing only — no blend modes, no mask, no second grain layer */
+	:global(html[data-story-lite]) .story-tunnel {
+		mix-blend-mode: normal;
+		-webkit-mask-image: none;
+		mask-image: none;
+	}
+	:global(html[data-story-lite]) .story-grain {
+		display: none;
+	}
+	/* film grain over the stage (stronger than the page-wide grain) */
+	.story-grain {
+		position: absolute;
+		inset: -15%;
+		pointer-events: none;
+		background-image: var(--grain-url);
+		background-size: 180px 180px;
+		opacity: 0.07;
+		mix-blend-mode: overlay;
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		:global(html[data-story='live']) .story-grain {
+			animation: grain 0.84s steps(10) infinite;
+			will-change: transform;
+		}
+	}
 	.story-veil {
 		background: #f3f3f6;
 		opacity: 0;
@@ -303,9 +363,11 @@ const splinters = Array.from({ length: 8 }, (_, i) => ({ a: (i / 8) * 360 + rnd(
 	@keyframes wordIn {
 		from {
 			transform: translateY(112%) rotate(4deg);
+			filter: blur(10px);
 		}
 		to {
 			transform: none;
+			filter: none;
 		}
 	}
 	.sp {

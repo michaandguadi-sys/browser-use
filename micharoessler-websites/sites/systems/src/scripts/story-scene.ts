@@ -40,6 +40,7 @@ import {
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { CH, type StoryState } from './story-ch';
+import type { Post } from './story-post';
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const ease = (x: number) => {
@@ -342,6 +343,7 @@ export async function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	// ---------- sizing ----------
 	let vw = 1;
 	let vh = 1;
+	let post: Post | null = null; // desktop only: bloom + motion blur + grain + vignette (story-post.ts)
 	let numeralReady = false; // placed for the current layout
 	let texAspect = 0;
 	const resize = () => {
@@ -349,6 +351,7 @@ export async function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		const h = canvas.clientHeight;
 		if (!w || !h) return;
 		renderer.setSize(w, h, false);
+		post?.setSize(w, h, dpr);
 		camera.aspect = w / h;
 		camera.updateProjectionMatrix();
 		vh = 2 * 10 * Math.tan(MathUtils.degToRad(FOV / 2)); // visible size at the z = 0 plane from the home pose
@@ -416,10 +419,17 @@ export async function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	let frames = 0;
 	let first = true;
 	let tlSpeed = 0;
+	// cinematic post inputs (smoothed)
+	const lastCam = new Vector3(0, 0, 10);
+	let lastP = 0;
+	let fxZoom = 0;
+	let fxX = 0;
+	let fxCA = 0;
 
 	const tick = (now: number) => {
 		raf = 0;
-		const dt = Math.min(0.05, (now - last) / 1000);
+		const rawDt = Math.max(1 / 240, (now - last) / 1000); // real frame time (for velocities)
+		const dt = Math.min(0.05, rawDt);
 		last = now;
 		const t = now / 1000;
 		const p = state.p;
@@ -527,7 +537,18 @@ export async function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		camera.lookAt(camLook);
 		camera.rotateZ(Math.sin(fly * Math.PI) * 0.12);
 
-		renderer.render(scene, camera);
+		if (post) {
+			const idt = 1 / rawDt;
+			const fwd = Math.max(0, (lastCam.z - camPos.z) * idt); // flying forward (-z)
+			const lat = (camPos.x - lastCam.x) * idt; // tracking the playhead
+			const sv = Math.abs(p - lastP) * idt; // scroll speed in progress / s
+			fxZoom += (Math.min(0.05, fwd * 0.0025) - fxZoom) * 0.2;
+			fxX += (MathUtils.clamp(lat * 0.0012, -0.03, 0.03) - fxX) * 0.2;
+			fxCA += (Math.min(1, sv * 6) - fxCA) * 0.15;
+			lastCam.copy(camPos);
+			lastP = p;
+			post.render(dt, t, fxX, 0, fxZoom, fxCA);
+		} else renderer.render(scene, camera);
 		if (first) {
 			first = false;
 			canvas.classList.add('is-live');
@@ -539,10 +560,13 @@ export async function mount(canvas: HTMLCanvasElement, state: StoryState) {
 			frames++;
 			const ms = performance.now() - now;
 			if (ms > 22 || dt > 0.03) slow++;
-			if (frames === 90 && slow > 30 && dpr > 1) {
-				dpr = 1;
-				renderer.setPixelRatio(dpr);
-				resize();
+			if (frames === 90 && slow > 30) {
+				if (post) post.bloom.enabled = false; // first thing to go on a slow machine
+				if (dpr > 1) {
+					dpr = 1;
+					renderer.setPixelRatio(dpr);
+					resize();
+				}
 			}
 		}
 		if (visible && !document.hidden) raf = requestAnimationFrame(tick);
@@ -571,6 +595,17 @@ export async function mount(canvas: HTMLCanvasElement, state: StoryState) {
 		numeralReady = false;
 	});
 
+	// desktop: the cinematic post chain (lazy chunk; the story still renders without it if it fails)
+	if (!lite) {
+		try {
+			const m = await import('./story-post');
+			post = m.createPost(renderer, scene, camera);
+			post.setSize(canvas.clientWidth, canvas.clientHeight, dpr);
+		} catch {
+			post = null;
+		}
+	}
+
 	// warm-up: compile every program and upload every buffer/texture before the first visible frame
 	buildNumeralTexture();
 	const groups = [amb, numeral, splinters, line];
@@ -585,10 +620,11 @@ export async function mount(canvas: HTMLCanvasElement, state: StoryState) {
 	// (some drivers finish compiling only at the first real draw); the canvas is still at opacity 0 — never seen
 	camera.position.set(0, 0, 10);
 	camera.lookAt(0, 0, 0);
-	renderer.render(scene, camera);
+	const draw = () => (post ? post.render(0, 0, 0.001, 0, 0.001, 0) : renderer.render(scene, camera)); // non-zero blur → compiles the blur branch too
+	draw();
 	camera.position.set(-3, 0.5, TZ + 8);
 	camera.lookAt(2, 0, TZ);
-	renderer.render(scene, camera);
+	draw();
 	camera.position.set(0, 0, 10);
 	camera.lookAt(0, 0, 0);
 	groups.forEach((g, i) => (g.visible = was[i]));

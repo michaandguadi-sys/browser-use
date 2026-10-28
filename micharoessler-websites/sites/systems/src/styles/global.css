@@ -30,6 +30,8 @@
 	--max: 1200px;
 	--gutter: clamp(20px, 4vw, 40px);
 	--ease: cubic-bezier(0.22, 1, 0.36, 1);
+	/* film grain: a tiny SVG noise tile, rasterised once, moved by the compositor (transform only) */
+	--grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.6 -0.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 	color-scheme: light;
 }
 
@@ -288,6 +290,45 @@ input[type='range']::-moz-range-thumb {
 .aura::after {
 	right: -18vmax;
 	background: radial-gradient(closest-side, rgba(255, 166, 120, 0.2), rgba(255, 166, 120, 0.07) 50%, transparent);
+}
+
+/* page-wide grain: barely there on text sections; animated at ~12 fps only when motion is welcome */
+body::after {
+	content: '';
+	position: fixed;
+	inset: -15%;
+	z-index: 70;
+	pointer-events: none;
+	background-image: var(--grain-url);
+	background-size: 180px 180px;
+	opacity: 0.035;
+	mix-blend-mode: overlay;
+}
+/* touch devices: the same grain as a plain translucent, static layer (no blend pass, no per-frame movement) */
+@media (pointer: coarse) {
+	body::after {
+		mix-blend-mode: normal;
+		opacity: 0.045;
+	}
+}
+@keyframes grain {
+	0% { transform: translate(0, 0); }
+	10% { transform: translate(-5%, -8%); }
+	20% { transform: translate(-10%, 4%); }
+	30% { transform: translate(6%, -10%); }
+	40% { transform: translate(-4%, 10%); }
+	50% { transform: translate(-10%, 6%); }
+	60% { transform: translate(10%, 0); }
+	70% { transform: translate(0, 10%); }
+	80% { transform: translate(4%, 10%); }
+	90% { transform: translate(-8%, 6%); }
+	100% { transform: translate(0, 0); }
+}
+@media (prefers-reduced-motion: no-preference) and (pointer: fine) {
+	html[data-story='live'] body::after {
+		animation: grain 0.84s steps(10) infinite;
+		will-change: transform;
+	}
 }
 
 /* reveal: content is always visible (opacity is never animated, so no capture, crawler or slow device sees a gap);

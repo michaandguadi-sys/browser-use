@@ -40,6 +40,15 @@ export function initStory() {
 	const frags = $$('[data-frag]');
 	const spl = $$('[data-spl]');
 	const odoParts = [...$('[data-odo]').children].filter((c) => !c.hasAttribute('data-frags'));
+	const amb = $<HTMLVideoElement>('[data-amb]');
+	const tun = $<HTMLVideoElement>('[data-tunnel]');
+	const tall = matchMedia('(max-width: 719px)').matches;
+	const TUN = [CH.hoursOut, CH.tl[0] + 0.01] as const; // tunnel chapter (scroll progress)
+	let tunRaf = 0;
+	let lastSeek = 0;
+	let stageVisible = true;
+	let ambReady = false;
+	gsap.set(amb, { opacity: lite ? 0 : 0.5 });
 
 	const end = $('[data-end]');
 	const h1 = $('[data-h1]');
@@ -58,6 +67,7 @@ export function initStory() {
 		words.forEach((w, i) => {
 			const e = out3((k - i * st) / (0.62 - st));
 			w.style.transform = `translate3d(0, ${(1 - e) * 115}%, 0) rotate(${(1 - e) * 3}deg)`;
+			if (!lite) w.style.filter = e > 0.995 ? '' : `blur(${((1 - e) * 8).toFixed(2)}px)`; // filmic, not slide-deck
 		});
 		endRest.forEach((el, j) => {
 			const e = out3((k - 0.42 - j * 0.07) / 0.3);
@@ -106,11 +116,22 @@ export function initStory() {
 		const tl = gsap.timeline({
 			defaults: { ease: 'none' },
 			scrollTrigger: { trigger: root, start: 'top top', end: 'bottom bottom', scrub: 0.8, invalidateOnRefresh: true },
-			onUpdate: () => (state.p = tl.progress()),
+			onUpdate: () => {
+				state.p = tl.progress();
+				footage();
+			},
 		});
 		tl.to('[data-hint]', { autoAlpha: 0, duration: 0.03 }, 0)
 			// a → b: the question leaves, the hours arrive and roll up
-			.to($$('[data-q] .wo'), { yPercent: -118, rotate: -3, duration: 0.05, stagger: 0.008, ease: 'power2.in' }, CH.qOut)
+			.to($$('[data-q] .wo'), { yPercent: -118, rotate: -3, ...(lite ? {} : { filter: 'blur(6px)' }), duration: 0.05, stagger: 0.008, ease: 'power2.in' }, CH.qOut)
+			// footage: the glass macro fades with the question …
+			.to(amb, { opacity: 0, duration: 0.05 }, CH.qOut)
+			// … the tunnel carries the fly-through (c) and zooms out into the 3D timeline
+			.to(tun, { opacity: lite ? 0.9 : 0.85, duration: 0.025 }, CH.hoursOut - 0.01)
+			.fromTo(tun, { scale: 1.05 }, { scale: 1.25, duration: TUN[1] - CH.hoursOut, ease: 'none' }, CH.hoursOut)
+			.to(tun, { opacity: 0, scale: 1.45, duration: 0.035, ease: 'power1.in' }, TUN[1] - 0.025)
+			// … and the glass comes back softly behind the H1 (f)
+			.to(amb, { opacity: 0.42, duration: 0.05 }, CH.settle - 0.02)
 			.to('[data-hours]', { opacity: 1, duration: 0.03 }, CH.hoursIn)
 			.fromTo('[data-odo]', { scale: 0.82 }, { scale: 1, duration: 0.06, ease: 'power2.out' }, CH.hoursIn)
 			.to(counter, { v: 60, duration: CH.count[1] - CH.count[0], ease: 'power1.in', onUpdate: renderOdo }, CH.count[0])
@@ -191,13 +212,89 @@ export function initStory() {
 		{ passive: true },
 	);
 
+	// ---------- generated footage ----------
+	// tunnel: scrubbed by scroll in chapter c. Sources are attached on the first scroll (poster-free until then),
+	// phones get the 9:16 cut. Seeks are rAF-throttled and only issued when the target moved by more than a frame.
+	function footage() {
+		const p = state.p;
+		const inTun = p > CH.hoursOut - 0.04 && p < TUN[1] + 0.03;
+		if (inTun && !tunRaf) tunRaf = requestAnimationFrame(scrub);
+		const wantAmb = !lite && stageVisible && (p < CH.qOut + 0.06 || p > CH.settle - 0.03);
+		if (wantAmb && amb.paused && ambReady) amb.play().catch(() => {});
+		else if (!wantAmb && !amb.paused) amb.pause();
+	}
+	function scrub() {
+		tunRaf = 0;
+		const p = state.p;
+		if (!(p > CH.hoursOut - 0.04 && p < TUN[1] + 0.03)) return;
+		const now = performance.now();
+		// phones: at most ~12 seeks/s and only for ≥ 2 frames of change (the footage is motion-blurred anyway)
+		if (tun.readyState >= 2 && !tun.seeking && tun.duration && now - lastSeek >= (lite ? 80 : 0)) {
+			const k = Math.min(1, Math.max(0, (p - (CH.hoursOut - 0.01)) / (TUN[1] - CH.hoursOut + 0.01)));
+			const target = 0.05 + k * (tun.duration - 0.15);
+			if (Math.abs(tun.currentTime - target) > (lite ? 2 : 1) / 24) {
+				tun.currentTime = target;
+				lastSeek = now;
+			}
+		}
+		tunRaf = requestAnimationFrame(scrub);
+	}
+	let tunLoaded = false;
+	const tunnelOn = !(lite && root.dataset.tunnelPhones === 'false');
+	if (!tunnelOn) tun.remove();
+	const loadTunnel = () => {
+		if (tunLoaded || !tunnelOn) return;
+		tunLoaded = true;
+		const src = tall
+			? [['/media/bg/tunnel-tall.mp4', 'video/mp4']]
+			: [
+					['/media/bg/tunnel-wide.webm', 'video/webm'],
+					['/media/bg/tunnel-wide.mp4', 'video/mp4'],
+				];
+		tun.poster = tall ? '/media/bg/tunnel-tall.jpg' : '/media/bg/tunnel-wide.jpg';
+		for (const [u, t] of src) tun.append(Object.assign(document.createElement('source'), { src: u, type: t }));
+		tun.preload = 'auto';
+		tun.load();
+		// iOS paints seeked frames only after the element has played once; elsewhere a first seek is enough to have
+		// the decoder warm and the first frame on its layer before chapter c needs it
+		const iOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+		tun.addEventListener(
+			'loadeddata',
+			() => {
+				if (iOS) tun.play().then(() => tun.pause()).catch(() => {});
+				else tun.currentTime = 0.05;
+			},
+			{ once: true },
+		);
+	};
+	addEventListener('scroll', loadTunnel, { once: true, passive: true });
+	if (scrollY > 0) loadTunnel();
+	// ambient glass (desktop): attached after the page has loaded, plays only in chapters a and f while on screen
+	const loadAmbient = () => {
+		if (lite || root.dataset.ambient === 'false') return;
+		amb.append(Object.assign(document.createElement('source'), { src: '/media/bg/glass-ambient.mp4', type: 'video/mp4' }));
+		amb.preload = 'auto';
+		amb.load();
+		amb.addEventListener('canplay', () => ((ambReady = true), footage()), { once: true });
+	};
+	new IntersectionObserver(([e]) => {
+		stageVisible = e.isIntersecting;
+		footage();
+	}).observe(root);
+
 	// the living background: three.js right after first paint (never blocks the headline)
 	const canvas = $<HTMLCanvasElement>('.story-canvas');
 	const go = () =>
 		import('./story-scene')
 			.then((m) => m.mount(canvas, state))
 			.catch(() => {});
-	const afterPaint = () => requestAnimationFrame(() => setTimeout(go, 0));
+	const afterPaint = () =>
+		requestAnimationFrame(() =>
+			setTimeout(() => {
+				go();
+				setTimeout(loadAmbient, 400);
+			}, 0),
+		);
 	if (document.readyState === 'complete') afterPaint();
 	else addEventListener('load', afterPaint, { once: true });
 }

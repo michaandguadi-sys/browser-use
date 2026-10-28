@@ -1,11 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import { type Lang } from '../i18n';
-import { hero, compare, how, packages, pricing, faq, contact, meta, booking } from '../data/content';
+import { hero, compare, how, packages, pricing, calc, faq, contact, meta, booking } from '../data/content';
 import Story from '../components/Story.astro';
 import GlassSystem from '../components/GlassSystem.astro';
 import Calculator from '../components/Calculator.astro';
 import Booking from '../components/Booking.astro';
+import FormatCheck from '../components/FormatCheck.astro';
 import { Image } from 'astro:assets';
 import portrait from '../assets/micha-portrait.jpg';
 
@@ -15,8 +16,6 @@ interface Props {
 const { lang } = Astro.props;
 const de = lang === 'de';
 const t = (x: { de: string; en: string }) => x[lang];
-const cards = packages.filter((p) => p.tier === 'card');
-const more = packages.filter((p) => p.tier === 'more');
 const ctaHref = booking.bookingUrl || '#kontakt';
 
 const faqLd = {
@@ -32,7 +31,8 @@ const offerLd = {
 		'@type': 'Offer',
 		name: t(p.name),
 		priceCurrency: 'EUR',
-		price: Number(p.price.de.replace(/[^\d]/g, '')),
+		price: p.amount,
+		...(p.monthly ? { priceSpecification: { '@type': 'UnitPriceSpecification', price: p.amount, priceCurrency: 'EUR', unitCode: 'MON', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' } } } : {}),
 		description: [t(p.sub), ...p.points.map((x) => t(x))].join('; '),
 	})),
 };
@@ -45,6 +45,7 @@ const offerLd = {
 		<div class="wrap">
 			<div class="sec-h">
 				<h2 id="cmp-h">{t(compare.h2)}</h2>
+				<p>{t(compare.sub)}</p>
 			</div>
 			<div class="cmp glass">
 				<table>
@@ -111,7 +112,7 @@ const offerLd = {
 			</div>
 			<div class="pk">
 				{
-					cards.map((p, i) => (
+					packages.map((p, i) => (
 						<article class:list={['pk-card', 'glass', 'reveal', { hl: p.highlight }]} style={`--i:${i}`}>
 							<div class="pk-top">
 								<h3>{t(p.name)}</h3>
@@ -119,12 +120,11 @@ const offerLd = {
 							</div>
 							<p class="pk-sub">{t(p.sub)}</p>
 							<p class="pk-price">{t(p.price)}</p>
-							<p class="pk-meta muted">
-								{t(p.unit)} · {t(p.days)}
-							</p>
+							<p class="pk-meta muted">{t(p.unit)}</p>
+							{p.note && <p class="pk-per">{t(p.note)}</p>}
 							<ul class="pk-list">
 								{p.points.map((x) => (
-									<li class:list={{ 'pk-x': /Setup|not included/.test(x.en) }}>{t(x)}</li>
+									<li class:list={{ 'pk-x': /^Setup/.test(x.en) }}>{t(x)}</li>
 								))}
 							</ul>
 							<a class:list={['btn', 'pk-cta', { 'btn--primary': p.highlight }]} href="#kontakt" data-pkg={t(p.name)}>
@@ -135,28 +135,14 @@ const offerLd = {
 					))
 				}
 			</div>
-			<div class="pk-more glass reveal">
-				<h3 class="pk-more-h">{t(pricing.more)}</h3>
-				<ul>
-					{
-						more.map((p) => (
-							<li>
-								<p class="pk-more-n">
-									<b>{t(p.name)}</b>
-									<span>
-										{t(p.price)} {t(p.unit)} · {t(p.days)}
-									</span>
-								</p>
-								<p class="muted">{t(p.sub)}</p>
-								<a class="pk-more-a" href="#kontakt" data-pkg={t(p.name)}>
-									{t(pricing.discuss)}
-									<span class="sr-only">: {t(p.name)}</span> <span aria-hidden="true">→</span>
-								</a>
-							</li>
-						))
-					}
-				</ul>
-			</div>
+			<p class="pk-more glass">
+				<span>
+					{t(pricing.more)} <b>{t(pricing.moreValue)}</b>
+				</span>
+				<a class="pk-more-a" href="#kontakt" data-pkg={t(pricing.moreName)}>
+					{t(pricing.discuss)} <span aria-hidden="true">→</span>
+				</a>
+			</p>
 			<p class="pk-note muted">{t(pricing.note)}</p>
 		</div>
 	</section>
@@ -164,7 +150,8 @@ const offerLd = {
 	<section id="rechner" class="sec sec--tight" aria-labelledby="calc-h">
 		<div class="wrap">
 			<div class="sec-h">
-				<h2 id="calc-h" class="reveal">{de ? 'Was spart euch ein System?' : 'What would a system save you?'}</h2>
+				<h2 id="calc-h" class="reveal">{t(calc.h2)}</h2>
+				<p class="reveal">{t(calc.sub)}</p>
 			</div>
 			<Calculator lang={lang} />
 		</div>
@@ -190,6 +177,8 @@ const offerLd = {
 			</div>
 		</div>
 	</section>
+
+	<FormatCheck lang={lang} />
 
 	<section id="kontakt" class="sec contact" aria-labelledby="c-h">
 		<div class="aura" aria-hidden="true"></div>
@@ -481,11 +470,16 @@ const offerLd = {
 	}
 	.pk {
 		display: grid;
-		gap: 20px;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 16px;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 		align-items: stretch;
 	}
-	@media (max-width: 1000px) {
+	@media (max-width: 1100px) {
+		.pk {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	@media (max-width: 640px) {
 		.pk {
 			grid-template-columns: 1fr;
 			max-width: 34rem;
@@ -493,7 +487,7 @@ const offerLd = {
 		}
 	}
 	.pk-card {
-		padding: 28px;
+		padding: 24px;
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
@@ -529,7 +523,7 @@ const offerLd = {
 	}
 	.pk-price {
 		margin-top: 16px;
-		font-size: clamp(40px, 4.2vw, 56px);
+		font-size: clamp(36px, 3.4vw, 48px);
 		font-weight: 680;
 		letter-spacing: -0.045em;
 		line-height: 1;
@@ -574,46 +568,27 @@ const offerLd = {
 		font-size: 16px;
 	}
 	.pk-more {
-		margin-top: 20px;
-		padding: 22px 28px;
-		display: grid;
-		gap: 14px;
-	}
-	@media (min-width: 1000px) {
-		.pk-more {
-			grid-template-columns: 180px 1fr;
-			align-items: start;
-		}
-	}
-	.pk-more-h {
-		font-size: 17px;
-		font-weight: 650;
-		letter-spacing: -0.02em;
-		padding-top: 2px;
-	}
-	.pk-more ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 16px 32px;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-		font-size: 15px;
-		line-height: 1.45;
+		margin-top: 16px;
+		padding: 16px 24px;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px 24px;
+		font-size: 16px;
 	}
 	.pk-more b {
 		font-weight: 650;
 	}
-	.pk-more-n {
-		display: grid;
-	}
-	.pk-more-n span {
-		font-weight: 560;
+	.pk-per {
+		margin-top: 2px;
+		font-size: 15px;
+		font-weight: 650;
+		color: var(--iris);
 	}
 	.pk-more-a {
 		display: inline-flex;
 		gap: 6px;
-		margin-top: 6px;
 		min-height: 24px;
 		color: var(--iris);
 		font-weight: 600;
