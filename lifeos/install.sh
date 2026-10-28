@@ -25,6 +25,13 @@ PY
 	fi
 }
 env_get() { grep -E "^$1=" .env | head -1 | cut -d= -f2-; }
+ask_domain() { # ask_domain VAR PROMPT DEFAULT: re-asks until it looks like a real domain (sub.example.com)
+	while :; do
+		ask "$1" "$2" "$3"
+		[[ "${!1}" =~ ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$ ]] && break
+		echo "That is not a domain (it needs a dot, e.g. $3). Press Enter for the default."
+	done
+}
 
 command -v docker >/dev/null || die "Docker is not installed. See https://docs.docker.com/engine/install/"
 docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is missing (docker compose ...)."
@@ -36,12 +43,12 @@ if [[ ! -f .env ]]; then
 		say "Life OS DEMO mentor setup (a fictional person, Noa, with 90 days of history)"
 		echo "Needs its own DNS A record pointing at this server, e.g. demo.yourdomain.com."
 		OWNER="Noa"
-		ask MENTOR_DOMAIN "Domain for the demo" "demo.micharoessler.com"
+		ask_domain MENTOR_DOMAIN "Domain for the demo" "demo.micharoessler.com"
 	else
 		say "Life OS mentor setup"
 		echo "You need one DNS A record pointing at this server's IP, e.g. mentor.yourdomain.com."
 		ask OWNER "Your first name" "Micha"
-		ask MENTOR_DOMAIN "Domain for the mentor app" "mentor.micharoessler.com"
+		ask_domain MENTOR_DOMAIN "Domain for the mentor app" "mentor.micharoessler.com"
 	fi
 	while :; do
 		ask_secret PASS "Choose a login passphrase (min 8 chars)"

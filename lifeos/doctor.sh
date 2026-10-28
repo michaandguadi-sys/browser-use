@@ -17,7 +17,11 @@ PUBLIC_IP=$(curl -s4 --max-time 5 https://api.ipify.org || true)
 DNS_IP=$(getent ahostsv4 "$DOMAIN" | awk 'NR==1{print $1}')
 info "this server: ${PUBLIC_IP:-unknown}   $DOMAIN -> ${DNS_IP:-nothing}"
 if [[ -z "$DNS_IP" ]]; then
-	bad "$DOMAIN has no A record yet. Add one: name 'mentor' -> ${PUBLIC_IP:-the IP of this server} where micharoessler.com's DNS is managed."
+	if [[ "$DOMAIN" != *.* ]]; then
+		bad "\"$DOMAIN\" is not a domain. Fix: sed -i 's/^MENTOR_DOMAIN=.*/MENTOR_DOMAIN=sub.example.com/; s|^PUBLIC_URL=.*|PUBLIC_URL=https://sub.example.com|' .env && ./install.sh"
+	else
+		bad "$DOMAIN has no A record yet. Add one: host '${DOMAIN%%.*}' -> ${PUBLIC_IP:-the IP of this server} where ${DOMAIN#*.}'s DNS is managed."
+	fi
 elif [[ -n "$PUBLIC_IP" && "$DNS_IP" != "$PUBLIC_IP" ]]; then
 	bad "$DOMAIN points at $DNS_IP, but this server is $PUBLIC_IP. Change the A record to $PUBLIC_IP."
 else
