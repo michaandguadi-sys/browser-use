@@ -1,0 +1,228 @@
+---
+import Base from '../layouts/Base.astro';
+import { href, formatschnitt, type Lang } from '../i18n';
+import Photo from '../components/Photo.astro';
+import ExpeditionMap from '../components/ExpeditionMap.astro';
+import { timelineOf } from '../data/timeline';
+import { factsOf } from '../data/facts';
+import Icon from '../components/Icon.astro';
+import portrait from '../assets/micha-portrait.jpg';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const en = lang === 'en';
+
+const timeline = timelineOf(lang);
+const facts = factsOf(lang);
+---
+
+<Base
+	lang={lang}
+	title={en ? 'About – Micha Rössler, Expedition Filmmaker from Germany' : 'Über mich – Micha Rössler, Outdoor-Filmemacher aus Bayern'}
+	description={en
+		? 'German expedition and adventure filmmaker, camera operator and documentary editor. Raised in a small Bavarian village, now filming on the road full-time.'
+		: 'Expeditions- und Outdoor-Filmemacher, Kameramann und Dokumentarfilm-Cutter. Aufgewachsen in einem kleinen Dorf in Bayern, heute dauerhaft unterwegs.'}
+	alt={{ en: '/about/', de: '/de/ueber-mich/' }}
+	ogImage="kilimanjaro-ridge"
+	pageType="ProfilePage"
+	crumbs={[{ name: en ? 'About' : 'Über mich', path: href(lang, 'about') }]}
+>
+	<div class="wrap a">
+		<div class="a-grid">
+			<div class="a-main">
+				<p class="k">{en ? 'About' : 'Über mich'}</p>
+				<h1>{en ? 'Still looking for the next hard, honest story' : 'Immer auf der Suche nach der nächsten harten, ehrlichen Geschichte'}</h1>
+				<div class="prose a-prose">
+					{
+						en ? (
+							<>
+								<p>I grew up in a small village in Bavaria, and the mountains were my first playground. For a while I almost lost that – until I started travelling and understood that the most important skill is being able to tell a story, to the right people, the right way.</p>
+								<p>I learned the craft on long-form YouTube documentaries: directing, filming and editing for Felix von der Laden, whose 24h Nürburgring and Hotrodtour docs reached 1.4 and 1.2 million views. Since then I have filmed on Kilimanjaro, in the Sahara and in the Bolivian Andes.</p>
+								<p>Today I live on the road with my partner Guada. My main terrain is mountains, snow and multi-day journeys. I care about fair work, people over spectacle and stories that do not need to be exaggerated.</p>
+								<p>Practical bits, because you will wonder: I am German, I work in German and English, and I invoice through my own US company, Micha Roessler LLC, because I work on the road full-time. You always deal with me directly.</p>
+							</>
+						) : (
+							<>
+								<p>Ich bin in einem kleinen Dorf in Bayern aufgewachsen, die Berge waren mein erster Spielplatz. Eine Zeit lang hätte ich das fast verloren – bis ich angefangen habe zu reisen und verstanden habe, dass die wichtigste Fähigkeit ist, eine Geschichte zu erzählen: den richtigen Menschen, auf die richtige Weise.</p>
+								<p>Das Handwerk habe ich bei langen YouTube-Dokumentationen gelernt: Regie, Kamera und Schnitt für Felix von der Laden, dessen Dokus über das 24h-Rennen am Nürburgring und die Hotrodtour 1,4 und 1,2 Millionen Aufrufe erreicht haben. Seitdem habe ich am Kilimandscharo, in der Sahara und in den bolivianischen Anden gedreht.</p>
+								<p>Heute lebe ich mit meiner Partnerin Guada unterwegs. Mein Terrain sind Berge, Schnee und mehrtägige Touren. Mir sind faire Arbeit, Menschen statt Spektakel und Geschichten wichtig, die man nicht übertreiben muss.</p>
+								<p>Ganz praktisch, weil die Frage sowieso kommt: Ich bin Deutscher, arbeite auf Deutsch und Englisch und rechne über meine eigene US-Firma Micha Roessler LLC ab, weil ich dauerhaft unterwegs arbeite. Ihr habt immer direkt mit mir zu tun.</p>
+							</>
+						)
+					}
+				</div>
+			</div>
+			<figure class="a-fig">
+				<div class="m a-img">
+					<Photo src={portrait} alt="Micha Rössler" widths={[480, 800, 1200, 1600]} sizes="(min-width: 960px) 36vw, 92vw" eager />
+				</div>
+				<figcaption class="k">Micha Rössler · {en ? 'filmmaker & editor' : 'Filmemacher & Cutter'}</figcaption>
+			</figure>
+		</div>
+
+		<section class="sec facts" aria-labelledby="facts-h">
+			<div class="head">
+				<h2 id="facts-h" class="h2">{en ? 'In short' : 'Kurz gesagt'}</h2>
+			</div>
+			<dl>
+				{
+					facts.map(([k, v]) => (
+						<div>
+							<dt class="k">{k}</dt>
+							<dd>{k === (en ? 'Also' : 'Außerdem') ? <a href={formatschnitt(lang)}>{v}</a> : v}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</section>
+
+		<section class="sec tl" aria-labelledby="tl-h">
+			<div class="head">
+				<h2 id="tl-h" class="h2">{en ? 'Timeline' : 'Stationen'}</h2>
+			</div>
+			<ol>
+				{
+					timeline.map(([y, txt]) => (
+						<li>
+							<span class="tl-y">{y}</span>
+							<p>{txt}</p>
+						</li>
+					))
+				}
+			</ol>
+		</section>
+
+		<section class="sec" aria-labelledby="map-h">
+			<div class="head">
+				<h2 id="map-h" class="h2">{en ? 'Where I have filmed' : 'Wo ich gedreht habe'}</h2>
+				<p class="k">{en ? 'Hover or tap a pin' : 'Pin antippen oder überfahren'}</p>
+			</div>
+			<ExpeditionMap lang={lang} />
+		</section>
+
+		<section class="sec also">
+			<p class="k">{en ? 'Also' : 'Außerdem'}</p>
+			<p class="prose also-p">
+					{en ? 'I build edit systems for recurring video formats – templates, data-driven graphics and shorts pipelines – at ' : 'Für wiederkehrende Videoformate baue ich Schnitt-Systeme – Templates, datengetriebene Grafiken und Shorts-Pipelines – bei '}
+					<a href={formatschnitt(lang)}>{en ? 'Formatschnitt, my editing service for company YouTube shows' : 'Formatschnitt, meinem Schnitt-Angebot für YouTube-Formate von Unternehmen'}</a>.
+				</p>
+			<a class="btn" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}<Icon name="arrow" /></a>
+		</section>
+	</div>
+</Base>
+
+<style>
+	.a {
+		padding-top: clamp(16px, 3vw, 40px);
+	}
+	.a-grid {
+		display: grid;
+		grid-template-columns: 1.4fr 1fr;
+		gap: 56px clamp(32px, 6vw, 110px);
+		align-items: start;
+	}
+	.a-fig {
+		position: sticky;
+		top: 112px;
+	}
+	h1 {
+		margin: 22px 0 clamp(32px, 4vw, 48px);
+		font-size: clamp(34px, 4.4vw, 68px);
+		line-height: 1.08;
+		letter-spacing: -0.03em;
+		font-variation-settings: 'wdth' 86;
+		max-width: 20ch;
+	}
+	.a-prose {
+		font-size: clamp(17px, 1.3vw, 20px);
+	}
+	.a-img {
+		aspect-ratio: 4 / 5;
+		border-radius: 6px;
+	}
+	.a-img :global(img) {
+		object-position: 50% 20%;
+	}
+	.a-fig figcaption {
+		margin-top: 14px;
+	}
+	.facts dl > div {
+		display: grid;
+		grid-template-columns: 180px 1fr;
+		gap: 6px 18px;
+		padding: 16px 0;
+		border-bottom: 1px solid var(--line);
+		align-items: baseline;
+	}
+	.facts dl > div:first-child {
+		border-top: 1px solid var(--line);
+	}
+	.facts dd {
+		margin: 0;
+		max-width: 70ch;
+		line-height: 1.6;
+	}
+	.facts dd a {
+		border-bottom: 1px solid var(--line-2);
+	}
+	.facts dd a:hover {
+		border-color: var(--ink);
+	}
+	.tl li {
+		display: grid;
+		grid-template-columns: 120px 1fr;
+		gap: 18px;
+		padding: 20px 0;
+		border-bottom: 1px solid var(--line);
+		align-items: baseline;
+	}
+	.tl li:first-child {
+		border-top: 1px solid var(--line);
+	}
+	.tl-y {
+		font-weight: 600;
+		font-size: 18px;
+	}
+	.tl li:last-child .tl-y {
+		color: var(--signal);
+	}
+	.tl p {
+		color: var(--ink-2);
+		max-width: 70ch;
+		line-height: 1.6;
+	}
+	.also {
+		display: grid;
+		justify-items: start;
+		gap: 20px;
+	}
+	.also-p {
+		font-size: clamp(17px, 1.3vw, 20px);
+	}
+	.also-p a {
+		border-bottom: 1px solid var(--line-2);
+	}
+	.also-p a:hover {
+		border-color: var(--ink);
+	}
+	@media (max-width: 1000px) {
+		.a-grid {
+			grid-template-columns: 1fr;
+		}
+		.a-fig {
+			position: static;
+			max-width: 520px;
+		}
+	}
+	@media (max-width: 560px) {
+		.facts dl > div {
+			grid-template-columns: 1fr;
+		}
+		.tl li {
+			grid-template-columns: 1fr;
+			gap: 6px;
+		}
+	}
+</style>

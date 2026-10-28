@@ -1,0 +1,447 @@
+---
+// Intro-call request: pick a working day + a 15-minute slot (Berlin time, visitor's time alongside), add name and
+// company → a prefilled email, plus an optional .ics "tentative" entry for the visitor. No date library (Intl only).
+// Nothing is stored; Micha confirms by email. Replaced by a plain link once content.ts booking.bookingUrl is set.
+import { type Lang } from '../i18n';
+import { booking as b, contact as c } from '../data/content';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const t = (x: { de: string; en: string }) => x[lang];
+const cfg = { tz: b.timeZone, days: b.days, from: b.from, to: b.to, step: b.slotMinutes, email: b.email, lang };
+const txt = {
+	none: t(b.none),
+	chosen: t(b.chosen),
+	local: t(b.local),
+	need: t(b.needSlot),
+	sent: t(b.sent),
+	icsTitle: t(b.icsTitle),
+	icsNote: t(b.icsNote),
+	subject: t(c.subject),
+	slotKey: lang === 'de' ? 'Wunschtermin' : 'Preferred time',
+};
+---
+
+<form class="f" id="brief" action={`mailto:${b.email}`} method="post" enctype="text/plain" data-booking data-cfg={JSON.stringify(cfg)} data-txt={JSON.stringify(txt)}>
+	<fieldset class="bk" data-bk>
+		<legend class="bk-legend">{t(b.legend)}</legend>
+		<fieldset class="bk-group">
+			<legend>{t(b.day)}</legend>
+			<div class="chips bk-days" data-days></div>
+		</fieldset>
+		<fieldset class="bk-group">
+			<legend>{t(b.time)}</legend>
+			<div class="bk-slots" data-slots></div>
+		</fieldset>
+		<p class="bk-sum" data-sum aria-live="polite">{t(b.none)}</p>
+		<p class="bk-note">{t(b.confirm)}</p>
+	</fieldset>
+	<noscript><p class="bk-note">{lang === 'de' ? 'Schreibt euren Wunschtermin einfach in die Nachricht. ' : 'Just add your preferred time to the message. '}{t(b.confirm)}</p></noscript>
+
+	<div class="f-row">
+		<label><span>{t(c.name)} <i aria-hidden="true">*</i></span><input name={t(c.name)} required autocomplete="name" /></label>
+		<label><span>{t(c.company)} <i aria-hidden="true">*</i></span><input name={t(c.company)} required autocomplete="organization" /></label>
+	</div>
+	<fieldset>
+		<legend>{t(c.eps)} <span class="opt">({t(c.optional)})</span></legend>
+		<div class="chips">
+			{
+				c.epsOptions[lang].map((o) => (
+					<label class="chip">
+						<input type="radio" name={t(c.eps)} value={o} />
+						<span>{o}</span>
+					</label>
+				))
+			}
+		</div>
+	</fieldset>
+	<label><span>{t(c.link)} <span class="opt">({t(c.optional)})</span></span><input name="Link" type="url" placeholder="https://youtube.com/…" /></label>
+	<label><span>{t(c.msg)} <span class="opt">({t(c.optional)})</span></span><textarea name={t(c.msg)} rows="3"></textarea></label>
+	<div class="f-send">
+		<button class="btn btn--primary" type="submit">{t(b.submit)} <span class="arr">→</span></button>
+		<p class="f-note muted">{t(c.note)}</p>
+	</div>
+	<div class="bk-done" data-done hidden>
+		<p data-done-msg role="status"></p>
+		<a class="btn" data-ics download="formatschnitt-erstgespraech.ics" href="#">{t(b.ics)}</a>
+	</div>
+</form>
+
+<script>
+	type Cfg = { tz: string; days: number; from: string; to: string; step: number; email: string; lang: 'de' | 'en' };
+	type Txt = Record<'none' | 'chosen' | 'local' | 'need' | 'sent' | 'icsTitle' | 'icsNote' | 'subject' | 'slotKey', string>;
+
+	const form = document.querySelector<HTMLFormElement>('[data-booking]');
+	if (form) {
+		const cfg: Cfg = JSON.parse(form.dataset.cfg!);
+		const txt: Txt = JSON.parse(form.dataset.txt!);
+		const loc = cfg.lang === 'de' ? 'de-DE' : 'en-GB';
+		const $ = <T extends Element>(s: string) => form.querySelector<T>(s)!;
+
+		// wall-clock parts of an instant in a time zone
+		const partsIn = (ms: number, tz: string) => {
+			const p = Object.fromEntries(
+				new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+					.formatToParts(ms)
+					.map((x) => [x.type, Number(x.value)]),
+			);
+			return p as Record<'year' | 'month' | 'day' | 'hour' | 'minute', number>;
+		};
+		// a Berlin wall-clock time → UTC instant (two passes cover DST edges)
+		const zonedToUtc = (y: number, mo: number, d: number, h: number, mi: number) => {
+			const want = Date.UTC(y, mo - 1, d, h, mi);
+			let ms = want;
+			for (let i = 0; i < 2; i++) {
+				const p = partsIn(ms, cfg.tz);
+				ms += want - Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute);
+			}
+			return ms;
+		};
+
+		// next N working days (Mon–Fri), starting tomorrow in Berlin
+		const today = partsIn(Date.now(), cfg.tz);
+		const days: { y: number; m: number; d: number }[] = [];
+		for (let k = 1; days.length < cfg.days && k < 30; k++) {
+			const dt = new Date(Date.UTC(today.year, today.month - 1, today.day + k));
+			const wd = dt.getUTCDay();
+			if (wd > 0 && wd < 6) days.push({ y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() });
+		}
+		const dayFmt = new Intl.DateTimeFormat(loc, { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' });
+		const dayLong = new Intl.DateTimeFormat(loc, { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long' });
+		const daysBox = $<HTMLElement>('[data-days]');
+		days.forEach((x, i) => {
+			const l = document.createElement('label');
+			l.className = 'chip';
+			const inp = Object.assign(document.createElement('input'), { type: 'radio', name: 'bk-day', value: String(i) });
+			const s = document.createElement('span');
+			s.textContent = dayFmt.format(Date.UTC(x.y, x.m - 1, x.d));
+			l.append(inp, s);
+			daysBox.append(l);
+		});
+
+		const [fh, fm] = cfg.from.split(':').map(Number);
+		const [th, tm] = cfg.to.split(':').map(Number);
+		const slots: { h: number; m: number }[] = [];
+		for (let mins = fh * 60 + fm; mins + cfg.step <= th * 60 + tm; mins += cfg.step) slots.push({ h: Math.floor(mins / 60), m: mins % 60 });
+		const hhmm = (h: number, m: number) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+		const slotsBox = $<HTMLElement>('[data-slots]');
+		slots.forEach((x, i) => {
+			const l = document.createElement('label');
+			l.className = 'slot';
+			const inp = Object.assign(document.createElement('input'), { type: 'radio', name: 'bk-slot', value: String(i) });
+			const s = document.createElement('span');
+			s.textContent = hhmm(x.h, x.m);
+			l.append(inp, s);
+			slotsBox.append(l);
+		});
+
+		const myTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		const localFmt = new Intl.DateTimeFormat(loc, { weekday: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+		const sum = $<HTMLElement>('[data-sum]');
+		const pick = () => {
+			const di = form.querySelector<HTMLInputElement>('input[name="bk-day"]:checked');
+			const si = form.querySelector<HTMLInputElement>('input[name="bk-slot"]:checked');
+			if (!di || !si) return null;
+			const d = days[Number(di.value)];
+			const s = slots[Number(si.value)];
+			const start = zonedToUtc(d.y, d.m, d.d, s.h, s.m);
+			const label = `${dayLong.format(Date.UTC(d.y, d.m - 1, d.d))}, ${hhmm(s.h, s.m)}–${hhmm(Math.floor((s.h * 60 + s.m + cfg.step) / 60), (s.m + cfg.step) % 60)} (Berlin)`;
+			const bp = partsIn(start, cfg.tz);
+			const berlinOffset = (Date.UTC(bp.year, bp.month - 1, bp.day, bp.hour, bp.minute) - start) / 60000;
+			const sameZone = myTz === cfg.tz || berlinOffset === -new Date(start).getTimezoneOffset();
+			const local = sameZone ? '' : `${txt.local}: ${localFmt.format(start)}`;
+			return { start, label, local };
+		};
+		const show = () => {
+			const p = pick();
+			sum.classList.toggle('is-set', !!p);
+			sum.classList.remove('is-err');
+			sum.textContent = p ? `${txt.chosen}: ${p.label}${p.local ? ` · ${p.local}` : ''}` : txt.none;
+		};
+		form.addEventListener('change', (e) => {
+			if ((e.target as HTMLInputElement).name?.startsWith('bk-')) show();
+		});
+
+		const ics = (start: number) => {
+			const z = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+			const esc = (s: string) => s.replace(/[\;,]/g, (m) => '\\' + m).replace(/\n/g, '\\n');
+			return [
+				'BEGIN:VCALENDAR',
+				'VERSION:2.0',
+				'PRODID:-//Formatschnitt//Intro call request//' + cfg.lang.toUpperCase(),
+				'CALSCALE:GREGORIAN',
+				'METHOD:PUBLISH',
+				'BEGIN:VEVENT',
+				`UID:${start}-${Math.random().toString(36).slice(2)}@micharoessler.com`,
+				`DTSTAMP:${z(Date.now())}`,
+				`DTSTART:${z(start)}`,
+				`DTEND:${z(start + cfg.step * 60000)}`,
+				`SUMMARY:${esc(txt.icsTitle)}`,
+				`DESCRIPTION:${esc(`${txt.icsNote} ${cfg.email}`)}`,
+				'STATUS:TENTATIVE',
+				'END:VEVENT',
+				'END:VCALENDAR',
+				'',
+			].join('\r\n');
+		};
+
+		let icsUrl = '';
+		form.addEventListener('submit', (e) => {
+			e.preventDefault();
+			const p = pick();
+			if (!p) {
+				sum.classList.add('is-err');
+				sum.textContent = txt.need;
+				form.querySelector<HTMLInputElement>('input[name="bk-day"]:checked, input[name="bk-day"]')?.focus();
+				return;
+			}
+			const lines = [`${txt.slotKey}: ${p.label}${p.local ? ` (${p.local})` : ''}`];
+			for (const [k, v] of new FormData(form).entries()) if (!k.startsWith('bk-') && String(v).trim()) lines.push(`${k}: ${v}`);
+			const subject = `${txt.subject} – ${p.label}`;
+			if (icsUrl) URL.revokeObjectURL(icsUrl);
+			icsUrl = URL.createObjectURL(new Blob([ics(p.start)], { type: 'text/calendar' }));
+			const done = $<HTMLElement>('[data-done]');
+			$<HTMLAnchorElement>('[data-ics]').href = icsUrl;
+			$<HTMLElement>('[data-done-msg]').textContent = txt.sent;
+			done.hidden = false;
+			const url = `mailto:${cfg.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n\n'))}`;
+			form.dataset.mailto = url; // kept on the form so the request can be checked (and copied) if no mail app opens
+			location.href = url;
+		});
+	}
+</script>
+
+<style>
+	.f {
+		display: grid;
+		gap: 16px;
+		align-content: start;
+		min-width: 0;
+	}
+	.f fieldset {
+		min-width: 0; /* fieldsets default to min-content → the day row would widen the page */
+	}
+	.f-row {
+		display: grid;
+		gap: 16px;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+	}
+	.f label {
+		display: grid;
+		gap: 6px;
+		font-size: 14px;
+		font-weight: 560;
+		color: var(--ink-2);
+	}
+	.f input,
+	.f textarea {
+		font: inherit;
+		font-size: 16px;
+		font-weight: 400;
+		color: var(--ink);
+		background: rgba(255, 255, 255, 0.8);
+		border: 0;
+		border-radius: 14px;
+		padding: 13px 16px;
+		width: 100%;
+		box-shadow:
+			inset 0 0 0 1px rgba(29, 29, 31, 0.1),
+			inset 0 1px 2px rgba(16, 24, 40, 0.04);
+		transition: box-shadow 0.2s var(--ease);
+	}
+	.f input::placeholder,
+	.f textarea::placeholder {
+		color: #8a8a90;
+	}
+	.f input:focus,
+	.f textarea:focus {
+		outline: none;
+		box-shadow:
+			inset 0 0 0 2px var(--iris),
+			0 0 0 4px rgba(85, 70, 255, 0.12);
+	}
+	fieldset {
+		border: 0;
+		margin: 0;
+		padding: 0;
+	}
+	legend {
+		padding: 0;
+		margin-bottom: 8px;
+		font-size: 14px;
+		font-weight: 560;
+		color: var(--ink-2);
+	}
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.f :global(.chip),
+	.f :global(.slot) {
+		position: relative; /* keeps the visually hidden radios inside the scrolling day row */
+		display: block;
+	}
+	.f :global(.chip input) {
+		position: absolute;
+		opacity: 0;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		box-shadow: none;
+		background: none;
+	}
+	.f :global(.chip span) {
+		display: inline-block;
+		padding: 9px 14px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.8);
+		box-shadow: inset 0 0 0 1px rgba(29, 29, 31, 0.1);
+		color: var(--ink);
+		font-size: 14px;
+		cursor: pointer;
+		transition:
+			background-color 0.2s var(--ease),
+			color 0.2s var(--ease);
+	}
+	.f :global(.chip input:checked + span) {
+		background: var(--iris);
+		color: #fff;
+		box-shadow: none;
+	}
+	.f :global(.chip input:focus-visible + span) {
+		outline: 3px solid rgba(85, 70, 255, 0.55);
+		outline-offset: 2px;
+	}
+	.f-send {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 12px 20px;
+		margin-top: 4px;
+	}
+	.f-note {
+		font-size: 14px;
+	}
+	.f label i,
+	.f legend i {
+		font-style: normal;
+		color: var(--iris);
+	}
+	.opt {
+		font-weight: 400;
+		color: #7a7a80;
+	}
+	.bk {
+		display: grid;
+		gap: 14px;
+		padding: 18px;
+		border-radius: 22px;
+		background: rgba(85, 70, 255, 0.05);
+		box-shadow: inset 0 0 0 1px rgba(85, 70, 255, 0.12);
+	}
+	:global(html:not(.js)) .bk {
+		display: none;
+	}
+	.bk-legend {
+		float: left;
+		width: 100%;
+		margin: 0;
+		font-size: 17px;
+		font-weight: 650;
+		letter-spacing: -0.02em;
+		color: var(--ink);
+	}
+	.bk-group legend {
+		margin-bottom: 6px;
+	}
+	.bk-days {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		padding: 4px 4px 6px;
+		margin: -4px -4px -6px;
+		scrollbar-width: thin;
+	}
+	@media (min-width: 560px) {
+		.bk-days {
+			flex-wrap: wrap;
+			overflow: visible;
+		}
+	}
+	.bk-days :global(.chip span) {
+		white-space: nowrap;
+	}
+	.bk-slots {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+		gap: 6px;
+	}
+	.f .bk-slots :global(.slot) {
+		display: block;
+	}
+	.f :global(.chip input),
+	.f :global(.slot input) {
+		position: absolute;
+		opacity: 0;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		box-shadow: none;
+		background: none;
+	}
+	.f :global(.slot span) {
+		display: block;
+		padding: 9px 0;
+		text-align: center;
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.85);
+		box-shadow: inset 0 0 0 1px rgba(29, 29, 31, 0.1);
+		color: var(--ink);
+		font-family: var(--mono);
+		font-size: 14px;
+		cursor: pointer;
+		transition: background-color 0.2s var(--ease);
+	}
+	.f :global(.slot input:checked + span),
+	.f :global(.chip input:checked + span) {
+		background: var(--iris);
+		color: #fff;
+		box-shadow: none;
+	}
+	.f :global(.slot input:focus-visible + span),
+	.f :global(.chip input:focus-visible + span) {
+		outline: 3px solid rgba(85, 70, 255, 0.55);
+		outline-offset: 2px;
+	}
+	.bk-sum {
+		font-size: 15px;
+		font-weight: 560;
+		color: var(--ink-2);
+	}
+	.bk-sum:global(.is-set) {
+		color: var(--ink);
+	}
+	.bk-sum:global(.is-err) {
+		color: #b42318;
+	}
+	.bk-note {
+		font-size: 14px;
+		color: var(--ink-2);
+	}
+	.bk-done {
+		display: grid;
+		gap: 10px;
+		justify-items: start;
+		padding: 16px 18px;
+		border-radius: 18px;
+		background: rgba(21, 128, 61, 0.07);
+		box-shadow: inset 0 0 0 1px rgba(21, 128, 61, 0.18);
+		font-size: 15px;
+		font-weight: 560;
+	}
+	.bk-done[hidden] {
+		display: none;
+	}
+</style>

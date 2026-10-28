@@ -1,0 +1,141 @@
+---
+// Film strip with sprocket edges for the long-form YouTube documentaries (click-to-load facade).
+import YouTube from './YouTube.astro';
+import { href, ui, type Lang } from '../i18n';
+import { pic, type Project } from '../data/projects';
+
+interface Props {
+	lang: Lang;
+	items: Project[];
+	id?: string;
+}
+const { lang, items, id = 'films' } = Astro.props;
+const t = ui[lang];
+const en = lang === 'en';
+---
+
+<div class="strip-head" id={id}>
+	<h2 class="k">{en ? 'Long-form documentaries on YouTube' : 'Langform-Dokus auf YouTube'}</h2>
+	<span class="rule" aria-hidden="true"></span>
+	<span class="k sh-r">{items[0]?.roles[lang]}</span>
+</div>
+<div class="strip">
+	{
+		items.map((p, i) => (
+			<div class="frame">
+				<span class="fn" aria-hidden="true">
+					{String(i + 1).padStart(2, '0')}
+				</span>
+				<YouTube id={p.youtube!} title={p.title[lang]} lang={lang} poster={pic(p.cover)} alt={p.title[lang]} widths={[480, 720, 960, 1280]} sizes="(min-width: 1520px) 700px, (min-width: 700px) 46vw, 90vw" position="top" />
+				<a class="fx" href={href(lang, p.slug)}>
+					<b>{p.title[lang]}</b>
+					<span>
+						{p.client}
+						{' · '}
+						{p.year || p.kicker[lang]}
+					</span>
+					{p.views && <em>{p.views[lang]}</em>}
+					<span class="sr-only">– {t.viewFilm}</span>
+				</a>
+			</div>
+		))
+	}
+</div>
+
+<style>
+	.strip-head {
+		display: flex;
+		align-items: center;
+		gap: 18px;
+		margin: clamp(80px, 9vw, 140px) 0 22px;
+	}
+	.strip-head h2 {
+		font-weight: 400;
+	}
+	.strip {
+		position: relative;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		padding: 34px 0;
+		border-radius: 6px;
+		background: #070707;
+	}
+	.strip::before,
+	.strip::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		height: 12px;
+		background: radial-gradient(ellipse 6px 4.5px at 12px 6px, #33322f 98%, transparent) 0 0 / 26px 12px repeat-x;
+	}
+	.strip::before {
+		top: 11px;
+	}
+	.strip::after {
+		bottom: 11px;
+	}
+	.frame {
+		position: relative;
+		display: grid;
+		gap: 14px;
+		padding: 0 17px;
+	}
+	.frame + .frame {
+		border-left: 1px solid #1d1d1c;
+	}
+	.fn {
+		position: absolute;
+		left: 28px;
+		top: 12px;
+		z-index: 2;
+		padding: 3px 7px;
+		border-radius: 2px;
+		background: rgb(0 0 0 / 0.55);
+		font-size: 11px;
+		letter-spacing: 0.14em;
+		color: #f2efe9;
+		pointer-events: none;
+	}
+	.fx {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 4px 16px;
+		padding: 0 4px;
+	}
+	.fx b {
+		font-weight: 500;
+		font-size: 17px;
+	}
+	.fx:hover b {
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+	.fx span {
+		grid-column: 1;
+		font-size: 13px;
+		color: var(--muted);
+	}
+	.fx em {
+		grid-column: 2;
+		grid-row: 1 / 3;
+		align-self: center;
+		font-style: normal;
+		font-size: clamp(22px, 2.2vw, 32px);
+		letter-spacing: -0.03em;
+		font-variation-settings: 'wdth' 85;
+	}
+	@media (max-width: 700px) {
+		.strip {
+			grid-template-columns: 1fr;
+		}
+		.frame + .frame {
+			border-left: 0;
+			margin-top: 30px;
+		}
+		.strip-head .rule,
+		.sh-r {
+			display: none;
+		}
+	}
+</style>

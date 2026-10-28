@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+.vercel/
+.DS_Store
+
+# Re-include files that the host repository's root .gitignore excludes.
+!*.json
+!*.txt

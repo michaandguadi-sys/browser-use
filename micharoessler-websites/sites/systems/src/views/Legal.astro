@@ -1,0 +1,74 @@
+---
+import Base from '../layouts/Base.astro';
+import { alts, type Lang } from '../i18n';
+import { impressum, privacy } from '../data/legal';
+
+interface Props {
+	lang: Lang;
+	kind: 'imprint' | 'privacy';
+}
+const { lang, kind } = Astro.props;
+const de = lang === 'de';
+const sections = kind === 'imprint' ? impressum[lang] : privacy('Hostinger International Ltd., 61 Lordou Vironos Street, 6023 Larnaca, Cyprus')[lang];
+const title = kind === 'imprint' ? (de ? 'Impressum' : 'Legal notice') : de ? 'Datenschutzerklärung' : 'Privacy policy';
+const alt = alts(kind);
+const description =
+	kind === 'imprint'
+		? de
+			? 'Impressum von Formatschnitt (micharoessler.com/formatschnitt): Anbieter Micha Roessler LLC, Kontakt und Angaben gemäß § 5 DDG.'
+			: 'Legal notice for Formatschnitt (micharoessler.com/formatschnitt): provider Micha Roessler LLC, contact details and legal information.'
+		: de
+			? 'Datenschutzerklärung von Formatschnitt: welche Daten beim Besuch verarbeitet werden, wer verantwortlich ist und welche Rechte ihr habt.'
+			: 'Privacy policy for Formatschnitt: which data is processed when you visit, who is responsible and what your rights are.';
+---
+
+<Base lang={lang} title={`${title} | Formatschnitt`} description={description} alt={alt} crumb={title}>
+	<div class="wrap l">
+		<h1>{title}</h1>
+		{
+			sections.map((s) => (
+				<section>
+					<h2>{s.h}</h2>
+					{s.p.map((p) => (
+						<p set:html={p} />
+					))}
+				</section>
+			))
+		}
+	</div>
+</Base>
+
+<style>
+	.l {
+		padding-block: clamp(48px, 7vw, 96px);
+	}
+	.l > * {
+		max-width: 760px;
+		margin-inline: auto;
+	}
+	h1 {
+		font-size: var(--h2);
+		margin-bottom: 40px;
+	}
+	section {
+		margin-top: 16px;
+		padding: 24px 28px;
+		border-radius: var(--r-md);
+		background: var(--glass-bg);
+		border: var(--glass-edge);
+		box-shadow: var(--glass-shadow);
+	}
+	h2 {
+		font-size: 20px;
+		letter-spacing: -0.02em;
+		line-height: 1.2;
+		margin-bottom: 10px;
+	}
+	p {
+		color: var(--ink-2);
+		overflow-wrap: anywhere;
+	}
+	p + p {
+		margin-top: 10px;
+	}
+</style>

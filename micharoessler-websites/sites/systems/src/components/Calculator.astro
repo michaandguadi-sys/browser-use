@@ -1,0 +1,464 @@
+---
+// Staff editor vs. Formatschnitt. All numbers come from content.ts (offer + calc defaults), so a price change there
+// updates this too. Honest by construction: transparent formula, sources, and a plain "not cheaper" when it isn't.
+import { type Lang } from '../i18n';
+import { calc as c, offer, perEpisode } from '../data/content';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const de = lang === 'de';
+const t = (x: { de: string; en: string }) => x[lang];
+const d = c.defaults;
+
+const sliders = [
+	{ id: 'eps', label: t(c.eps), min: 1, max: 12, step: 1, value: d.eps, unit: '' },
+	{ id: 'h', label: t(c.hours), min: 2, max: 40, step: 1, value: d.hours, unit: ' h' },
+];
+const fields = [
+	{ id: 'sal', label: t(c.salary), hint: t(c.salaryHint), min: 1000, max: 12000, step: 50, value: d.salary, unit: '€' },
+	{ id: 'lnk', label: t(c.onCost), hint: t(c.onCostHint), min: 0, max: 40, step: 1, value: d.onCost, unit: '%' },
+	{ id: 'ws', label: t(c.workplace), hint: t(c.workplaceHint), min: 0, max: 3000, step: 10, value: d.workplace, unit: '€' },
+];
+const cfg = {
+	de,
+	setup: offer.setup,
+	sPrice: offer.aboS.price,
+	sEps: offer.aboS.episodes,
+	mPrice: offer.aboM.price,
+	mEps: offer.aboM.episodes,
+	perS: perEpisode.s,
+	perM: perEpisode.mExact,
+	perMShown: perEpisode.m,
+	txt: {
+		perMonth: t(c.perMonth),
+		perEpisode: t(c.perEpisode),
+		perYear: t(c.perYear),
+		firstYear: t(c.firstYear),
+		notCheaper: t(c.notCheaper),
+		saving: t(c.saving),
+		freed: t(c.freed),
+		planS: t(c.planS),
+		planM: t(c.planM),
+		planX: t(c.planX),
+		planFew: t(c.planFew),
+		onRequest: t(c.onRequest),
+		employee: t(c.employee),
+		us: t(c.us),
+		label: de ? 'Rechner' : 'Calculator',
+		eps: de ? 'Folgen' : 'episodes',
+		month: de ? 'Monat' : 'month',
+		hours: de ? 'Freie Stunden' : 'Freed hours',
+		setup: 'Setup',
+	},
+};
+---
+
+<div class="calc glass" data-calc data-cfg={JSON.stringify(cfg)}>
+	<div class="in">
+		{
+			sliders.map((i) => (
+				<label class="row">
+					<span class="lab">
+						<span>{i.label}</span>
+						<output data-show={i.id}>
+							{i.value}
+							{i.unit}
+						</output>
+					</span>
+					<input type="range" name={i.id} min={i.min} max={i.max} step={i.step} value={i.value} data-unit={i.unit} />
+				</label>
+			))
+		}
+		<div class="fields">
+			{
+				fields.map((f) => (
+					<label class="fld">
+						<span class="fld-l">{f.label}</span>
+						<span class="fld-in">
+							<input type="number" inputmode="decimal" name={f.id} min={f.min} max={f.max} step={f.step} value={f.value} />
+							<span aria-hidden="true">{f.unit}</span>
+						</span>
+						<span class="fld-h">{f.hint}</span>
+					</label>
+				))
+			}
+		</div>
+	</div>
+
+	<div class="res" aria-live="polite">
+		<div class="vs">
+			<div class="vs-c">
+				<p class="vs-k">{t(c.employee)}</p>
+				<p class="vs-v"><span data-o="emp"></span> <small>{t(c.perMonth)}</small></p>
+				<p class="vs-n">{t(c.employeeNote)}</p>
+			</div>
+			<div class="vs-c vs-us">
+				<p class="vs-k">{t(c.us)}</p>
+				<p class="vs-v"><span data-o="us"></span> <small>{t(c.perMonth)}</small></p>
+				<p class="vs-n"><span data-o="per"></span> · {t(c.setupNote)}</p>
+			</div>
+		</div>
+		<div class="sav" data-o="savbox">
+			<p class="sav-v" data-o="sav"></p>
+			<p class="sav-y" data-o="savy"></p>
+		</div>
+		<p class="free"><b data-o="free"></b> {t(c.freed)}</p>
+		<div class="rec">
+			<div>
+				<p class="rec-k">{t(c.plan)}</p>
+				<p class="rec-name" data-o="plan"></p>
+			</div>
+			<a class="btn btn--primary" href="#kontakt" data-cta>{t(c.cta)} <span class="arr">→</span></a>
+		</div>
+		<details class="how">
+			<summary>{t(c.maths)}</summary>
+			<p data-o="how"></p>
+		</details>
+		<p class="note">{t(c.note)}</p>
+		<p class="src">{t(c.sources)}</p>
+	</div>
+</div>
+
+<script>
+	type Cfg = {
+		de: boolean;
+		setup: number;
+		sPrice: number;
+		sEps: number;
+		mPrice: number;
+		mEps: number;
+		perS: number;
+		perM: number;
+		perMShown: number;
+		txt: Record<string, string>;
+	};
+	for (const root of document.querySelectorAll<HTMLElement>('[data-calc]')) {
+		const cfg: Cfg = JSON.parse(root.dataset.cfg!);
+		const { de, txt } = cfg;
+		const loc = de ? 'de-DE' : 'en-GB';
+		const nf = new Intl.NumberFormat(loc, { maximumFractionDigits: 0 });
+		const nf2 = new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+		const eur2 = (n: number) => (Number.isInteger(n) ? eur(n) : de ? `${nf2.format(n)} €` : `€${nf2.format(n)}`);
+		const eur = (n: number) => (de ? `${nf.format(n)} €` : `${n < 0 ? '−' : ''}€${nf.format(Math.abs(n))}`);
+		const inputs = [...root.querySelectorAll<HTMLInputElement>('input')];
+		const el = (n: string) => root.querySelector<HTMLInputElement>(`input[name="${n}"]`)!;
+		const num = (n: string) => {
+			const i = el(n);
+			const v = Number(i.value);
+			if (!Number.isFinite(v) || i.value.trim() === '') return Number(i.defaultValue);
+			return Math.min(Number(i.max), Math.max(Number(i.min), v));
+		};
+		const out = (k: string, s: string) => (root.querySelector(`[data-o="${k}"]`)!.textContent = s);
+
+		// shared estimate from the URL (?eps=4&h=16&sal=3700&lnk=21&ws=0), clamped to each input's range
+		const q = new URLSearchParams(location.search);
+		for (const i of inputs) {
+			const v = q.get(i.name);
+			if (v !== null && v.trim() !== '' && Number.isFinite(Number(v))) i.value = String(Math.min(Number(i.max), Math.max(Number(i.min), Number(v))));
+		}
+
+		// Formatschnitt per month: up to S's episodes at the S rate, up to M's at the M rate, beyond that ≈ M rate (quote)
+		const ours = (eps: number) => {
+			if (eps <= cfg.sEps) return { cost: eps * cfg.perS, per: cfg.perS, shown: cfg.perS, plan: eps < cfg.sEps ? `${txt.planS} (${txt.planFew})` : txt.planS };
+			if (eps <= cfg.mEps) return { cost: eps * cfg.perM, per: cfg.perM, shown: cfg.perMShown, plan: txt.planM };
+			return { cost: eps * cfg.perM, per: cfg.perM, shown: cfg.perMShown, plan: `${txt.planX} (${txt.onRequest})` };
+		};
+
+		const render = () => {
+			for (const i of root.querySelectorAll<HTMLInputElement>('input[type=range]')) {
+				root.querySelector(`[data-show="${i.name}"]`)!.textContent = Number(i.value).toLocaleString(loc) + (i.dataset.unit ?? '');
+				i.style.setProperty('--p', `${((Number(i.value) - Number(i.min)) / (Number(i.max) - Number(i.min))) * 100}%`);
+			}
+			const eps = num('eps');
+			const h = num('h');
+			const sal = num('sal');
+			const lnk = num('lnk');
+			const ws = num('ws');
+			const emp = sal * (1 + lnk / 100) + ws;
+			const o = ours(eps);
+			const sav = emp - o.cost;
+			const year = sav * 12;
+			const first = year - cfg.setup;
+			out('emp', `≈ ${eur(emp)}`);
+			out('us', `≈ ${eur(o.cost)}`);
+			out('per', `≈ ${eur(o.shown)} ${txt.perEpisode}`);
+			const box = root.querySelector<HTMLElement>('[data-o="savbox"]')!;
+			box.classList.toggle('neg', sav <= 0);
+			if (sav > 0) {
+				out('sav', `${txt.saving} ≈ ${eur(sav)} ${txt.perMonth}`);
+				out('savy', `≈ ${eur(year)} ${txt.perYear} · ≈ ${eur(first)} ${txt.firstYear}`);
+			} else {
+				out('sav', txt.notCheaper);
+				out('savy', `${eur(emp)} vs. ${eur(o.cost)} ${txt.perMonth}`);
+			}
+			out('free', `≈ ${nf.format(eps * h)} h`);
+			out('plan', o.plan);
+			out(
+				'how',
+				`${txt.employee}: ${eur(sal)} × ${nf2.format(1 + lnk / 100)} + ${eur(ws)} = ${eur(emp)} ${txt.perMonth}. ` +
+					`${txt.us}: ${eps} × ${eur2(o.per)} = ${eur(o.cost)} ${txt.perMonth} (${cfg.sEps} = ${eur(cfg.sPrice)}, ${cfg.mEps} = ${eur(cfg.mPrice)}). ` +
+					`${txt.saving}: ${eur(emp)} − ${eur(o.cost)} = ${eur(sav)} ${txt.perMonth}; × 12 = ${eur(year)}; − ${txt.setup} ${eur(cfg.setup)} = ${eur(first)}. ` +
+					`${txt.hours}: ${eps} × ${h} h = ${nf.format(eps * h)} h.`,
+			);
+			root.querySelector<HTMLAnchorElement>('[data-cta]')!.dataset.summary =
+				`${txt.label}: ${eps} ${txt.eps}/${txt.month} · ${txt.employee} ≈ ${eur(emp)} vs. ${txt.us} ≈ ${eur(o.cost)} ${txt.perMonth} · ${o.plan}`;
+		};
+		root.addEventListener('input', () => {
+			render();
+			const p = new URLSearchParams(location.search);
+			for (const i of inputs) p.set(i.name, i.value);
+			history.replaceState(history.state, '', `${location.pathname}?${p}${location.hash}`);
+		});
+		root.querySelector('[data-cta]')?.addEventListener('click', (e) => {
+			const s = (e.currentTarget as HTMLElement).dataset.summary ?? '';
+			const goal = document.querySelector<HTMLTextAreaElement>('#brief textarea');
+			if (goal && !goal.value.includes(s)) goal.value = (goal.value ? goal.value + '\n' : '') + s;
+		});
+		render();
+	}
+</script>
+
+<style>
+	.calc {
+		display: grid;
+		gap: clamp(28px, 4vw, 56px);
+		padding: clamp(24px, 4vw, 48px);
+	}
+	@media (min-width: 960px) {
+		.calc {
+			grid-template-columns: 1fr 1.1fr;
+		}
+	}
+	.in {
+		display: grid;
+		gap: 26px;
+		align-content: start;
+		min-width: 0;
+	}
+	.row {
+		display: grid;
+		gap: 10px;
+	}
+	.lab {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 16px;
+		font-size: 16px;
+		font-weight: 520;
+	}
+	.lab output {
+		font-family: var(--mono);
+		font-size: 15px;
+		color: var(--iris);
+		white-space: nowrap;
+	}
+	.fields {
+		display: grid;
+		gap: 16px;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+	}
+	.fld {
+		display: grid;
+		gap: 6px;
+		align-content: start;
+	}
+	.fld-l {
+		font-size: 15px;
+		font-weight: 520;
+	}
+	.fld-in {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 0 14px 0 0;
+		border-radius: 14px;
+		background: rgba(255, 255, 255, 0.8);
+		box-shadow:
+			inset 0 0 0 1px rgba(29, 29, 31, 0.1),
+			inset 0 1px 2px rgba(16, 24, 40, 0.04);
+	}
+	.fld-in:focus-within {
+		box-shadow:
+			inset 0 0 0 2px var(--iris),
+			0 0 0 4px rgba(85, 70, 255, 0.12);
+	}
+	.fld-in input {
+		flex: 1;
+		min-width: 0;
+		border: 0;
+		background: none;
+		padding: 12px 0 12px 14px;
+		font: inherit;
+		font-family: var(--mono);
+		font-size: 16px;
+		color: var(--ink);
+		outline: none;
+	}
+	.fld-in span {
+		font-family: var(--mono);
+		font-size: 15px;
+		color: var(--ink-2);
+	}
+	.fld-h {
+		font-size: 12.5px;
+		line-height: 1.35;
+		color: var(--ink-2);
+	}
+	.res {
+		display: grid;
+		gap: 18px;
+		align-content: start;
+		min-width: 0;
+	}
+	.vs {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 12px;
+	}
+	.vs-c {
+		display: grid;
+		gap: 6px;
+		align-content: start;
+		padding: 16px 18px;
+		border-radius: 20px;
+		background: rgba(29, 29, 31, 0.04);
+	}
+	.vs-us {
+		background: rgba(85, 70, 255, 0.08);
+		box-shadow: inset 0 0 0 1px rgba(85, 70, 255, 0.18);
+	}
+	.vs-k {
+		font-size: 14px;
+		font-weight: 650;
+		color: var(--ink-2);
+	}
+	.vs-us .vs-k {
+		color: var(--iris);
+	}
+	.vs-v {
+		font-size: clamp(24px, 2.6vw, 34px);
+		font-weight: 700;
+		letter-spacing: -0.04em;
+		line-height: 1.05;
+	}
+	.vs-v small {
+		font-size: 14px;
+		font-weight: 560;
+		letter-spacing: 0;
+		color: var(--ink-2);
+		white-space: nowrap;
+	}
+	.vs-v span {
+		white-space: nowrap;
+	}
+	.vs-n {
+		font-size: 13px;
+		line-height: 1.35;
+		color: var(--ink-2);
+	}
+	.sav {
+		padding: 16px 20px;
+		border-radius: 20px;
+		background: rgba(21, 128, 61, 0.08);
+		box-shadow: inset 0 0 0 1px rgba(21, 128, 61, 0.2);
+	}
+	.sav:global(.neg) {
+		background: rgba(29, 29, 31, 0.05);
+		box-shadow: inset 0 0 0 1px rgba(29, 29, 31, 0.1);
+	}
+	.sav-v {
+		font-size: clamp(20px, 2vw, 26px);
+		font-weight: 700;
+		letter-spacing: -0.03em;
+		color: var(--green);
+	}
+	.sav:global(.neg) .sav-v {
+		color: var(--ink);
+		font-size: 18px;
+	}
+	.sav-y {
+		margin-top: 4px;
+		font-size: 14px;
+		color: var(--ink-2);
+	}
+	.free {
+		font-size: 16px;
+		line-height: 1.4;
+	}
+	.free b {
+		font-weight: 700;
+		color: var(--iris);
+	}
+	.rec {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 16px 16px 16px 20px;
+		border-radius: 22px;
+		background: rgba(85, 70, 255, 0.07);
+		box-shadow: inset 0 0 0 1px rgba(85, 70, 255, 0.12);
+	}
+	.rec-k {
+		font-size: 14px;
+		color: var(--ink-2);
+	}
+	.rec-name {
+		font-size: 18px;
+		font-weight: 620;
+		letter-spacing: -0.02em;
+	}
+	.how summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 32px;
+		cursor: pointer;
+		font-size: 15px;
+		font-weight: 560;
+		color: var(--iris);
+		list-style: none;
+	}
+	.how summary::-webkit-details-marker {
+		display: none;
+	}
+	.how summary::after {
+		content: '';
+		width: 7px;
+		height: 7px;
+		border: solid currentColor;
+		border-width: 0 2px 2px 0;
+		rotate: 45deg;
+		translate: 0 -2px;
+		transition: rotate 0.2s var(--ease);
+	}
+	.how[open] summary::after {
+		rotate: 225deg;
+		translate: 0 2px;
+	}
+	.how p {
+		margin-top: 6px;
+		font-family: var(--mono);
+		font-size: 12.5px;
+		line-height: 1.6;
+		color: var(--ink-2);
+	}
+	.note {
+		font-size: 14px;
+		color: var(--ink-2);
+	}
+	.src {
+		font-size: 12.5px;
+		line-height: 1.45;
+		color: var(--ink-2);
+	}
+	@media (max-width: 420px) {
+		.vs {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

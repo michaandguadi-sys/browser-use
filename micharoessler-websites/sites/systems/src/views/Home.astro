@@ -1,0 +1,883 @@
+---
+import Base from '../layouts/Base.astro';
+import { href, alts, areaServed, PERSON_ID, SERVICE_ID, type Lang } from '../i18n';
+import { hero, compare, how, packages, pricing, calc, faq, facts, contact, meta, booking } from '../data/content';
+import Story from '../components/Story.astro';
+import GlassSystem from '../components/GlassSystem.astro';
+import Calculator from '../components/Calculator.astro';
+import Booking from '../components/Booking.astro';
+import FormatCheck from '../components/FormatCheck.astro';
+import { Image } from 'astro:assets';
+import portrait from '../assets/micha-portrait.jpg';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const de = lang === 'de';
+const t = (x: { de: string; en: string }) => x[lang];
+const ctaHref = booking.bookingUrl || '#kontakt';
+
+const site = Astro.site!;
+const page = new URL(href(lang, 'home'), site).href;
+const area = areaServed(lang);
+// Service + offers (prices from `offer` via `packages`) and the visible FAQ – nodes of the page's @graph (Base.astro).
+const serviceLd = {
+	'@type': 'Service',
+	'@id': `${SERVICE_ID.replace('#service', '#editing')}`,
+	name: de ? 'Videoschnitt für YouTube-Formate von Unternehmen' : 'Video editing for company YouTube shows',
+	serviceType: de ? 'Videoschnitt im Abo' : 'Video editing retainer',
+	description: t(facts.lead),
+	provider: { '@id': PERSON_ID },
+	brand: { '@id': SERVICE_ID },
+	areaServed: area,
+	availableLanguage: ['de', 'en'],
+	audience: { '@type': 'BusinessAudience', audienceType: de ? 'Unternehmen mit wiederkehrendem YouTube-Format' : 'Companies with a recurring YouTube show' },
+	url: page,
+	hasOfferCatalog: {
+		'@type': 'OfferCatalog',
+		name: de ? 'Formatschnitt Pakete' : 'Formatschnitt packages',
+		itemListElement: packages.map((p) => ({
+			'@type': 'Offer',
+			name: t(p.name),
+			url: `${page}#pakete`,
+			price: p.amount,
+			priceCurrency: 'EUR',
+			priceSpecification: {
+				'@type': 'UnitPriceSpecification',
+				price: p.amount,
+				priceCurrency: 'EUR',
+				valueAddedTaxIncluded: false,
+				...(p.monthly ? { unitCode: 'MON', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' } } : {}),
+			},
+			description: `${t(p.sub)} ${p.points.map((x) => t(x)).join('; ')}.`,
+			seller: { '@id': SERVICE_ID },
+		})),
+	},
+};
+const faqLd = {
+	'@type': 'FAQPage',
+	'@id': `${page}#faq`,
+	isPartOf: { '@id': `${page}#webpage` },
+	inLanguage: lang,
+	mainEntity: faq.map((f) => ({ '@type': 'Question', name: t(f.q), acceptedAnswer: { '@type': 'Answer', text: t(f.a) } })),
+};
+---
+
+<Base lang={lang} title={t(meta.title)} description={t(meta.description)} alt={alts('home')} jsonLd={[serviceLd, faqLd]}>
+	<Story lang={lang} />
+
+	<section id="vergleich" class="sec cmp-sec" aria-labelledby="cmp-h">
+		<div class="wrap">
+			<div class="sec-h">
+				<h2 id="cmp-h">{t(compare.h2)}</h2>
+				<p>{t(compare.sub)}</p>
+			</div>
+			<div class="cmp glass">
+				<table>
+					<thead>
+						<tr>
+							<td></td>
+							<th scope="col" class="cmp-b">{t(compare.before)}</th>
+							<th scope="col" class="cmp-a">{t(compare.after)}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{
+							compare.rows.map((r) => (
+								<tr>
+									<th scope="row">{t(r.k)}</th>
+									<td class="cmp-b">
+										{t(r.before)}
+									</td>
+									<td class="cmp-a">
+										{t(r.after)}
+									</td>
+								</tr>
+							))
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</section>
+
+	<section id="ablauf" class="sec how" aria-labelledby="how-h">
+		<div class="aura" aria-hidden="true"></div>
+		<div class="wrap">
+			<div class="sec-h">
+				<h2 id="how-h" class="reveal">{t(how.h2)}</h2>
+			</div>
+			<div class="how-grid">
+				<ol class="how-cards">
+					{
+						how.steps.map((c, i) => (
+							<li class="how-card glass reveal" data-tilt style={`--i:${i}`}>
+								<span class="how-n" aria-hidden="true">
+									{i + 1}
+								</span>
+								<div>
+									<h3>{t(c.title)}</h3>
+									<p class="muted">{t(c.text)}</p>
+								</div>
+							</li>
+						))
+					}
+				</ol>
+				<GlassSystem />
+			</div>
+		</div>
+	</section>
+
+	<section id="pakete" class="sec" aria-labelledby="pk-h">
+		<div class="aura aura--b" aria-hidden="true"></div>
+		<div class="wrap">
+			<div class="sec-h">
+				<h2 id="pk-h" class="reveal">{t(pricing.h2)}</h2>
+				<p class="reveal">{t(pricing.sub)}</p>
+			</div>
+			<div class="pk">
+				{
+					packages.map((p, i) => (
+						<article class:list={['pk-card', 'glass', 'reveal', { hl: p.highlight }]} style={`--i:${i}`}>
+							<div class="pk-top">
+								<h3>{t(p.name)}</h3>
+								{p.highlight && <span class="pk-tag">{t(pricing.tag)}</span>}
+							</div>
+							<p class="pk-sub">{t(p.sub)}</p>
+							<p class="pk-price">{t(p.price)}</p>
+							<p class="pk-meta muted">{t(p.unit)}</p>
+							{p.note && <p class="pk-per">{t(p.note)}</p>}
+							<ul class="pk-list">
+								{p.points.map((x) => (
+									<li class:list={{ 'pk-x': /^Setup/.test(x.en) }}>{t(x)}</li>
+								))}
+							</ul>
+							<a class:list={['btn', 'pk-cta', { 'btn--primary': p.highlight }]} href="#kontakt" data-pkg={t(p.name)}>
+								{p.cta ? t(p.cta) : t(pricing.enquire)}
+								{!p.cta && <span class="sr-only">: {t(p.name)}</span>} <span class="arr" aria-hidden="true">→</span>
+							</a>
+						</article>
+					))
+				}
+			</div>
+			<p class="pk-more glass">
+				<span>
+					{t(pricing.more)} <b>{t(pricing.moreValue)}</b>
+				</span>
+				<a class="pk-more-a" href="#kontakt" data-pkg={t(pricing.moreName)}>
+					{t(pricing.discuss)} <span aria-hidden="true">→</span>
+				</a>
+			</p>
+			<p class="pk-note muted">{t(pricing.note)}</p>
+		</div>
+	</section>
+
+	<section id="rechner" class="sec sec--tight" aria-labelledby="calc-h">
+		<div class="wrap">
+			<div class="sec-h">
+				<h2 id="calc-h" class="reveal">{t(calc.h2)}</h2>
+				<p class="reveal">{t(calc.sub)}</p>
+			</div>
+			<Calculator lang={lang} />
+		</div>
+	</section>
+
+	<section id="fakten" class="sec sec--tight" aria-labelledby="facts-h">
+		<div class="wrap">
+			<div class="sec-h">
+				<h2 id="facts-h" class="reveal">{t(facts.h2)}</h2>
+				<p class="reveal">{t(facts.lead)}</p>
+			</div>
+			<dl class="facts glass">
+				{
+					facts.rows.map((r) => (
+						<div>
+							<dt>{t(r.k)}</dt>
+							<dd>{t(r.v)}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</div>
+	</section>
+
+	<section id="faq" class="sec" aria-labelledby="faq-h">
+		<div class="wrap">
+			<div class="sec-h">
+				<h2 id="faq-h" class="reveal">{de ? 'Häufige Fragen' : 'Common questions'}</h2>
+			</div>
+			<div class="faq glass">
+				{
+					faq.map((f) => (
+						<details name="faq">
+							<summary>
+								<span>{t(f.q)}</span>
+								<i class="q-x" aria-hidden="true" />
+							</summary>
+							<p class="muted">{t(f.a)}</p>
+						</details>
+					))
+				}
+			</div>
+		</div>
+	</section>
+
+	<FormatCheck lang={lang} />
+
+	<section id="kontakt" class="sec contact" aria-labelledby="c-h">
+		<div class="aura" aria-hidden="true"></div>
+		<div class="wrap">
+			<div class="c-card glass">
+				<div class="c-txt">
+					<h2 id="c-h">{t(contact.h2)}</h2>
+					<div class="c-who">
+						<Image src={portrait} alt="" width={176} height={176} widths={[88, 176]} sizes="88px" class="c-avatar" />
+						<p>{t(contact.who)}</p>
+					</div>
+					<ul class="trust">
+						<li>{t(contact.steps)}</li>
+						<li>{t(contact.risk)}</li>
+						<li>{t(contact.remote)}</li>
+					</ul>
+					<p class="c-mail muted">
+						{t(contact.mail)} <a href={`mailto:${booking.email}`}>{booking.email}</a>
+					</p>
+				</div>
+				{
+					booking.bookingUrl ? (
+						<div class="c-book">
+							<a class="btn btn--primary" href={booking.bookingUrl}>
+								{t(hero.cta)} <span class="arr">→</span>
+							</a>
+							<p class="muted">{t(hero.ctaMicro)}</p>
+						</div>
+					) : (
+						<Booking lang={lang} />
+					)
+				}
+			</div>
+		</div>
+	</section>
+
+	<div class="sticky-cta" data-sticky-cta>
+		<a class="btn btn--primary" href={ctaHref}>{t(hero.cta)} <span class="arr">→</span></a>
+		<span>{t(hero.ctaMicro)}</span>
+	</div>
+</Base>
+
+<script>
+	// Package CTAs carry the chosen package into the request.
+	document.querySelectorAll<HTMLAnchorElement>('[data-pkg]').forEach((a) =>
+		a.addEventListener('click', () => {
+			const msg = document.querySelector<HTMLTextAreaElement>('#brief textarea');
+			const line = `${document.documentElement.lang.startsWith('de') ? 'Paket' : 'Package'}: ${a.dataset.pkg}`;
+			if (msg && !msg.value.includes(line)) msg.value = (msg.value ? msg.value + '\n' : '') + line;
+		}),
+	);
+
+	// Mobile: a CTA bar appears once the hero story is behind you, and steps aside at the contact section.
+	const bar = document.querySelector<HTMLElement>('[data-sticky-cta]');
+	const story = document.querySelector('[data-story-root]');
+	const kontakt = document.getElementById('kontakt');
+	if (bar && story && kontakt) {
+		let past = false;
+		let atContact = false;
+		const sync = () => bar.classList.toggle('on', past && !atContact);
+		new IntersectionObserver(([e]) => {
+			past = !e.isIntersecting && e.boundingClientRect.top < 0;
+			sync();
+		}).observe(story);
+		new IntersectionObserver(([e]) => {
+			atContact = e.isIntersecting;
+			sync();
+		}).observe(kontakt);
+	}
+
+	// Page motion (magnetic CTA, glass tilt) — after first paint, never under reduced motion.
+	if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		const go = () => import('../scripts/motion').then((m) => m.init());
+		if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 2500 });
+		else setTimeout(go, 1200);
+	}
+</script>
+
+<style>
+	/* ---------- vorher / mit Formatschnitt ---------- */
+	.cmp-sec {
+		padding-bottom: 0;
+	}
+	.cmp {
+		max-width: 60rem;
+		margin-inline: auto;
+		padding: clamp(10px, 2vw, 18px);
+	}
+	.cmp table {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
+		font-size: clamp(16px, 1.45vw, 19px);
+		line-height: 1.35;
+	}
+	.cmp th,
+	.cmp td {
+		padding: 18px 22px;
+		text-align: left;
+		vertical-align: middle;
+	}
+	.cmp thead th {
+		padding-block: 12px 14px;
+		font-size: 14px;
+		font-weight: 650;
+		letter-spacing: 0;
+	}
+	.cmp thead .cmp-b {
+		color: var(--ink-2);
+	}
+	.cmp thead .cmp-a {
+		color: var(--iris);
+	}
+	.cmp tbody th {
+		width: 9.5em;
+		font-size: 14px;
+		font-weight: 650;
+		color: var(--ink-2);
+	}
+	.cmp tbody tr + tr > * {
+		border-top: 1px solid var(--line);
+	}
+	.cmp td.cmp-b {
+		color: var(--ink-2);
+	}
+	.cmp td.cmp-a {
+		font-weight: 620;
+		letter-spacing: -0.015em;
+		background: rgba(85, 70, 255, 0.07);
+	}
+	.cmp thead .cmp-a {
+		background: rgba(85, 70, 255, 0.07);
+		border-radius: 16px 16px 0 0;
+	}
+	.cmp tbody tr:last-child td.cmp-a {
+		border-radius: 0 0 16px 16px;
+	}
+	.cmp td.cmp-a,
+	.cmp td.cmp-b {
+		padding-left: 52px;
+		position: relative;
+	}
+	.cmp td.cmp-a::before,
+	.cmp td.cmp-b::before {
+		content: '';
+		position: absolute;
+		left: 20px;
+		top: 50%;
+		width: 20px;
+		height: 20px;
+		margin-top: -10px;
+		border-radius: 50%;
+	}
+	.cmp td.cmp-b::before {
+		background: rgba(29, 29, 31, 0.07) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23636369' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M8 8l8 8M16 8l-8 8'/%3E%3C/svg%3E") center / 11px no-repeat;
+	}
+	.cmp td.cmp-a::before {
+		background: var(--iris) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4L18 8'/%3E%3C/svg%3E") center / 12px no-repeat;
+	}
+	/* phones: stacked pairs — label, then before (muted) and after (strong) */
+	@media (max-width: 719px) {
+		/* the column heads become a small legend above the pairs */
+		.cmp thead tr {
+			display: flex;
+			gap: 8px;
+			padding: 6px 6px 4px;
+		}
+		.cmp thead td {
+			display: none;
+		}
+		.cmp thead th {
+			padding: 5px 12px;
+			border-radius: 999px;
+			font-size: 13px;
+		}
+		.cmp thead .cmp-a {
+			border-radius: 999px;
+		}
+		.cmp thead .cmp-b {
+			background: rgba(29, 29, 31, 0.05);
+		}
+		.cmp table,
+		.cmp thead,
+		.cmp tbody,
+		.cmp tbody tr,
+		.cmp th,
+		.cmp td {
+			display: block;
+			width: auto;
+		}
+		.cmp tbody tr {
+			padding: 14px 6px;
+		}
+		.cmp tbody tr + tr {
+			border-top: 1px solid var(--line);
+		}
+		.cmp tbody tr + tr > * {
+			border-top: 0;
+		}
+		.cmp tbody th {
+			padding: 0 0 8px 6px;
+			width: auto;
+		}
+		.cmp td.cmp-a,
+		.cmp td.cmp-b {
+			padding: 8px 12px 8px 44px;
+			border-radius: 14px;
+		}
+		.cmp tbody tr:last-child td.cmp-a {
+			border-radius: 14px;
+		}
+		.cmp td.cmp-a {
+			margin-top: 6px;
+		}
+		.cmp td.cmp-a::before,
+		.cmp td.cmp-b::before {
+			left: 12px;
+		}
+	}
+
+	/* ---------- so läuft's ---------- */
+	.how-grid {
+		display: grid;
+		gap: clamp(24px, 4vw, 48px);
+		align-items: center;
+	}
+	@media (min-width: 960px) {
+		.how-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+	.how-cards {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 16px;
+	}
+	.how-card {
+		display: grid;
+		grid-template-columns: 52px 1fr;
+		gap: 18px;
+		align-items: start;
+		padding: 24px 26px;
+	}
+	.how-n {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		color: #fff;
+		font-size: 20px;
+		font-weight: 680;
+		background: linear-gradient(180deg, var(--iris-2), var(--iris));
+		box-shadow: 0 10px 22px -10px rgba(85, 70, 255, 0.7);
+	}
+	.how-card h3 {
+		font-size: clamp(21px, 1.9vw, 26px);
+		letter-spacing: -0.03em;
+		margin: 2px 0 6px;
+	}
+
+	/* glass pointer tilt + moving specular (enabled by motion.ts on hover-capable devices) */
+	:global([data-tilt]) {
+		position: relative;
+		transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+		transition: transform 0.4s var(--ease);
+		will-change: transform;
+	}
+	:global([data-tilt].is-tilting) {
+		transition: transform 0.08s linear;
+	}
+	:global([data-tilt])::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		pointer-events: none;
+		background: radial-gradient(420px circle at var(--sx, 50%) var(--sy, -40%), rgba(255, 255, 255, 0.75), transparent 45%);
+		opacity: var(--so, 0);
+		mix-blend-mode: soft-light;
+		transition: opacity 0.3s var(--ease);
+	}
+
+	/* ---------- pricing ---------- */
+	.aura--b::after {
+		background: radial-gradient(closest-side, rgba(110, 220, 200, 0.22), rgba(110, 220, 200, 0.07) 50%, transparent);
+	}
+	.pk {
+		display: grid;
+		gap: 16px;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		align-items: stretch;
+	}
+	@media (max-width: 1100px) {
+		.pk {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	@media (max-width: 640px) {
+		.pk {
+			grid-template-columns: 1fr;
+			max-width: 34rem;
+			margin-inline: auto;
+		}
+	}
+	.pk-card {
+		padding: 24px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.pk-card.hl {
+		box-shadow:
+			var(--glass-shadow),
+			0 0 0 2px var(--iris);
+	}
+	.pk-top {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px 12px;
+	}
+	.pk-top h3 {
+		font-size: 21px;
+		letter-spacing: -0.025em;
+		font-weight: 650;
+	}
+	.pk-tag {
+		padding: 4px 10px;
+		border-radius: 999px;
+		background: var(--iris);
+		color: #fff;
+		font-size: 13px;
+		font-weight: 600;
+	}
+	.pk-sub {
+		font-size: 16px;
+		color: var(--ink-2);
+	}
+	.pk-price {
+		margin-top: 16px;
+		font-size: clamp(36px, 3.4vw, 48px);
+		font-weight: 680;
+		letter-spacing: -0.045em;
+		line-height: 1;
+		white-space: nowrap;
+	}
+	.pk-meta {
+		font-size: 15px;
+	}
+	.pk-list {
+		list-style: none;
+		margin: 18px 0 24px;
+		padding: 18px 0 0;
+		border-top: 1px solid var(--line);
+		display: grid;
+		gap: 10px;
+		font-size: 15px;
+		line-height: 1.45;
+	}
+	.pk-list li {
+		display: grid;
+		grid-template-columns: 22px 1fr;
+	}
+	.pk-list li::before {
+		content: '';
+		width: 14px;
+		height: 14px;
+		margin-top: 3px;
+		border-radius: 50%;
+		background: rgba(85, 70, 255, 0.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235546ff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4L18 8'/%3E%3C/svg%3E") center / 10px no-repeat;
+	}
+	.pk-list li.pk-x {
+		color: var(--ink-2);
+	}
+	.pk-list li.pk-x::before {
+		background: rgba(29, 29, 31, 0.07) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23636369' stroke-width='3.4' stroke-linecap='round'%3E%3Cpath d='M12 7v6M12 17h.01'/%3E%3C/svg%3E") center / 10px no-repeat;
+	}
+	.pk-cta {
+		margin-top: auto;
+		align-self: flex-start;
+		min-height: 44px;
+		padding: 10px 20px;
+		font-size: 16px;
+	}
+	.pk-more {
+		margin-top: 16px;
+		padding: 16px 24px;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px 24px;
+		font-size: 16px;
+	}
+	.pk-more b {
+		font-weight: 650;
+	}
+	.pk-per {
+		margin-top: 2px;
+		font-size: 15px;
+		font-weight: 650;
+		color: var(--iris);
+	}
+	.pk-more-a {
+		display: inline-flex;
+		gap: 6px;
+		min-height: 24px;
+		color: var(--iris);
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.pk-more-a:hover {
+		text-decoration: underline;
+	}
+	.pk-note {
+		margin: 28px auto 0;
+		max-width: 52rem;
+		text-align: center;
+		font-size: 14px;
+	}
+	.sec--tight {
+		padding-top: 0;
+	}
+
+	/* ---------- faq ---------- */
+	/* ---------- auf einen Blick ---------- */
+	.facts {
+		max-width: 52rem;
+		margin: 0 auto;
+		padding: 8px 28px;
+	}
+	.facts > div {
+		display: grid;
+		grid-template-columns: 11em 1fr;
+		gap: 4px 24px;
+		padding: 16px 0;
+	}
+	.facts > div + div {
+		border-top: 1px solid var(--line);
+	}
+	.facts dt {
+		font-size: 14px;
+		font-weight: 650;
+		color: var(--ink-2);
+		padding-top: 2px;
+	}
+	.facts dd {
+		margin: 0;
+		font-weight: 560;
+		letter-spacing: -0.01em;
+		line-height: 1.4;
+	}
+	@media (max-width: 719px) {
+		.facts {
+			padding: 4px 20px;
+		}
+		.facts > div {
+			grid-template-columns: 1fr;
+		}
+	}
+	.faq {
+		max-width: 52rem;
+		margin-inline: auto;
+		padding: 8px 28px;
+	}
+	details + details {
+		border-top: 1px solid var(--line);
+	}
+	summary {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 16px;
+		padding: 22px 0;
+		cursor: pointer;
+		list-style: none;
+		font-size: 19px;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	.q-x {
+		position: relative;
+		flex: none;
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		background: rgba(85, 70, 255, 0.1);
+	}
+	.q-x::before,
+	.q-x::after {
+		content: '';
+		position: absolute;
+		left: 8px;
+		right: 8px;
+		top: 13px;
+		height: 2px;
+		border-radius: 1px;
+		background: var(--iris);
+		transition: transform 0.3s var(--ease);
+	}
+	.q-x::after {
+		transform: rotate(90deg);
+	}
+	details[open] .q-x::after {
+		transform: rotate(0);
+	}
+	details p {
+		padding: 0 44px 24px 0;
+	}
+	@supports (interpolate-size: allow-keywords) {
+		details {
+			interpolate-size: allow-keywords;
+		}
+		details::details-content {
+			block-size: 0;
+			overflow: clip;
+			transition:
+				block-size 0.35s var(--ease),
+				content-visibility 0.35s allow-discrete;
+		}
+		details[open]::details-content {
+			block-size: auto;
+		}
+	}
+
+	/* ---------- contact ---------- */
+	.contact {
+		isolation: isolate;
+	}
+	.c-card {
+		display: grid;
+		gap: clamp(32px, 5vw, 64px);
+		padding: clamp(24px, 4vw, 56px);
+	}
+	@media (min-width: 1000px) {
+		.c-card {
+			grid-template-columns: 0.9fr 1.1fr;
+		}
+	}
+	.c-txt {
+		display: grid;
+		gap: 18px;
+		align-content: start;
+	}
+	.c-txt h2 {
+		font-size: var(--h2);
+	}
+	.c-who {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		margin-top: 4px;
+		font-size: 17px;
+		line-height: 1.4;
+		font-weight: 560;
+	}
+	.c-txt :global(.c-avatar) {
+		flex: none;
+		width: 88px;
+		height: 88px;
+		border-radius: 50%;
+		object-fit: cover;
+		object-position: 50% 18%;
+	}
+	.c-mail a {
+		color: var(--iris);
+		font-weight: 560;
+		text-decoration: none;
+	}
+	.trust {
+		list-style: none;
+		margin: 6px 0 0;
+		padding: 0;
+		display: grid;
+		gap: 12px;
+		font-size: 15px;
+		line-height: 1.45;
+	}
+	.trust li {
+		display: grid;
+		grid-template-columns: 26px 1fr;
+	}
+	.trust li::before {
+		content: '';
+		width: 18px;
+		height: 18px;
+		margin-top: 1px;
+		border-radius: 50%;
+		background: var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4L18 8'/%3E%3C/svg%3E") center / 12px no-repeat;
+	}
+	.c-book {
+		display: grid;
+		gap: 10px;
+		align-content: center;
+		justify-items: start;
+	}
+
+	/* ---------- mobile sticky CTA ---------- */
+	.sticky-cta {
+		display: none;
+	}
+	@media (max-width: 719px) {
+		.sticky-cta {
+			position: fixed;
+			z-index: 40;
+			left: 12px;
+			right: 12px;
+			bottom: max(12px, env(safe-area-inset-bottom));
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			padding: 8px 14px 8px 8px;
+			border-radius: 999px;
+			background: rgba(255, 255, 255, 0.78);
+			-webkit-backdrop-filter: saturate(1.8) blur(18px);
+			backdrop-filter: saturate(1.8) blur(18px);
+			box-shadow:
+				inset 0 1px 0 #fff,
+				0 0 0 1px rgba(29, 29, 31, 0.06),
+				0 12px 30px -12px rgba(16, 24, 40, 0.3);
+			font-size: 13px;
+			font-weight: 560;
+			color: var(--ink-2);
+			transition:
+				translate 0.35s var(--ease),
+				opacity 0.35s var(--ease);
+		}
+		.sticky-cta .btn {
+			flex: none;
+			min-height: 44px;
+			padding: 10px 16px;
+			font-size: 15px;
+			white-space: nowrap;
+		}
+		.sticky-cta span {
+			font-size: 12.5px;
+			line-height: 1.3;
+			text-align: right;
+		}
+		:global(.js) .sticky-cta:not(.on) {
+			translate: 0 140%;
+			opacity: 0;
+			pointer-events: none;
+		}
+		:global(.js) .sticky-cta:not(.on) .btn {
+			visibility: hidden;
+		}
+	}
+</style>

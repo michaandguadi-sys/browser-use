@@ -1,0 +1,149 @@
+---
+// Staggered two-column work grid (right column offset): media + fact tag + hairline meta rows.
+import Media from './Media.astro';
+import { href, type Lang } from '../i18n';
+import type { Project } from '../data/projects';
+
+interface Props {
+	lang: Lang;
+	items: Project[];
+	eagerFirst?: boolean; // first row is above the fold (Work index)
+}
+const { lang, items, eagerFirst = false } = Astro.props;
+const en = lang === 'en';
+const cols = [items.filter((_, i) => i % 2 === 0), items.filter((_, i) => i % 2 === 1)];
+---
+
+<div class="grid">
+	{
+		cols.map((col, c) => (
+			<div class="col">
+				{col.map((p, r) => {
+					const eager = eagerFirst && r === 0;
+					return (
+						<a class:list={['card', { reveal: !eager }]} href={href(lang, p.slug)}>
+							<div class="m" style={`view-transition-name: p-${p.slug}`}>
+								<Media
+									src={p.cover}
+									alt={p.title[lang]}
+									video={p.video}
+									widths={[480, 720, 960, 1280, 1600]}
+									sizes="(min-width: 1520px) 680px, (min-width: 700px) 45vw, 92vw"
+									crop={{ ratio: 16 / 11 }}
+									eager={eager}
+								/>
+								{p.tag && <span class="tag">{p.tag[lang]}</span>}
+								{!p.tag && p.galleryCredit && (
+									<span class="credit">
+										{en ? 'Photo' : 'Foto'}: {p.galleryCredit}
+									</span>
+								)}
+							</div>
+							<div class="rows">
+								<div>
+									<span class="t">{p.title[lang]}</span>
+									<span class="kk">{p.kicker[lang]}</span>
+								</div>
+								<div>
+									<span>{p.client ?? p.facts[p.facts.length - 1].value[lang]}</span>
+									<span>{p.roles[lang]}</span>
+								</div>
+								<div>
+									<span>{p.location[lang]}</span>
+									{p.year && <span>{p.year}</span>}
+								</div>
+							</div>
+						</a>
+					);
+				})}
+			</div>
+		))
+	}
+</div>
+
+<style>
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		column-gap: clamp(24px, 4vw, 64px);
+	}
+	.col {
+		display: grid;
+		gap: clamp(56px, 6vw, 96px);
+		align-content: start;
+	}
+	.col:nth-child(2) {
+		padding-top: clamp(80px, 10vw, 170px);
+	}
+	.card {
+		display: block;
+	}
+	.card .m {
+		aspect-ratio: 16 / 11;
+	}
+	.card .m :global(img) {
+		transition: transform 1.2s var(--ease);
+	}
+	.card:hover .m :global(img) {
+		transform: scale(1.05);
+	}
+	.tag {
+		position: absolute;
+		right: 14px;
+		bottom: 14px;
+		z-index: 2;
+		padding: 5px 9px;
+		border-radius: 3px;
+		background: var(--ink);
+		color: #0f0f0f;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+	}
+	.credit {
+		position: absolute;
+		left: 14px;
+		bottom: 12px;
+		z-index: 2;
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		color: #ece8e1;
+		text-shadow: 0 1px 6px rgb(0 0 0 / 0.6);
+	}
+	.rows {
+		margin-top: 16px;
+	}
+	.rows div {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 11px 0;
+		border-bottom: 1px solid var(--line);
+		font-size: 13px;
+		color: var(--muted);
+	}
+	.rows div:first-child {
+		padding-top: 2px;
+		font-size: 18px;
+		color: var(--ink);
+	}
+	.rows .kk {
+		align-self: center;
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--muted);
+		text-align: right;
+	}
+	.rows span:last-child:not(:first-child) {
+		text-align: right;
+	}
+	@media (max-width: 700px) {
+		.grid {
+			grid-template-columns: 1fr;
+		}
+		.col:nth-child(2) {
+			padding-top: 56px;
+		}
+	}
+</style>

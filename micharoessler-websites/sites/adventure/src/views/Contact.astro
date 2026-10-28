@@ -1,0 +1,230 @@
+---
+import Base from '../layouts/Base.astro';
+import { Picture } from 'astro:assets';
+import Icon from '../components/Icon.astro';
+import { href, type Lang } from '../i18n';
+import portrait from '../assets/micha-portrait.jpg';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const en = lang === 'en';
+const L = en
+	? {
+			h: 'Planning an expedition or campaign?',
+			p: 'Tell me where, when and what you need. I answer within two working days.',
+			name: 'Your name',
+			org: 'Organisation / brand (optional)',
+			type: 'What is it?',
+			types: ['Expedition / mountain film', 'Camera operator', 'Documentary edit', 'Destination / hotel film', 'Partnership on a planned expedition', 'Something else'],
+			when: 'Dates or time window',
+			where: 'Region / location',
+			deliver: 'What should come out of it?',
+			send: 'Write email',
+			note: 'This opens your email app with the details filled in. Nothing is stored on this website.',
+			direct: 'Or write directly:',
+		}
+	: {
+			h: 'Expedition oder Kampagne geplant?',
+			p: 'Schreib mir wo, wann und was du brauchst. Ich antworte innerhalb von zwei Werktagen.',
+			name: 'Dein Name',
+			org: 'Organisation / Marke (optional)',
+			type: 'Worum geht es?',
+			types: ['Expeditions- / Bergfilm', 'Kameramann', 'Doku-Schnitt', 'Destinations- / Hotelfilm', 'Partnerschaft bei geplanter Expedition', 'Etwas anderes'],
+			when: 'Termin oder Zeitraum',
+			where: 'Region / Ort',
+			deliver: 'Was soll am Ende rauskommen?',
+			send: 'E-Mail schreiben',
+			note: 'Öffnet dein E-Mail-Programm mit den ausgefüllten Angaben. Auf dieser Website wird nichts gespeichert.',
+			direct: 'Oder direkt schreiben:',
+		};
+---
+
+<Base
+	lang={lang}
+	title={en ? 'Contact – Book an Expedition Filmmaker | Micha Rössler' : 'Kontakt – Expeditionsfilmer buchen | Micha Rössler'}
+	description={en ? 'Book Micha Rössler as expedition filmmaker, camera operator or documentary editor. Reply within two working days.' : 'Micha Rössler als Expeditionsfilmer, Kameramann oder Doku-Cutter anfragen. Antwort innerhalb von zwei Werktagen.'}
+	alt={{ en: '/contact/', de: '/de/kontakt/' }}
+	cta={false}
+	pageType="ContactPage"
+	crumbs={[{ name: en ? 'Contact' : 'Kontakt', path: href(lang, 'contact') }]}
+>
+	<div class="c-sheet">
+		<div class="wrap c">
+			<div class="c-head">
+				<p class="k">{en ? 'Contact' : 'Kontakt'}</p>
+				<h1>{L.h}</h1>
+				<div class="who">
+					<Picture src={portrait} alt="Micha Rössler" formats={['avif', 'webp']} quality={78} width={160} height={160} widths={[80, 160]} sizes="72px" class="avatar" />
+					<p class="prose c-p">{L.p} {en ? 'You are writing to me directly – Micha.' : 'Du schreibst direkt mir – Micha.'}</p>
+				</div>
+			</div>
+
+			<form class="f" id="brief" data-subject={en ? 'Shoot request' : 'Drehanfrage'}>
+				<label><span class="k">{L.name}</span><input name={L.name} required autocomplete="name" /></label>
+				<label><span class="k">{L.org}</span><input name={L.org} autocomplete="organization" /></label>
+				<label class="full">
+					<span class="k">{L.type}</span>
+					<select name={L.type}>{L.types.map((x) => <option>{x}</option>)}</select>
+				</label>
+				<label><span class="k">{L.when}</span><input name={L.when} /></label>
+				<label><span class="k">{L.where}</span><input name={L.where} /></label>
+				<label class="full"><span class="k">{L.deliver}</span><textarea name={L.deliver} rows="5"></textarea></label>
+				<div class="full f-send">
+					<button class="btn" type="submit">{L.send}<Icon name="arrow" /></button>
+					<p class="k f-note">{L.note}</p>
+				</div>
+			</form>
+
+			<p class="direct">
+				<span class="k">{L.direct}</span>
+				<a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a>
+			</p>
+		</div>
+	</div>
+</Base>
+
+<script>
+	const f = document.getElementById('brief') as HTMLFormElement;
+	f?.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const lines = [...new FormData(f).entries()].filter(([, v]) => String(v).trim()).map(([k, v]) => `${k}: ${v}`);
+		location.href = `mailto:hello@micharoessler.com?subject=${encodeURIComponent(f.dataset.subject ?? '')}&body=${encodeURIComponent(lines.join('\n\n'))}`;
+	});
+</script>
+
+<style>
+	.c-sheet {
+		padding-top: clamp(16px, 3vw, 40px);
+	}
+	.c {
+		display: grid;
+		grid-template-columns: 1fr 1.4fr;
+		gap: clamp(48px, 6vw, 80px) clamp(32px, 6vw, 110px);
+		align-items: start;
+	}
+	.direct {
+		grid-column: 2;
+	}
+	h1 {
+		margin: 22px 0 32px;
+		font-size: clamp(34px, 4.4vw, 68px);
+		line-height: 1.08;
+		letter-spacing: -0.03em;
+		font-variation-settings: 'wdth' 86;
+		max-width: 14ch;
+	}
+	.who {
+		display: flex;
+		align-items: center;
+		gap: 20px;
+	}
+	.who :global(picture) {
+		flex: none;
+	}
+	:global(.avatar) {
+		width: 72px;
+		height: 72px;
+		border-radius: 50%;
+		object-fit: cover;
+		object-position: 50% 18%;
+		background: var(--bg-2);
+	}
+	.c-p {
+		max-width: 40ch;
+	}
+	.f {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 28px clamp(20px, 3vw, 40px);
+		padding: clamp(22px, 3vw, 36px);
+		border: 1px solid var(--line-2);
+		border-radius: 6px;
+		background: var(--bg-2);
+	}
+	.full {
+		grid-column: 1 / -1;
+	}
+	label {
+		display: grid;
+		gap: 8px;
+	}
+	input,
+	select,
+	textarea {
+		width: 100%;
+		padding: 0.8rem 0.9rem;
+		border: 1px solid var(--line-2);
+		border-radius: 4px;
+		background: var(--bg);
+		color: var(--ink);
+		font: inherit;
+		font-size: 16px;
+		transition: border-color 0.3s;
+	}
+	textarea {
+		resize: vertical;
+	}
+	select {
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23f2efe9' stroke-width='1.2'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 14px center;
+		padding-right: 2.5rem;
+	}
+	input:hover,
+	select:hover,
+	textarea:hover {
+		border-color: var(--muted);
+	}
+	input:focus,
+	select:focus,
+	textarea:focus {
+		outline: none;
+		border-color: var(--signal);
+	}
+	.f-send {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 16px 24px;
+		align-items: center;
+	}
+	.f-note {
+		max-width: 44ch;
+		line-height: 1.6;
+		letter-spacing: 0.06em;
+		text-transform: none;
+	}
+	.direct {
+		display: grid;
+		gap: 10px;
+	}
+	.direct a {
+		font-size: clamp(26px, 4vw, 60px);
+		letter-spacing: -0.04em;
+		line-height: 1.05;
+		font-variation-settings: 'wdth' 80;
+		font-weight: 500;
+		border-bottom: 2px solid var(--line-2);
+		padding-bottom: 10px;
+		justify-self: start;
+		overflow-wrap: anywhere;
+	}
+	.direct a:hover {
+		border-color: var(--ink);
+	}
+	@media (max-width: 1000px) {
+		.c {
+			grid-template-columns: 1fr;
+		}
+		.direct {
+			grid-column: auto;
+		}
+	}
+	@media (max-width: 640px) {
+		.f {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

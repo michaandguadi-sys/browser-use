@@ -1,0 +1,366 @@
+@import '@fontsource-variable/inter/opsz.css';
+@import '@fontsource-variable/geist-mono';
+
+/* "Glass" — light, Apple-clean ground, frosted panels, one iris accent. */
+:root {
+	--bg: #f5f5f7;
+	--ink: #1d1d1f;
+	--ink-2: #636369; /* secondary text: 5.2:1 on tinted glass, 4.7:1+ on --bg */
+	--iris: #5546ff; /* accent: white text 5.7:1, as text on --bg 5.2:1 */
+	--iris-2: #6d61ff;
+	--green: #15803d;
+	--line: rgba(29, 29, 31, 0.08);
+
+	--glass-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.64) 100%);
+	--glass-edge: 1px solid rgba(255, 255, 255, 0.85);
+	--glass-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(29, 29, 31, 0.04), 0 1px 2px rgba(16, 24, 40, 0.05),
+		0 12px 32px -10px rgba(16, 24, 40, 0.12), 0 40px 80px -36px rgba(16, 24, 40, 0.18);
+
+	--sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
+	--mono: 'Geist Mono Variable', ui-monospace, monospace;
+
+	--display: clamp(48px, 7.4vw, 112px);
+	--h2: clamp(36px, 4.8vw, 72px);
+	--h3: clamp(20px, 1.6vw, 24px);
+	--lead: clamp(19px, 1.6vw, 24px);
+
+	--r-lg: 32px;
+	--r-md: 22px;
+	--max: 1200px;
+	--gutter: clamp(20px, 4vw, 40px);
+	--ease: cubic-bezier(0.22, 1, 0.36, 1);
+	/* film grain: a tiny SVG noise tile, rasterised once, moved by the compositor (transform only) */
+	--grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.6 -0.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+	scroll-padding-top: 72px;
+}
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--sans);
+	font-optical-sizing: auto;
+	font-size: 17px;
+	line-height: 1.5;
+	letter-spacing: -0.011em;
+	-webkit-font-smoothing: antialiased;
+	overflow-x: clip;
+}
+img,
+svg {
+	display: block;
+	max-width: 100%;
+}
+img {
+	height: auto;
+}
+a {
+	color: inherit;
+	text-underline-offset: 0.2em;
+	text-decoration-thickness: 1px;
+}
+:focus-visible {
+	outline: 3px solid rgba(85, 70, 255, 0.55);
+	outline-offset: 3px;
+}
+h1,
+h2,
+h3 {
+	margin: 0;
+	font-weight: 650;
+	letter-spacing: -0.035em;
+	line-height: 1.04;
+	text-wrap: balance;
+}
+p {
+	margin: 0;
+}
+::selection {
+	background: rgba(85, 70, 255, 0.2);
+}
+
+.wrap {
+	width: 100%;
+	max-width: calc(var(--max) + 2 * var(--gutter));
+	margin-inline: auto;
+	padding-inline: var(--gutter);
+}
+
+/* glass material (faked, no backdrop-filter → cheap while scrolling) */
+.glass {
+	background: var(--glass-bg);
+	border: var(--glass-edge);
+	box-shadow: var(--glass-shadow);
+	border-radius: var(--r-lg);
+}
+
+.eyebrow {
+	font-size: 15px;
+	font-weight: 600;
+	letter-spacing: -0.005em;
+	color: var(--iris);
+}
+.muted {
+	color: var(--ink-2);
+}
+.mono {
+	font-family: var(--mono);
+	font-size: 13px;
+	letter-spacing: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+/* buttons: pills */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: 48px;
+	padding: 12px 24px;
+	border-radius: 999px;
+	border: 0;
+	font: inherit;
+	font-size: 17px;
+	font-weight: 560;
+	letter-spacing: -0.015em;
+	text-decoration: none;
+	cursor: pointer;
+	color: var(--ink);
+	background: var(--glass-bg);
+	box-shadow:
+		inset 0 1px 0 #fff,
+		0 0 0 1px rgba(29, 29, 31, 0.08),
+		0 6px 16px -8px rgba(16, 24, 40, 0.2);
+	transition:
+		transform 0.25s var(--ease),
+		box-shadow 0.25s var(--ease),
+		background-color 0.25s var(--ease);
+}
+.btn:hover {
+	transform: translateY(-1px);
+	box-shadow:
+		inset 0 1px 0 #fff,
+		0 0 0 1px rgba(29, 29, 31, 0.1),
+		0 10px 24px -10px rgba(16, 24, 40, 0.28);
+}
+.btn:active {
+	transform: scale(0.98);
+}
+.btn--primary {
+	color: #fff;
+	background: linear-gradient(180deg, var(--iris-2), var(--iris));
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.4),
+		0 10px 24px -10px rgba(85, 70, 255, 0.7);
+}
+.btn--primary:hover {
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.4),
+		0 14px 32px -10px rgba(85, 70, 255, 0.8);
+}
+.btn .arr {
+	font-weight: 400;
+}
+
+/* range inputs (calculator) */
+input[type='range'] {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 28px;
+	margin: 0;
+	background: transparent;
+	cursor: pointer;
+	--p: 50%;
+}
+input[type='range']::-webkit-slider-runnable-track {
+	height: 6px;
+	border-radius: 3px;
+	background: linear-gradient(90deg, var(--iris) var(--p), rgba(29, 29, 31, 0.1) var(--p));
+}
+input[type='range']::-moz-range-track {
+	height: 6px;
+	border-radius: 3px;
+	background: rgba(29, 29, 31, 0.1);
+}
+input[type='range']::-moz-range-progress {
+	height: 6px;
+	border-radius: 3px;
+	background: var(--iris);
+}
+input[type='range']::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 24px;
+	height: 24px;
+	margin-top: -9px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow:
+		0 0 0 0.5px rgba(29, 29, 31, 0.12),
+		0 3px 8px rgba(16, 24, 40, 0.18);
+}
+input[type='range']::-moz-range-thumb {
+	width: 24px;
+	height: 24px;
+	border: 0;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow:
+		0 0 0 0.5px rgba(29, 29, 31, 0.12),
+		0 3px 8px rgba(16, 24, 40, 0.18);
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+.skip {
+	position: absolute;
+	left: 16px;
+	top: -64px;
+	z-index: 100;
+	padding: 10px 16px;
+	border-radius: 999px;
+	background: var(--ink);
+	color: #fff;
+}
+.skip:focus {
+	top: 12px;
+}
+
+/* sections */
+.sec {
+	position: relative;
+	padding-block: clamp(64px, 8vw, 120px);
+}
+.sec-h {
+	display: grid;
+	gap: 14px;
+	justify-items: center;
+	text-align: center;
+	max-width: 46rem;
+	margin: 0 auto clamp(48px, 6vw, 80px);
+}
+.sec-h h2 {
+	font-size: var(--h2);
+}
+.sec-h p:not(.eyebrow) {
+	font-size: var(--lead);
+	line-height: 1.4;
+	color: var(--ink-2);
+}
+
+/* soft colour fields behind glass (static, cheap; ellipses fade out before the box edge → no hard cuts) */
+.aura {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	overflow: hidden;
+	pointer-events: none;
+}
+.aura::before,
+.aura::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	width: 64vmax;
+	height: 100%;
+}
+.aura::before {
+	left: -18vmax;
+	background: radial-gradient(closest-side, rgba(85, 70, 255, 0.16), rgba(85, 70, 255, 0.06) 50%, transparent);
+}
+.aura::after {
+	right: -18vmax;
+	background: radial-gradient(closest-side, rgba(255, 166, 120, 0.2), rgba(255, 166, 120, 0.07) 50%, transparent);
+}
+
+/* page-wide grain: barely there on text sections; animated at ~12 fps only when motion is welcome */
+body::after {
+	content: '';
+	position: fixed;
+	inset: -15%;
+	z-index: 70;
+	pointer-events: none;
+	background-image: var(--grain-url);
+	background-size: 180px 180px;
+	opacity: 0.035;
+	mix-blend-mode: overlay;
+}
+/* touch devices: the same grain as a plain translucent, static layer (no blend pass, no per-frame movement) */
+@media (pointer: coarse) {
+	body::after {
+		mix-blend-mode: normal;
+		opacity: 0.045;
+	}
+}
+@keyframes grain {
+	0% { transform: translate(0, 0); }
+	10% { transform: translate(-5%, -8%); }
+	20% { transform: translate(-10%, 4%); }
+	30% { transform: translate(6%, -10%); }
+	40% { transform: translate(-4%, 10%); }
+	50% { transform: translate(-10%, 6%); }
+	60% { transform: translate(10%, 0); }
+	70% { transform: translate(0, 10%); }
+	80% { transform: translate(4%, 10%); }
+	90% { transform: translate(-8%, 6%); }
+	100% { transform: translate(0, 0); }
+}
+@media (prefers-reduced-motion: no-preference) and (pointer: fine) {
+	html[data-story='live'] body::after {
+		animation: grain 0.84s steps(10) infinite;
+		will-change: transform;
+	}
+}
+
+/* reveal: content is always visible (opacity is never animated, so no capture, crawler or slow device sees a gap);
+   where scroll-driven animations are supported and motion is welcome, cards rise a few pixels as they enter */
+@supports (animation-timeline: view()) {
+	@media (prefers-reduced-motion: no-preference) {
+		.reveal {
+			animation: rise linear both;
+			animation-timeline: view();
+			animation-range: entry 0% entry 70%;
+		}
+	}
+}
+@keyframes rise {
+	from {
+		translate: 0 32px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+	@view-transition {
+		navigation: auto;
+	}
+}

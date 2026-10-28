@@ -1,0 +1,317 @@
+---
+import '../styles/global.css';
+import { getImage } from 'astro:assets';
+import { href, other, url, mainHome, areaServed, ORIGIN, PERSON_ID, ORG_ID, WEBSITE_ID, SERVICE_ID, type Lang } from '../i18n';
+import portrait from '../assets/micha-portrait.jpg';
+import { booking, meta } from '../data/content';
+
+interface Props {
+	lang: Lang;
+	title: string;
+	description: string;
+	alt: Record<Lang, string>; // the same page in both languages (base-prefixed paths, see href()/alts())
+	jsonLd?: Record<string, unknown>[]; // extra nodes for the page's @graph
+	crumb?: string; // breadcrumb name of a page below the Formatschnitt home (legal pages)
+	noindex?: boolean;
+}
+const { lang, title, description, alt, jsonLd = [], crumb, noindex = false } = Astro.props;
+const de = lang === 'de';
+const site = Astro.site!;
+const abs = (p: string) => new URL(p, site).href;
+const canonical = abs(alt[lang]);
+const home = href(lang, 'home');
+const face = await getImage({ src: portrait, width: 800, format: 'jpg' });
+const ogImage = abs(url('/og.png'));
+
+// One entity graph across micharoessler.com: Person, LLC and WebSite are defined in full on the main site
+// (same @ids); here they are referenced with their core facts so this page stands on its own.
+const graph: Record<string, unknown>[] = [
+	{
+		'@type': 'Person',
+		'@id': PERSON_ID,
+		name: 'Micha Rössler',
+		alternateName: 'Micha Roessler',
+		url: `${ORIGIN}/`,
+		image: abs(face.src),
+		jobTitle: de ? 'Editor & Filmemacher' : 'Editor & filmmaker',
+		worksFor: { '@id': ORG_ID },
+	},
+	{ '@type': 'Organization', '@id': ORG_ID, name: 'Micha Roessler LLC', url: `${ORIGIN}/`, founder: { '@id': PERSON_ID } },
+	{ '@type': 'WebSite', '@id': WEBSITE_ID, url: `${ORIGIN}/`, name: 'Micha Rössler', publisher: { '@id': PERSON_ID } },
+	{
+		'@type': 'ProfessionalService',
+		'@id': SERVICE_ID,
+		name: 'Formatschnitt',
+		url: abs(href('de', 'home')),
+		description: meta.description[lang],
+		email: booking.email,
+		image: ogImage,
+		logo: abs(url('/favicon.svg')),
+		areaServed: areaServed(lang),
+		knowsLanguage: ['de', 'en'],
+		contactPoint: { '@type': 'ContactPoint', contactType: de ? 'Anfragen' : 'enquiries', email: booking.email, availableLanguage: ['de', 'en'] },
+		founder: { '@id': PERSON_ID },
+		parentOrganization: { '@id': ORG_ID },
+	},
+	{
+		'@type': 'WebPage',
+		'@id': `${canonical}#webpage`,
+		url: canonical,
+		name: title,
+		description,
+		inLanguage: lang,
+		isPartOf: { '@id': WEBSITE_ID },
+		about: { '@id': SERVICE_ID },
+		primaryImageOfPage: { '@type': 'ImageObject', url: ogImage, width: 1200, height: 630 },
+		breadcrumb: { '@id': `${canonical}#breadcrumb` },
+	},
+	{
+		'@type': 'BreadcrumbList',
+		'@id': `${canonical}#breadcrumb`,
+		itemListElement: [
+			{ name: 'Micha Rössler', item: abs(mainHome(lang)) },
+			{ name: 'Formatschnitt', item: abs(home) },
+			...(crumb ? [{ name: crumb, item: canonical }] : []),
+		].map((x, i) => ({ '@type': 'ListItem', position: i + 1, ...x })),
+	},
+	...jsonLd,
+];
+const ld = { '@context': 'https://schema.org', '@graph': graph };
+---
+
+<!doctype html>
+<html lang={lang}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		{noindex && <meta name="robots" content="noindex" />}
+		{!noindex && <link rel="canonical" href={canonical} />}
+		{!noindex && <link rel="alternate" hreflang="de" href={abs(alt.de)} />}
+		{!noindex && <link rel="alternate" hreflang="en" href={abs(alt.en)} />}
+		{!noindex && <link rel="alternate" hreflang="x-default" href={abs(alt.de)} />}
+		<link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+		<link rel="sitemap" href={url('/sitemap-index.xml')} />
+		<meta name="author" content="Micha Rössler" />
+		<meta name="theme-color" content="#f5f5f7" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Formatschnitt · Micha Rössler" />
+		<meta property="og:locale" content={de ? 'de_DE' : 'en_GB'} />
+		<meta property="og:locale:alternate" content={de ? 'en_GB' : 'de_DE'} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content={de ? 'Formatschnitt – Schnitt-Systeme für wiederkehrende YouTube-Formate' : 'Formatschnitt – editing systems for recurring YouTube shows'} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+		<script type="application/ld+json" set:html={JSON.stringify(ld)} />
+		<script is:inline>document.documentElement.classList.add('js');</script>
+		<script type="speculationrules" is:inline>{"prerender":[{"where":{"href_matches":"/*"},"eagerness":"moderate"}]}</script>
+	</head>
+	<body>
+		<a class="skip" href="#main">{de ? 'Zum Inhalt springen' : 'Skip to content'}</a>
+		<header class="hd">
+			<div class="bar">
+				<div class="brand-wrap">
+					<a class="brand" href={href(lang, 'home')} aria-label="Formatschnitt">
+						<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2" y="5" width="12" height="6" rx="3" fill="#5546ff"></rect><rect x="9" y="13" width="13" height="6" rx="3" fill="#1d1d1f"></rect><rect x="15" y="2" width="2" height="20" rx="1" fill="#5546ff"></rect></svg>
+						<span>Formatschnitt</span>
+					</a>
+					<a class="by" href={mainHome(lang)}>{de ? 'von' : 'by'} Micha Rössler</a>
+				</div>
+				<nav aria-label={de ? 'Hauptnavigation' : 'Main'}>
+					<a class="nl" href={`${home}#ablauf`}>{de ? 'So läuft’s' : 'How it works'}</a>
+					<a class="nl" href={`${home}#pakete`}>{de ? 'Preise' : 'Pricing'}</a>
+					<a class="nl" href={`${home}#rechner`}>{de ? 'Rechner' : 'Calculator'}</a>
+					<a class="nl" href={`${home}#faq`}>FAQ</a>
+					<a class="lang" href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>{other(lang).toUpperCase()}</a>
+					<a class="btn btn--primary hd-cta" href={booking.bookingUrl || `${home}#kontakt`}>{de ? 'Erstgespräch' : 'Intro call'}</a>
+				</nav>
+			</div>
+		</header>
+
+		<main id="main">
+			<slot />
+		</main>
+
+		<footer class="ft">
+			<div class="wrap ft-in">
+				<div>
+					<p class="ft-brand">Formatschnitt</p>
+					<p class="muted">{de ? 'Schnitt-Systeme für wiederkehrende Videoformate' : 'Editing systems for recurring video shows'}</p>
+					<p class="muted">{de ? 'Ein Angebot von ' : 'A service by '}<a href={mainHome(lang)}>Micha Rössler</a></p>
+				</div>
+				<ul>
+					<li><a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a></li>
+					<li><a href={mainHome(lang)}>{de ? 'Micha Rössler – Expeditions- & Dokumentarfilm' : 'Micha Rössler – expedition & documentary film'}</a></li>
+				</ul>
+				<ul>
+					<li><a href={href(lang, 'imprint')}>{de ? 'Impressum' : 'Legal notice'}</a></li>
+					<li><a href={href(lang, 'privacy')}>{de ? 'Datenschutz' : 'Privacy'}</a></li>
+					<li class="muted">© {new Date().getFullYear()} Micha Roessler LLC</li>
+				</ul>
+			</div>
+		</footer>
+
+		<script>
+			const io = new IntersectionObserver(
+				(es) =>
+					es.forEach((e) => {
+						if (e.isIntersecting) {
+							e.target.classList.add('in');
+							io.unobserve(e.target);
+						}
+					}),
+				{ rootMargin: '0px 0px -8% 0px' },
+			);
+			document.querySelectorAll('.reveal, [data-io]').forEach((el) => io.observe(el));
+		</script>
+
+		<style>
+			/* floating glass nav — the one real backdrop-filter on the page */
+			.hd {
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				padding: 10px var(--gutter) 0;
+			}
+			.bar {
+				max-width: var(--max);
+				margin-inline: auto;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 16px;
+				height: 56px;
+				padding: 0 8px 0 18px;
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.72);
+				-webkit-backdrop-filter: saturate(1.8) blur(20px);
+				backdrop-filter: saturate(1.8) blur(20px);
+				box-shadow:
+					inset 0 1px 0 rgba(255, 255, 255, 0.9),
+					0 0 0 1px rgba(29, 29, 31, 0.06),
+					0 8px 24px -12px rgba(16, 24, 40, 0.18);
+			}
+			.brand-wrap {
+				display: flex;
+				align-items: baseline;
+				gap: 10px;
+				min-width: 0;
+			}
+			.by {
+				display: inline-flex;
+				align-items: center;
+				min-height: 24px; /* touch target (WCAG 2.5.8) */
+				font-size: 13px;
+				color: var(--ink-2);
+				text-decoration: none;
+				white-space: nowrap;
+			}
+			.by:hover {
+				color: var(--iris);
+			}
+			.brand {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				text-decoration: none;
+				font-weight: 650;
+				font-size: 18px;
+				letter-spacing: -0.03em;
+			}
+			nav {
+				display: flex;
+				align-items: center;
+				gap: 4px;
+				font-size: 15px;
+			}
+			nav > a:not(.btn) {
+				text-decoration: none;
+				color: var(--ink-2);
+				padding: 8px 12px;
+				border-radius: 999px;
+				transition:
+					color 0.2s var(--ease),
+					background-color 0.2s var(--ease);
+			}
+			nav > a:not(.btn):hover {
+				color: var(--ink);
+				background: rgba(29, 29, 31, 0.05);
+			}
+			nav > a.lang {
+				color: var(--ink);
+				font-weight: 560;
+			}
+			.hd-cta {
+				min-height: 40px;
+				padding: 8px 18px;
+				font-size: 15px;
+				margin-left: 6px;
+			}
+			@media (max-width: 860px) {
+				nav > a.nl {
+					display: none;
+				}
+			}
+			@media (max-width: 560px) {
+				.brand-wrap {
+					flex-direction: column;
+					align-items: flex-start;
+					gap: 0;
+				}
+				.by {
+					font-size: 11.5px;
+					line-height: 1.2;
+					padding-left: 32px;
+					margin-top: -3px;
+				}
+			}
+			@media (max-width: 400px) {
+				.brand span {
+					font-size: 17px;
+				}
+				.bar {
+					padding-left: 14px;
+				}
+			}
+			.ft {
+				padding-block: 64px 48px;
+				font-size: 15px;
+			}
+			.ft-in {
+				display: grid;
+				gap: 32px;
+				grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+				border-top: 1px solid var(--line);
+				padding-top: 40px;
+			}
+			.ft-brand {
+				font-size: 22px;
+				font-weight: 650;
+				letter-spacing: -0.03em;
+				margin-bottom: 6px;
+			}
+			.ft ul {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: grid;
+				gap: 8px;
+				align-content: start;
+			}
+			.ft a {
+				text-decoration: none;
+			}
+			.ft a:hover {
+				color: var(--iris);
+			}
+		</style>
+	</body>
+</html>

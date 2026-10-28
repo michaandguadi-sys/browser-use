@@ -1,0 +1,53 @@
+---
+import Base from '../layouts/Base.astro';
+import WorkGrid from '../components/WorkGrid.astro';
+import FilmStrip from '../components/FilmStrip.astro';
+import { href, type Lang } from '../i18n';
+import { projects } from '../data/projects';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const en = lang === 'en';
+const grid = projects.filter((p) => !p.youtube);
+const films = projects.filter((p) => p.youtube);
+---
+
+<Base
+	lang={lang}
+	title={en ? 'Work – Expedition & Documentary Films | Micha Rössler' : 'Projekte – Expeditions- & Dokumentarfilme | Micha Rössler'}
+	description={en
+		? 'Expedition films from the Bolivian Andes and Kilimanjaro, documentaries with 1.2M and 1.4M views, destination and hospitality films.'
+		: 'Expeditionsfilme aus den bolivianischen Anden und vom Kilimandscharo, Dokus mit 1,2 und 1,4 Mio. Aufrufen, Destinations- und Hotelfilme.'}
+	alt={{ en: '/work/', de: '/de/work/' }}
+	pageType="CollectionPage"
+	crumbs={[{ name: en ? 'Work' : 'Projekte', path: href(lang, 'work') }]}
+>
+	<div class="wrap w">
+		<p class="k">{en ? 'Index' : 'Übersicht'} · {projects.length}</p>
+		<h1>{en ? 'Work' : 'Projekte'}</h1>
+		<WorkGrid lang={lang} items={grid} eagerFirst />
+		<FilmStrip lang={lang} items={films} />
+	</div>
+</Base>
+
+<style>
+	.w {
+		padding-top: clamp(16px, 3vw, 40px);
+	}
+	h1 {
+		margin: 22px 0 clamp(48px, 6vw, 88px);
+		font-size: clamp(44px, 7vw, 112px);
+		line-height: 1;
+		letter-spacing: -0.035em;
+		font-variation-settings: 'wdth' 86;
+	}
+	h1 sup {
+		font-size: 0.22em;
+		color: var(--muted);
+		vertical-align: top;
+		margin-left: 8px;
+		letter-spacing: 0.06em;
+	}
+</style>

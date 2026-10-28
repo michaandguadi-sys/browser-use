@@ -1,0 +1,516 @@
+---
+import '../styles/global.css';
+import { getImage } from 'astro:assets';
+import { href, other, ui, formatschnitt, ORIGIN, PERSON_ID, ORG_ID, WEBSITE_ID, SERVICE_ID, type Lang } from '../i18n';
+import { company } from '../data/legal';
+import { pic } from '../data/projects';
+import { audio } from '../data/site';
+import portrait from '../assets/micha-portrait.jpg';
+import monoFont from '@fontsource-variable/inconsolata/files/inconsolata-latin-wdth-normal.woff2?url';
+import Icon from '../components/Icon.astro';
+
+interface Props {
+	lang: Lang;
+	title: string;
+	description: string;
+	alt: Record<Lang, string>; // same page in both languages, for hreflang + switcher
+	ogImage?: string;
+	jsonLd?: Record<string, unknown>[];
+	preload?: { srcset: string; sizes: string; media?: string }[]; // LCP image candidates (AVIF)
+	terrainCredit?: boolean; // page shows real-terrain contours
+	cta?: boolean; // big e-mail call to action above the footer
+	crumbs?: { name: string; path: string }[]; // breadcrumb below Home (subpages); the last one is this page
+	pageType?: string; // schema.org type of this page (WebPage, ProfilePage, CollectionPage, ContactPage …)
+	about?: string; // @id of the page's main entity (defaults to the Person)
+	noindex?: boolean;
+}
+
+const {
+	lang,
+	title,
+	description,
+	alt,
+	ogImage = 'bolivia-ridge-climbers',
+	jsonLd = [],
+	preload = [],
+	terrainCredit = false,
+	cta = true,
+	crumbs = [],
+	pageType = 'WebPage',
+	about = PERSON_ID,
+	noindex = false,
+} = Astro.props;
+const t = ui[lang];
+const en = lang === 'en';
+const site = Astro.site!;
+const canonical = new URL(alt[lang], site).href;
+const og = await getImage({ src: pic(ogImage), width: 1200, height: 630, fit: 'cover', format: 'jpg' });
+const ogUrl = new URL(og.src, site).href;
+const face = await getImage({ src: portrait, width: 800, format: 'jpg' });
+
+const abs = (p: string) => new URL(p, site).href;
+// The entity graph for the whole domain. Formatschnitt (sites/systems) uses the same @ids.
+// sameAs: only profiles that exist (the links in the footer below) – never guessed handles.
+const graph: Record<string, unknown>[] = [
+	{
+		'@type': 'Person',
+		'@id': PERSON_ID,
+		name: 'Micha Rössler',
+		alternateName: 'Micha Roessler',
+		jobTitle: en ? 'Expedition & adventure filmmaker' : 'Expeditions- & Outdoor-Filmemacher',
+		description: en
+			? 'German expedition and adventure filmmaker, camera operator and documentary editor.'
+			: 'Deutscher Expeditions- und Outdoor-Filmemacher, Kameramann und Dokumentarfilm-Cutter.',
+		url: `${ORIGIN}/`,
+		email: 'mailto:hello@micharoessler.com',
+		image: abs(face.src),
+		nationality: { '@type': 'Country', name: 'Germany' },
+		knowsLanguage: ['de', 'en'],
+		knowsAbout: en
+			? ['Expedition film', 'Mountain film', 'Documentary film', 'Camera operation', 'Drone and FPV filming', 'Documentary editing', 'Destination and hospitality film']
+			: ['Expeditionsfilm', 'Bergfilm', 'Dokumentarfilm', 'Kamera', 'Drohnen- und FPV-Aufnahmen', 'Dokumentarfilm-Schnitt', 'Destinations- und Hotelfilm'],
+		worksFor: { '@id': ORG_ID },
+		sameAs: ['https://www.instagram.com/michaaroessler/', 'https://www.youtube.com/@GuadiandMicha'],
+	},
+	{
+		'@type': 'Organization',
+		'@id': ORG_ID,
+		name: company.name,
+		url: `${ORIGIN}/`,
+		email: `mailto:${company.email}`,
+		address: { '@type': 'PostalAddress', streetAddress: company.street, addressLocality: 'Sheridan', addressRegion: 'WY', postalCode: '82801', addressCountry: 'US' },
+		founder: { '@id': PERSON_ID },
+		subOrganization: { '@id': SERVICE_ID },
+	},
+	{
+		// the Formatschnitt section (defined in full on /formatschnitt/)
+		'@type': 'ProfessionalService',
+		'@id': SERVICE_ID,
+		name: 'Formatschnitt',
+		url: `${ORIGIN}${formatschnitt('de')}`,
+		description: en ? 'Monthly video editing retainer for company YouTube shows.' : 'YouTube-Videos schneiden lassen: Videoschnitt im Abo für YouTube-Formate von Unternehmen.',
+		founder: { '@id': PERSON_ID },
+		parentOrganization: { '@id': ORG_ID },
+	},
+	{
+		'@type': 'WebSite',
+		'@id': WEBSITE_ID,
+		url: `${ORIGIN}/`,
+		name: 'Micha Rössler',
+		alternateName: 'micharoessler.com',
+		inLanguage: ['en', 'de'],
+		publisher: { '@id': PERSON_ID },
+	},
+	{
+		'@type': pageType,
+		'@id': `${canonical}#webpage`,
+		url: canonical,
+		name: title,
+		description,
+		inLanguage: lang,
+		isPartOf: { '@id': WEBSITE_ID },
+		about: { '@id': about },
+		...(pageType === 'ProfilePage' ? { mainEntity: { '@id': PERSON_ID } } : {}),
+		primaryImageOfPage: { '@type': 'ImageObject', url: ogUrl, width: 1200, height: 630 },
+		...(crumbs.length ? { breadcrumb: { '@id': `${canonical}#breadcrumb` } } : {}),
+	},
+	...(crumbs.length
+		? [
+				{
+					'@type': 'BreadcrumbList',
+					'@id': `${canonical}#breadcrumb`,
+					itemListElement: [{ name: 'Micha Rössler', path: href(lang, 'home') }, ...crumbs].map((c, i) => ({
+						'@type': 'ListItem',
+						position: i + 1,
+						name: c.name,
+						item: abs(c.path),
+					})),
+				},
+			]
+		: []),
+	...jsonLd,
+];
+const ld = { '@context': 'https://schema.org', '@graph': graph };
+const path = Astro.url.pathname;
+const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefined);
+---
+
+<!doctype html>
+<html lang={lang}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<script is:inline>document.documentElement.classList.add('js');</script>
+		<link rel="preload" href={monoFont} as="font" type="font/woff2" crossorigin />
+		{preload.map((p) => <link rel="preload" as="image" type="image/avif" imagesrcset={p.srcset} imagesizes={p.sizes} media={p.media} fetchpriority="high" />)}
+		<meta name="description" content={description} />
+		{noindex && <meta name="robots" content="noindex" />}
+		{!noindex && <link rel="canonical" href={canonical} />}
+		{!noindex && <link rel="alternate" hreflang="en" href={abs(alt.en)} />}
+		{!noindex && <link rel="alternate" hreflang="de" href={abs(alt.de)} />}
+		{!noindex && <link rel="alternate" hreflang="x-default" href={abs(alt.en)} />}
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta name="author" content="Micha Rössler" />
+		<meta name="theme-color" content="#0f0f0f" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Micha Rössler" />
+		<meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} />
+		<meta property="og:locale:alternate" content={lang === 'de' ? 'en_US' : 'de_DE'} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={ogUrl} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogUrl} />
+		<script type="speculationrules" is:inline>
+			{ "prerender": [{ "where": { "href_matches": "/*" }, "eagerness": "moderate" }] }
+		</script>
+		<script type="application/ld+json" set:html={JSON.stringify(ld)} />
+	</head>
+	<body>
+		<a class="skip" href="#main">{t.skip}</a>
+
+		<header class="site-header">
+			<div class="wrap nav">
+				<a class="logo" href={href(lang, 'home')}>Micha Rössler<span> /film</span></a>
+				<nav aria-label={en ? 'Main' : 'Hauptnavigation'}>
+					<ul>
+						<li class="hide-s"><a href={href(lang, 'work')} aria-current={current('work')}>{t.nav.work}</a></li>
+						<li class="hide-s"><a href={href(lang, 'about')} aria-current={current('about')}>{t.nav.about}</a></li>
+						{
+							audio && (
+								<li class="hide-s">
+									<button type="button" class="snd" aria-pressed="false" data-on={en ? 'Sound on' : 'Ton an'} data-off={en ? 'Sound off' : 'Ton aus'}>
+										<span class="eq" aria-hidden="true">
+											<b />
+											<b />
+											<b />
+											<b />
+										</span>
+										<span class="snd-l">{en ? 'Sound off' : 'Ton aus'}</span>
+									</button>
+									<audio src={audio} loop preload="none" />
+								</li>
+							)
+						}
+						<li>
+							<a class="lang" href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>
+								{other(lang).toUpperCase()}<span class="sr-only"> – {t.switch}</span>
+							</a>
+						</li>
+						<li><a class="btn nav-cta" href={href(lang, 'contact')} aria-current={current('contact')}>{t.nav.contact}</a></li>
+					</ul>
+				</nav>
+			</div>
+		</header>
+
+		<main id="main">
+			<slot />
+		</main>
+
+		{
+			cta && (
+				<section class="wrap cta-big" id="contact" aria-labelledby="cta-h">
+					<p id="cta-h" class="k">
+						{en ? 'Planning an expedition or campaign?' : 'Expedition oder Kampagne geplant?'}
+					</p>
+					<a class="mail" href="mailto:hello@micharoessler.com">
+						hello@micharoessler.com
+					</a>
+				</section>
+			)
+		}
+
+		<div class="wrap soc-wrap">
+			<ul class="soc">
+				<li>
+					<a href="https://www.instagram.com/michaaroessler/" rel="me noopener"><Icon name="instagram" />Instagram</a>
+				</li>
+				<li class="rule" aria-hidden="true"></li>
+				<li>
+					<a href="https://www.youtube.com/@GuadiandMicha" rel="me noopener"><Icon name="youtube" />YouTube · Guadi &amp; Micha</a>
+				</li>
+				<li class="rule" aria-hidden="true"></li>
+				<li>
+					<a href={formatschnitt(lang)}>{en ? 'Editing systems for company YouTube shows → Formatschnitt' : 'Schnitt-Systeme für YouTube-Formate → Formatschnitt'}</a>
+				</li>
+			</ul>
+		</div>
+
+		<footer class="wrap f">
+			<div class="f-top">
+				<a class="logo" href={href(lang, 'home')}>Micha Rössler<span> /film</span></a>
+				<p class="k">{en ? 'Available worldwide · based on the road' : 'Weltweit verfügbar · zuhause unterwegs'}</p>
+				<nav class="k f-nav" aria-label={en ? 'Footer' : 'Fußzeile'}>
+					<a href={href(lang, 'work')}>{t.nav.work}</a>
+					<a href={href(lang, 'about')}>{t.nav.about}</a>
+					<a href={href(lang, 'contact')}>{t.nav.contact}</a>
+					<a href={formatschnitt(lang)}>{t.fs}</a>
+				</nav>
+			</div>
+			<div class="f-box">
+				<span>© {new Date().getFullYear()} Micha Roessler LLC</span>
+				<nav aria-label={en ? 'Legal' : 'Rechtliches'}>
+					<a href={href(lang, 'imprint')}>{t.imprint}</a>
+					<a href={href(lang, 'privacy')}>{t.privacy}</a>
+					<a href={alt[other(lang)]} hreflang={other(lang)} lang={other(lang)}>{t.switch}</a>
+				</nav>
+				{
+					terrainCredit && (
+						<p class="f-terrain">
+							{en
+								? 'Terrain: AWS Terrain Tiles (Mapzen) · SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey'
+								: 'Gelände: AWS Terrain Tiles (Mapzen) · SRTM- und GMTED2010-Geländedaten mit freundlicher Genehmigung des U.S. Geological Survey'}
+						</p>
+					)
+				}
+			</div>
+		</footer>
+
+		<script>
+			const io = new IntersectionObserver(
+				(es) =>
+					es.forEach((e) => {
+						if (e.isIntersecting) {
+							e.target.classList.add('in');
+							io.unobserve(e.target);
+						}
+					}),
+				{ rootMargin: '0px 0px -8% 0px' },
+			);
+			document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+			const snd = document.querySelector<HTMLButtonElement>('.snd');
+			if (snd) {
+				const a = snd.nextElementSibling as HTMLAudioElement;
+				snd.addEventListener('click', () => {
+					const on = snd.getAttribute('aria-pressed') !== 'true';
+					snd.setAttribute('aria-pressed', String(on));
+					snd.querySelector('.snd-l')!.textContent = on ? snd.dataset.on! : snd.dataset.off!;
+					if (on) a.play().catch(() => {});
+					else a.pause();
+				});
+			}
+		</script>
+
+		<style>
+			.site-header {
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				background: linear-gradient(var(--bg) 55%, rgb(15 15 15 / 0));
+			}
+			.nav {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 16px;
+				height: 88px;
+			}
+			.logo {
+				font-weight: 700;
+				font-size: 20px;
+				letter-spacing: -0.01em;
+				font-variation-settings: 'wdth' 90;
+				white-space: nowrap;
+			}
+			.logo span {
+				color: var(--muted);
+				font-weight: 400;
+			}
+			nav ul {
+				display: flex;
+				align-items: center;
+				gap: 30px;
+				font-size: 13px;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+			}
+			nav ul a:not(.btn) {
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
+				transition: color 0.2s;
+			}
+			nav ul a:not(.btn):hover,
+			nav ul a[aria-current='page']:not(.btn) {
+				color: var(--muted);
+			}
+			.nav-cta[aria-current='page'] {
+				background: transparent;
+				color: var(--ink);
+			}
+			.snd {
+				display: inline-flex;
+				align-items: center;
+				gap: 9px;
+				min-height: 44px;
+				padding: 0;
+				border: 0;
+				background: none;
+				color: var(--ink-2);
+				letter-spacing: inherit;
+				text-transform: inherit;
+				cursor: pointer;
+			}
+			.eq {
+				display: inline-flex;
+				gap: 2px;
+				align-items: flex-end;
+				height: 12px;
+			}
+			.eq b {
+				width: 2px;
+				height: 3px;
+				background: currentColor;
+			}
+			.eq b:nth-child(2) {
+				height: 7px;
+			}
+			.eq b:nth-child(3) {
+				height: 5px;
+			}
+			.eq b:nth-child(4) {
+				height: 9px;
+			}
+			@media (max-width: 700px) {
+				.nav {
+					height: 68px;
+				}
+				nav ul {
+					gap: 18px;
+				}
+				.hide-s {
+					display: none;
+				}
+			}
+			@media (max-width: 400px) {
+				.logo {
+					font-size: 18px;
+				}
+				.logo span {
+					display: none;
+				}
+			}
+
+			.cta-big {
+				padding: clamp(96px, 12vw, 180px) 0 0;
+				text-align: center;
+			}
+			.mail {
+				display: inline-block;
+				margin-top: 26px;
+				font-size: clamp(26px, 6.4vw, 104px);
+				letter-spacing: -0.04em;
+				line-height: 1;
+				font-variation-settings: 'wdth' 80;
+				font-weight: 500;
+				border-bottom: 2px solid var(--line-2);
+				padding-bottom: 12px;
+				overflow-wrap: anywhere;
+				transition: border-color 0.3s;
+			}
+			.mail:hover {
+				border-color: var(--ink);
+			}
+			.soc-wrap {
+				padding-top: clamp(56px, 6vw, 88px);
+			}
+			.soc {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: center;
+				align-items: center;
+				gap: 14px 28px;
+				font-size: 14px;
+				color: var(--ink-2);
+			}
+			.soc a {
+				display: inline-flex;
+				align-items: center;
+				gap: 10px;
+				min-height: 44px;
+			}
+			.soc a:hover {
+				color: var(--ink);
+			}
+			.f {
+				margin-top: 40px;
+				padding-bottom: 30px;
+			}
+			.f-top {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				flex-wrap: wrap;
+				gap: 16px;
+				padding: 34px 0;
+				border-top: 1px solid var(--line);
+			}
+			.f-nav {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0 24px;
+				color: var(--ink-2);
+			}
+			.f-nav a,
+			.f-box nav a {
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
+			}
+			.f-nav a:hover,
+			.f-box nav a:hover {
+				color: var(--ink);
+			}
+			.f-box {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				flex-wrap: wrap;
+				gap: 8px 16px;
+				padding: 20px 30px;
+				border-radius: 6px;
+				background: var(--bg-3);
+				font-size: 12px;
+				letter-spacing: 0.06em;
+				color: var(--muted);
+			}
+			.f-box nav {
+				display: flex;
+				gap: 24px;
+				text-transform: uppercase;
+				letter-spacing: 0.14em;
+				color: var(--ink-2);
+			}
+			.f-terrain {
+				flex-basis: 100%;
+				font-size: 11px;
+				letter-spacing: 0.04em;
+				padding-bottom: 8px;
+			}
+			@media (max-width: 700px) {
+				.soc {
+					flex-direction: column;
+					gap: 4px;
+				}
+				.soc .rule {
+					display: none;
+				}
+				.mail {
+					font-size: clamp(24px, 8vw, 40px);
+				}
+				.f-box {
+					flex-direction: column;
+					align-items: flex-start;
+				}
+			}
+		</style>
+	</body>
+</html>

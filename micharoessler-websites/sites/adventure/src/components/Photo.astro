@@ -1,0 +1,33 @@
+---
+// <picture> with AVIF + WebP (quality 78), never larger than the master; optional server-side crop.
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { pic } from '../data/projects';
+import { imgOptions, QUALITY, type Crop } from '../lib/img';
+
+interface Props {
+	src: string | ImageMetadata;
+	alt: string;
+	widths: number[];
+	sizes: string;
+	eager?: boolean;
+	crop?: Crop;
+	class?: string;
+}
+const { src, alt, widths, sizes, eager = false, crop, class: cls } = Astro.props;
+const img = typeof src === 'string' ? pic(src) : src;
+const o = imgOptions(img, widths, crop);
+---
+
+<Picture
+	src={img}
+	alt={alt}
+	formats={['avif', 'webp']}
+	quality={QUALITY}
+	{...o}
+	sizes={sizes}
+	loading={eager ? 'eager' : 'lazy'}
+	decoding={eager ? 'sync' : 'async'}
+	fetchpriority={eager ? 'high' : 'auto'}
+	class={cls}
+/>

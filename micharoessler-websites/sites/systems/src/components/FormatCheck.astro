@@ -1,0 +1,397 @@
+---
+// "Passt euer Format?" — five questions, one per step, scored transparently (see content.ts → check).
+// Client-side only: nothing is sent or stored. Without JS all questions show as a plain list plus a note.
+import { type Lang } from '../i18n';
+import { check as c } from '../data/content';
+
+interface Props {
+	lang: Lang;
+}
+const { lang } = Astro.props;
+const t = (x: { de: string; en: string }) => x[lang];
+const qs = c.questions;
+const cfg = {
+	lang,
+	max: c.max,
+	questions: qs.map((q) => ({ id: q.id, q: t(q.q), a: q.a.map((a) => ({ label: a[lang], pts: a.pts })) })),
+	tiers: c.tiers.map((x) => ({ min: x.min, title: t(x.title), text: t(x.text) })),
+	txt: {
+		step: t(c.step),
+		next: t(c.next),
+		result: t(c.result),
+		points: t(c.points),
+		recWeekly: t(c.recWeekly),
+		recLess: t(c.recLess),
+		recIrregular: t(c.recIrregular),
+		recTeam: t(c.recTeam),
+		start: t(c.start),
+		prefix: t(c.prefix),
+		rec: t(c.rec),
+	},
+};
+---
+
+<section id="check" class="sec chk-sec" aria-labelledby="chk-h">
+	<div class="wrap">
+		<div class="sec-h">
+			<h2 id="chk-h">{t(c.h2)}</h2>
+			<p>{t(c.sub)}</p>
+		</div>
+		<form class="chk glass" data-check data-cfg={JSON.stringify(cfg)} novalidate>
+			<div class="chk-top">
+				<p class="chk-step" data-step aria-live="polite">{t(c.step).replace('{n}', '1').replace('{t}', String(qs.length))}</p>
+				<ol class="chk-dots" aria-hidden="true">
+					{qs.map((_, i) => <li class:list={{ on: i === 0 }} />)}
+				</ol>
+			</div>
+
+			{
+				qs.map((q, i) => (
+					<fieldset class="chk-q" data-q={i}>
+						<legend class="chk-legend" tabindex="-1">
+							{t(q.q)}
+						</legend>
+						<div class="chk-opts">
+							{q.a.map((a, j) => (
+								<label class="chk-o">
+									<input type="radio" name={`chk-${q.id}`} value={j} />
+									<span>{a[lang]}</span>
+								</label>
+							))}
+						</div>
+					</fieldset>
+				))
+			}
+
+			<div class="chk-nav">
+				<button type="button" class="btn" data-back>
+					<span aria-hidden="true">←</span> {t(c.back)}
+				</button>
+				<button type="button" class="btn btn--primary" data-next disabled>
+					{t(c.next)} <span class="arr" aria-hidden="true">→</span>
+				</button>
+			</div>
+
+			<div class="chk-res" data-res hidden>
+				<p class="chk-pts" data-o="pts"></p>
+				<h3 class="chk-title" data-o="title" tabindex="-1"></h3>
+				<p class="chk-text" data-o="text"></p>
+				<div class="chk-rec">
+					<p class="chk-rec-k">{t(c.rec)}</p>
+					<ul data-o="rec"></ul>
+				</div>
+				<div class="chk-actions">
+					<a class="btn btn--primary" href="#kontakt" data-cta>{t(c.cta)} <span class="arr" aria-hidden="true">→</span></a>
+					<button type="button" class="btn" data-restart>{t(c.restart)}</button>
+				</div>
+				<details class="chk-how">
+					<summary>{t(c.how)}</summary>
+					<p>{t(c.howText)}</p>
+				</details>
+			</div>
+			<p class="chk-stored">{t(c.stored)}</p>
+			<noscript><p class="chk-stored">{t(c.noscript)}</p></noscript>
+		</form>
+	</div>
+</section>
+
+<script>
+	type Cfg = {
+		max: number;
+		questions: { id: string; q: string; a: { label: string; pts: number }[] }[];
+		tiers: { min: number; title: string; text: string }[];
+		txt: Record<string, string>;
+	};
+	const form = document.querySelector<HTMLFormElement>('[data-check]');
+	if (form) {
+		const cfg: Cfg = JSON.parse(form.dataset.cfg!);
+		const { txt } = cfg;
+		const steps = [...form.querySelectorAll<HTMLFieldSetElement>('[data-q]')];
+		const dots = [...form.querySelectorAll<HTMLLIElement>('.chk-dots li')];
+		const stepEl = form.querySelector<HTMLElement>('[data-step]')!;
+		const next = form.querySelector<HTMLButtonElement>('[data-next]')!;
+		const back = form.querySelector<HTMLButtonElement>('[data-back]')!;
+		const res = form.querySelector<HTMLElement>('[data-res]')!;
+		const n = steps.length;
+		let cur = 0;
+		form.classList.add('is-steps');
+
+		const answer = (i: number) => {
+			const v = steps[i].querySelector<HTMLInputElement>('input:checked');
+			return v ? Number(v.value) : -1;
+		};
+		const show = (i: number, focus = true) => {
+			cur = i;
+			const done = i >= n;
+			steps.forEach((s, k) => (s.hidden = k !== i));
+			res.hidden = !done;
+			next.hidden = done;
+			back.hidden = i === 0 || done; // the result has its own "start over"
+			dots.forEach((d, k) => {
+				d.classList.toggle('on', k <= Math.min(i, n - 1));
+			});
+			stepEl.textContent = done ? '' : txt.step.replace('{n}', String(i + 1)).replace('{t}', String(n));
+			if (!done) {
+				next.disabled = answer(i) < 0;
+				next.firstChild!.textContent = (i === n - 1 ? txt.result : txt.next) + ' ';
+				if (focus) steps[i].querySelector<HTMLElement>('legend')!.focus();
+			} else {
+				render();
+				if (focus) res.querySelector<HTMLElement>('[data-o="title"]')!.focus();
+			}
+		};
+
+		const render = () => {
+			const a = cfg.questions.map((q, i) => ({ q, j: answer(i) }));
+			const pts = a.reduce((s, x) => s + (x.j >= 0 ? x.q.a[x.j].pts : 0), 0);
+			const tier = cfg.tiers.find((x) => pts >= x.min)!;
+			const freq = answer(0);
+			const who = answer(3);
+			const rec: string[] = [];
+			if (freq === 0) rec.push(txt.recWeekly);
+			else if (freq === 1 || freq === 2) rec.push(txt.recLess);
+			else rec.push(txt.recIrregular);
+			if (who === 0) rec.push(txt.recTeam);
+			rec.push(txt.start);
+			const set = (k: string, s: string) => (res.querySelector(`[data-o="${k}"]`)!.textContent = s);
+			set('pts', txt.points.replace('{s}', String(pts)).replace('{m}', String(cfg.max)));
+			set('title', tier.title);
+			set('text', tier.text);
+			const ul = res.querySelector('[data-o="rec"]')!;
+			ul.replaceChildren(
+				...rec.map((r) => {
+					const li = document.createElement('li');
+					li.textContent = r;
+					return li;
+				}),
+			);
+			res.querySelector<HTMLElement>('[data-cta]')!.dataset.summary =
+				`${txt.prefix}: ${pts}/${cfg.max} – ${tier.title}. ` +
+				a.map((x) => `${x.q.q} ${x.j >= 0 ? x.q.a[x.j].label : '–'}`).join(' · ') +
+				`. ${txt.rec}: ${rec.join(' ')}`;
+		};
+
+		form.addEventListener('change', () => {
+			if (cur < n) next.disabled = answer(cur) < 0;
+		});
+		// tapping/clicking an answer moves on by itself; keyboard users choose with arrows and confirm with "Weiter"
+		form.addEventListener('pointerup', (e) => {
+			const lab = (e.target as HTMLElement).closest('.chk-o');
+			if (!lab || cur >= n) return;
+			const at = cur;
+			setTimeout(() => {
+				if (cur === at && answer(at) >= 0) show(at + 1);
+			}, 220);
+		});
+		next.addEventListener('click', () => answer(cur) >= 0 && show(cur + 1));
+		back.addEventListener('click', () => show(Math.max(0, cur - 1)));
+		form.querySelector('[data-restart]')!.addEventListener('click', () => {
+			form.reset();
+			show(0);
+		});
+		form.addEventListener('submit', (e) => e.preventDefault());
+		res.querySelector('[data-cta]')!.addEventListener('click', (e) => {
+			const s = (e.currentTarget as HTMLElement).dataset.summary ?? '';
+			const msg = document.querySelector<HTMLTextAreaElement>('#brief textarea');
+			if (msg && !msg.value.includes(s)) msg.value = (msg.value ? msg.value + '\n' : '') + s;
+		});
+		show(0, false);
+	}
+</script>
+
+<style>
+	.chk-sec {
+		padding-bottom: 0;
+	}
+	.chk {
+		max-width: 46rem;
+		margin-inline: auto;
+		padding: clamp(20px, 3.4vw, 36px);
+		display: grid;
+		gap: 20px;
+	}
+	.chk-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		min-height: 22px;
+	}
+	:global(html:not(.js)) .chk-top,
+	:global(html:not(.js)) .chk-nav {
+		display: none;
+	}
+	.chk-step {
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--ink-2);
+	}
+	.chk-dots {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		gap: 6px;
+	}
+	.chk-dots li {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: rgba(29, 29, 31, 0.14);
+	}
+	.chk-dots li.on {
+		background: var(--iris);
+	}
+	.chk-q {
+		border: 0;
+		margin: 0;
+		padding: 0;
+		min-width: 0;
+	}
+	.chk-q[hidden] {
+		display: none;
+	}
+	:global(html:not(.js)) .chk-q + .chk-q {
+		margin-top: 18px;
+	}
+	.chk-legend {
+		padding: 0;
+		margin-bottom: 16px;
+		font-size: clamp(21px, 2.2vw, 28px);
+		font-weight: 680;
+		letter-spacing: -0.03em;
+		line-height: 1.2;
+		outline: none;
+	}
+	.chk-opts {
+		display: grid;
+		gap: 10px;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+	}
+	.chk-o {
+		position: relative;
+		display: block;
+	}
+	.chk-o input {
+		position: absolute;
+		opacity: 0;
+		width: 1px;
+		height: 1px;
+	}
+	.chk-o span {
+		display: flex;
+		align-items: center;
+		min-height: 56px;
+		padding: 12px 18px;
+		border-radius: 18px;
+		background: rgba(255, 255, 255, 0.85);
+		box-shadow:
+			inset 0 0 0 1px rgba(29, 29, 31, 0.1),
+			0 6px 16px -10px rgba(16, 24, 40, 0.2);
+		font-size: 17px;
+		font-weight: 560;
+		cursor: pointer;
+	}
+	.chk-o input:checked + span {
+		background: var(--iris);
+		color: #fff;
+		box-shadow: 0 10px 22px -12px rgba(85, 70, 255, 0.8);
+	}
+	.chk-o input:focus-visible + span {
+		outline: 3px solid rgba(85, 70, 255, 0.55);
+		outline-offset: 2px;
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.chk-o span {
+			transition:
+				background-color 0.18s var(--ease),
+				color 0.18s var(--ease),
+				transform 0.18s var(--ease);
+		}
+		.chk-o span:active {
+			transform: scale(0.98);
+		}
+	}
+	.chk-nav {
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+	}
+	.chk-nav [data-next] {
+		margin-left: auto;
+	}
+	.chk-nav [hidden] {
+		display: none;
+	}
+	.chk-nav button:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+	.chk-res {
+		display: grid;
+		gap: 12px;
+	}
+	.chk-res[hidden] {
+		display: none;
+	}
+	.chk-pts {
+		font-size: 14px;
+		font-weight: 650;
+		color: var(--iris);
+	}
+	.chk-title {
+		font-size: clamp(26px, 3vw, 36px);
+		font-weight: 720;
+		letter-spacing: -0.035em;
+		line-height: 1.1;
+		outline: none;
+	}
+	.chk-text {
+		font-size: 17px;
+		line-height: 1.45;
+		color: var(--ink-2);
+	}
+	.chk-rec {
+		padding: 14px 18px;
+		border-radius: 18px;
+		background: rgba(85, 70, 255, 0.07);
+		box-shadow: inset 0 0 0 1px rgba(85, 70, 255, 0.12);
+	}
+	.chk-rec-k {
+		font-size: 13px;
+		font-weight: 650;
+		color: var(--iris);
+		margin-bottom: 4px;
+	}
+	.chk-rec ul {
+		margin: 0;
+		padding-left: 18px;
+		display: grid;
+		gap: 4px;
+		font-size: 16px;
+		line-height: 1.4;
+	}
+	.chk-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-top: 4px;
+	}
+	.chk-how summary {
+		cursor: pointer;
+		font-size: 14px;
+		font-weight: 560;
+		color: var(--iris);
+		min-height: 28px;
+	}
+	.chk-how p {
+		margin-top: 6px;
+		font-size: 13.5px;
+		line-height: 1.5;
+		color: var(--ink-2);
+	}
+	.chk-stored {
+		font-size: 13px;
+		color: var(--ink-2);
+	}
+</style>

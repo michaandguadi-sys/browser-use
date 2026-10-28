@@ -1,0 +1,62 @@
+---
+// Still image, or – when a `video` path is set in data – a muted looping clip layered over the still.
+// The clip loads only when in view and never under prefers-reduced-motion or Save-Data.
+import type { ImageMetadata } from 'astro';
+import Photo from './Photo.astro';
+import type { Crop } from '../lib/img';
+
+interface Props {
+	src: string | ImageMetadata;
+	alt: string;
+	widths: number[];
+	sizes: string;
+	eager?: boolean;
+	crop?: Crop;
+	video?: string;
+}
+const { video, ...photo } = Astro.props;
+---
+
+<Photo {...photo} />
+{
+	video && (
+		<video class="loop" muted playsinline loop preload="none" aria-hidden="true" data-src={video} />
+	)
+}
+
+<script>
+	const vids = document.querySelectorAll<HTMLVideoElement>('video.loop');
+	const calm =
+		matchMedia('(prefers-reduced-motion: reduce)').matches ||
+		(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+	if (vids.length && !calm) {
+		const io = new IntersectionObserver((es) =>
+			es.forEach((e) => {
+				const v = e.target as HTMLVideoElement;
+				if (e.isIntersecting) {
+					if (!v.src) {
+						v.src = v.dataset.src!;
+						v.addEventListener('playing', () => v.classList.add('on'), { once: true });
+					}
+					v.play().catch(() => {});
+				} else v.pause();
+			}),
+		);
+		vids.forEach((v) => io.observe(v));
+	}
+</script>
+
+<style>
+	.loop {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		opacity: 0;
+		transition: opacity 0.6s;
+	}
+	.loop.on {
+		opacity: 1;
+	}
+</style>
