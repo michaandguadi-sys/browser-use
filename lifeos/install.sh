@@ -2,6 +2,7 @@
 # One-time setup of the Life OS mentor on a VPS. Safe to re-run: existing .env, memory and users are kept.
 # If another web server owns ports 80/443 (Traefik, nginx-proxy, nginx), the mentor is connected to it automatically.
 # Optional: WITH_NTFY=1 also sets up an ntfy push server; USE_OWN_PROXY=1 skips all proxy setup.
+# DEMO=1 sets up a separate demo mentor (own port, data and domain) with a fictional person and 90 days of history.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -29,18 +30,32 @@ command -v docker >/dev/null || die "Docker is not installed. See https://docs.d
 docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is missing (docker compose ...)."
 command -v python3 >/dev/null || die "python3 is required for this installer."
 
+DEMO=${DEMO:-}
 if [[ ! -f .env ]]; then
-	say "Life OS mentor setup"
-	echo "You need one DNS A record pointing at this server's IP, e.g. mentor.yourdomain.com."
-	ask OWNER "Your first name" "Micha"
-	ask MENTOR_DOMAIN "Domain for the mentor app" "mentor.micharoessler.com"
+	if [[ "$DEMO" == "1" ]]; then
+		say "Life OS DEMO mentor setup (a fictional person, Noa, with 90 days of history)"
+		echo "Needs its own DNS A record pointing at this server, e.g. demo.yourdomain.com."
+		OWNER="Noa"
+		ask MENTOR_DOMAIN "Domain for the demo" "demo.micharoessler.com"
+	else
+		say "Life OS mentor setup"
+		echo "You need one DNS A record pointing at this server's IP, e.g. mentor.yourdomain.com."
+		ask OWNER "Your first name" "Micha"
+		ask MENTOR_DOMAIN "Domain for the mentor app" "mentor.micharoessler.com"
+	fi
 	while :; do
 		ask_secret PASS "Choose a login passphrase (min 8 chars)"
 		ask_secret PASS2 "Repeat passphrase"
 		[[ "$PASS" == "$PASS2" && ${#PASS} -ge 8 ]] && break
 		echo "Passphrases differ or are too short, try again."
 	done
-	ask_secret API_KEY "Anthropic API key (sk-ant-...)"
+	MAIN_ENV="$HOME/lifeos-src/lifeos/.env"
+	API_KEY=""
+	if [[ "$DEMO" == "1" && -f "$MAIN_ENV" ]]; then
+		ask REUSE "Use the Anthropic API key of your main mentor? (Y/n)" "Y"
+		[[ "$REUSE" =~ ^[Yy] ]] && API_KEY=$(grep -E '^ANTHROPIC_API_KEY=' "$MAIN_ENV" | head -1 | cut -d= -f2-)
+	fi
+	[[ -n "$API_KEY" ]] || ask_secret API_KEY "Anthropic API key (sk-ant-...)"
 	[[ -n "$API_KEY" ]] || die "An Anthropic API key is required."
 	ask HC_URL "Optional healthchecks.io ping URL (Enter to skip)" ""
 
@@ -53,10 +68,18 @@ if [[ ! -f .env ]]; then
 	set_env MENTOR_DOMAIN "$MENTOR_DOMAIN"
 	set_env PUBLIC_URL "https://$MENTOR_DOMAIN"
 	set_env HEALTHCHECK_PING_URL "$HC_URL"
+	if [[ "$DEMO" == "1" ]]; then
+		set_env COMPOSE_PROJECT_NAME "lifeos-demo"  # separate containers and data volume from the main mentor
+		set_env MENTOR_PORT "8789"
+		set_env DEMO_DATA "1"
+	fi
 else
 	say "Using existing .env"
 fi
 
+if [[ "$(env_get DEMO_DATA)" == "1" && ! -f seed_profile.json ]]; then
+	echo '[]' > seed_profile.json && chmod 644 seed_profile.json  # the demo person brings her own memory
+fi
 if [[ ! -f seed_profile.json ]]; then
 	say "Starter memory"
 	echo "If you got a starter memory code (one long line starting with LOS1: or LL1:), paste it now. Enter skips."

@@ -22,6 +22,24 @@ Siri ("Hey Siri, Mentor") ── iOS Shortcut ──POST /api/voice──►  (s
 - **Siri:** Settings → "Talk to it with Siri" shows a 2-minute Shortcuts recipe (Dictate Text → Get Contents of URL → Speak Text) with your URL and token. Say "Hey Siri, Mentor", talk, and Siri reads a short answer. The exchange lands in Talk, and memory and indicators update in the background.
 - **Voice input in the app:** the mic button uses the browser's speech recognition where available. Keyboard dictation works everywhere.
 
+## How it gets better over time
+
+The raw history (every message, check-in, reply, log, energy rating, correction) is the source of truth and is never thrown away. Everything the mentor "knows" about how you tick is **derived** from it, versioned, and can be rebuilt at any time, so both more data and a better model make it sharper (Sutton's "bitter lesson" applied to one person).
+
+- **Person model (You tab):** every night (04:00–07:00 local) the mentor rebuilds a picture of you from the full history: Big Five estimates with confidence and evidence, ranked Schwartz values, the state of your three self-determination needs (autonomy, competence, relatedness), recurring patterns with what it will do about them, coaching style, what backfires, and what it still doesn't know. It goes into every conversation as a hypothesis, never a label. "Not me" on any claim stores a correction that every later rebuild must respect. Each build records the model and the amount of data it used, so you can see the picture sharpen.
+- **Timing learner:** each proactive message is a small experiment, as in micro-randomized trials. Replies within 90 minutes (or "good timing") update a Beta posterior per weekday/weekend × 2-hour slot, bucketed by the local time where you were at that moment (travel doesn't scramble it). Thompson sampling keeps exploring under-tested slots and skips slots where you rarely answer.
+- **Coaching moves:** every check-in uses one of ten evidence-based moves (if-then plans, wish-obstacle-plan, number checks, Socratic questions, values reconnect, reflection, wellbeing check, who-could-help, devil's advocate, celebrating progress). Per-person reply rates choose the suggested move by Thompson sampling. Moves are judged on real replies only, never on ratings, because optimizing for approval breeds flattery.
+- **Re-entry:** after 3+ silent days (expeditions, rough patches) the mentor makes coming back easy instead of listing what you missed.
+
+## Demo mentor (fictional person)
+
+`DEMO=1 ./install.sh` in a **separate clone** sets up a second mentor with its own port (8789), data volume and domain, loaded with Noa: a fictional nomadic documentary photographer with 90 days of history. The history is simulated against a hidden "truth" (she answers mornings, ignores midday, responds to if-then plans, not to praise), and the mentor's real learning code runs over it day by day, so the You tab shows the algorithm actually converging. Your real mentor's memory is untouched.
+
+```bash
+git clone -b claude/wonderful-hypatia-e20n76 https://github.com/michaandguadi-sys/browser-use.git ~/lifeos-demo-src
+cd ~/lifeos-demo-src/lifeos && DEMO=1 ./install.sh && ./doctor.sh
+```
+
 ## Install on your VPS (about 10 minutes)
 
 Requirements: Docker with Compose v2, python3, and one DNS A record pointing at the VPS, e.g. `mentor.micharoessler.com`.

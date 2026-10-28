@@ -23,6 +23,7 @@ class Config(BaseModel):
 	ntfy_token: str = ''
 	ntfy_public_url: str = ''  # what the phone's ntfy app subscribes to
 
+	demo_data: bool = False  # load a fictional person with 90 days of history into an empty database
 	vapid_key_path: str = ''  # default: vapid_private.pem next to the database
 
 	healthcheck_ping_url: str = ''
@@ -46,6 +47,7 @@ def load_config() -> Config:
 		ntfy_topic=env.get('NTFY_TOPIC', ''),
 		ntfy_token=env.get('NTFY_TOKEN', ''),
 		ntfy_public_url=env.get('NTFY_PUBLIC_URL', '').rstrip('/'),
+		demo_data=env.get('DEMO_DATA', '') == '1',
 		vapid_key_path=env.get('VAPID_KEY_PATH', ''),
 		healthcheck_ping_url=env.get('HEALTHCHECK_PING_URL', ''),
 		tick_seconds=int(env.get('TICK_SECONDS', '300')),

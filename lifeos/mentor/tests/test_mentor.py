@@ -13,7 +13,7 @@ from app.notify import Notifier
 from app.scheduler import Scheduler
 from app.scorecard import build_scorecard, format_scorecard
 from app.timing import base_gate, in_quiet_hours, local_now, spontaneous_gate
-from app.views import CHECKIN_SCHEMA, INTERVIEW_TOPICS, MEMORY_UPDATE_SCHEMA, Settings
+from app.views import CHECKIN_SCHEMA, INTERVIEW_TOPICS, MEMORY_UPDATE_SCHEMA, PERSON_MODEL_SCHEMA, Settings
 from fastapi.testclient import TestClient
 from pytest_httpserver import HTTPServer
 
@@ -27,10 +27,36 @@ class ScriptedLLM:
 		self.decision = {
 			'send': True,
 			'lens': 'socrates',
+			'move': 'progress_check',
 			'reason': 'commitment due today',
 			'message': 'Did you call the producer?',
 		}
 		self.memory_update: dict = {'add': [], 'complete_ids': [], 'log': []}
+		self.person_model: dict = {
+			'summary': 'Builds films slowly, moves fast when someone is waiting for the cut.',
+			'traits': [
+				{
+					'trait': 'conscientiousness',
+					'score': 40,
+					'confidence': 0.4,
+					'evidence': 'edits slip',
+					'coaching_implication': 'date every plan',
+				}
+			],
+			'values': [{'value': 'self_direction', 'rank': 1, 'confidence': 0.6, 'evidence': 'freedom over security'}],
+			'needs': [{'need': 'relatedness', 'state': 'strained', 'evidence': 'few peers'}],
+			'patterns': [
+				{
+					'pattern': 'travel days kill edit time',
+					'confidence': 0.5,
+					'evidence': 'logs',
+					'implication': 'plan edits on parked days',
+				}
+			],
+			'coaching_style': 'short, numbers first',
+			'avoid': ['praise'],
+			'open_questions': ['who sees the work?'],
+		}
 
 	async def complete(self, *, system, messages, effort='medium', schema=None, max_tokens=16000) -> str:
 		self.calls.append({'system': system, 'messages': messages, 'effort': effort, 'schema': schema})
@@ -40,12 +66,20 @@ class ScriptedLLM:
 			return json.dumps(self.decision)
 		if schema is MEMORY_UPDATE_SCHEMA:
 			return json.dumps(self.memory_update)
+		if schema is PERSON_MODEL_SCHEMA:
+			return json.dumps(self.person_model)
 		return self.reply
 
 
 def make_config(tmp_path, **overrides: Any) -> Config:
 	return Config(
-		passphrase='correct horse battery', session_secret='x' * 32, db_path=str(tmp_path / 'm.db'), tick_seconds=60, **overrides
+		**{
+			'passphrase': 'correct horse battery',
+			'session_secret': 'x' * 32,
+			'db_path': str(tmp_path / 'm.db'),
+			'tick_seconds': 60,
+			**overrides,
+		}
 	)
 
 
@@ -203,12 +237,24 @@ async def test_spontaneous_checkin_respects_llm_silence_and_budget(db, llm):
 	scheduler = Scheduler(db, Mentor(db, llm, 'Micha'), Notifier(make_config_no_push()), tick_seconds=60)
 	morning = utc('2026-10-27T09:00:00')
 
-	llm.decision = {'send': False, 'lens': 'socrates', 'reason': 'nothing worth interrupting for', 'message': ''}
+	llm.decision = {
+		'send': False,
+		'lens': 'socrates',
+		'move': 'socratic_question',
+		'reason': 'nothing worth interrupting for',
+		'message': '',
+	}
 	assert await scheduler.tick(morning) == []
 	assert await scheduler.tick(morning + timedelta(minutes=10)) == []  # decided recently: no second LLM call
 	assert sum(1 for c in llm.calls if c['schema'] is CHECKIN_SCHEMA) == 1
 
-	llm.decision = {'send': True, 'lens': 'producer', 'reason': 'commitment due', 'message': 'Is the permit request out?'}
+	llm.decision = {
+		'send': True,
+		'lens': 'producer',
+		'move': 'implementation_intention',
+		'reason': 'commitment due',
+		'message': 'Is the permit request out?',
+	}
 	assert await scheduler.tick(morning + timedelta(hours=2)) == ['checkin']
 	assert await scheduler.tick(morning + timedelta(hours=6)) == []  # daily budget of 1 used
 	last = db.last_message('mentor')
@@ -412,3 +458,98 @@ def test_push_subscribe_api_and_siri_voice(tmp_path, llm):
 			voice.post('/api/voice', json={'text': 'hi'}, headers={'Authorization': f'Bearer {setup["token"]}'}).status_code
 			== 401
 		)
+
+
+# --- learning, person model, demo --------------------------------------------------
+
+
+def test_learning_buckets_by_local_time_judges_moves_on_replies_and_explores(db):
+	import random
+
+	from app import learning
+
+	db.update_settings(timezone='America/Santiago')
+	morning = utc('2026-10-05T11:30:00')  # 08:30 in Santiago, a Monday
+	for day in range(6):  # morning check-ins with if-then plans get answered...
+		at = morning + timedelta(days=day * 7)
+		db.add_message('mentor', 'If-then?', kind='checkin', move='implementation_intention', at=at)
+		db.add_message('user', 'Thursday 8am.', at=at + timedelta(minutes=10))
+		noon = at + timedelta(hours=4)  # ...midday praise doesn't, even when rated "good timing"
+		praise = db.add_message('mentor', 'Great job!', kind='checkin', move='celebrate_progress', at=noon)
+		db.set_feedback(praise.id, 1)
+	db.update_settings(timezone='Asia/Tokyo')  # then they fly to Japan
+	tokyo = db.add_message('mentor', 'How was the flight?', kind='checkin', move='wellbeing_check', at=utc('2026-11-20T00:00:00'))
+
+	history = learning.outcomes(db.all_messages(), utc('2026-12-01T00:00:00'))
+	moves = learning.move_stats(history)
+	assert moves['implementation_intention'].successes == 6 and moves['celebrate_progress'].successes == 0  # ratings don't count
+	slots = learning.receptivity(history, 'Asia/Tokyo')
+	assert slots['weekday:08'].successes == 6  # Santiago mornings stay Santiago mornings after the move
+	assert slots['weekday:12'].successes == 6 and slots['weekday:12'].failures == 0  # timing ratings do count for slots
+	assert tokyo.tz == 'Asia/Tokyo' and learning.slot_key(utc('2026-11-20T00:00:00'), tokyo.tz) == 'weekday:08'
+
+	rng = random.Random(1)
+	picks = [learning.suggest_move(history, rng) for _ in range(300)]
+	assert picks.count('implementation_intention') > 100  # far more than chance (30 of 300)
+	assert len(set(picks)) >= 5  # but untested moves still get tried
+	assert learning.outcomes(db.all_messages(), utc('2026-11-20T00:30:00'))[-1].message_id != tokyo.id  # reply window still open
+
+
+async def test_nightly_distill_builds_versioned_person_model_used_in_context(db, llm, tmp_path):
+	db.update_settings(timezone='Europe/Berlin')
+	db.add_message('user', 'Spent the day driving, no edit again.', at=utc('2026-10-27T15:00:00'))
+	db.add_correction('neuroticism 70/100', 'I am not anxious, I am tired')
+	mentor = Mentor(db, llm, 'Micha')
+	scheduler = Scheduler(db, mentor, Notifier(make_config(tmp_path)), tick_seconds=60)
+
+	assert 'distill' not in await scheduler.tick(utc('2026-10-28T01:30:00'))  # 02:30 local: too early
+	assert 'distill' in await scheduler.tick(utc('2026-10-28T03:30:00'))  # 04:30 local
+	assert 'distill' not in await scheduler.tick(utc('2026-10-28T03:40:00'))  # once a night
+	model = db.person_model()
+	assert model.version == 1 and model.data_messages == 1 and model.patterns[0].pattern == 'travel days kill edit time'
+	distill_call = next(c for c in llm.calls if c['schema'] is PERSON_MODEL_SCHEMA)
+	prompt = distill_call['messages'][0]['content']
+	assert 'I am not anxious, I am tired' in prompt and 'Spent the day driving' in prompt  # corrections and raw history
+
+	llm.calls.clear()
+	await mentor.reply('Should I cut the river scene?', now_utc=utc('2026-10-28T09:00:00'))
+	context = llm.calls[0]['system'][1]['text']
+	assert 'person model v1' in context and 'plan edits on parked days' in context and 'Avoid: praise' in context
+
+
+def test_you_api_and_corrections(tmp_path, llm):
+	app = create_app(make_config(tmp_path), llm=llm, run_scheduler=False)
+	with TestClient(app) as client:
+		assert client.get('/api/you').status_code == 401
+		client.post('/api/login', json={'passphrase': 'correct horse battery'})
+		empty = client.get('/api/you').json()
+		assert empty['model'] is None and empty['learning']['experiments'] == 0
+		client.post('/api/message', json={'text': 'Two hours on the film today.'})
+		built = client.post('/api/you/rebuild').json()
+		assert built['model']['version'] == 1 and built['history'][0]['confidence'] == 0.45
+		fixed = client.post('/api/you/correct', json={'claim': 'conscientiousness 40', 'note': 'I just hate admin'}).json()
+		assert fixed['corrections'][0]['note'] == 'I just hate admin'
+
+
+def test_demo_person_converges_on_what_works(tmp_path, llm):
+	from app import learning
+	from app.demo import load_demo
+
+	now = utc('2026-10-28T12:00:00')
+	db = DB(str(tmp_path / 'demo.db'))
+	load_demo(db, now=now)
+	history = learning.outcomes(db.all_messages(), now)
+	summary = learning.summary(history, 'America/Santiago')
+	rates = {s['slot']: s['rate'] for s in summary['slots']}
+	assert rates['weekday:08'] > rates['weekday:12'] + 0.3  # it learned she ignores midday messages
+	worked = [m['move'] for m in summary['moves'] if m['tries'] >= 5][:3]
+	assert 'implementation_intention' in worked  # and that if-then plans land with her
+	assert [h['version'] for h in db.person_model_history()] == [1, 2, 3]
+	assert db.list_corrections() and db.person_model().data_days == 76
+
+	again = DB(str(tmp_path / 'demo2.db'))
+	load_demo(again, now=now)
+	assert [m.content for m in again.all_messages()] == [m.content for m in db.all_messages()]  # deterministic
+
+	app = create_app(make_config(tmp_path, demo_data=True, db_path=str(tmp_path / 'fresh.db')), llm=llm, run_scheduler=False)
+	assert app.state.db.person_model().version == 3  # DEMO_DATA=1 fills an empty database on start

@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.middleware.sessions import SessionMiddleware
 
+from app import learning
 from app.config import Config, load_config
 from app.db import DB
 from app.llm import LLM, ClaudeLLM
@@ -98,6 +99,11 @@ class PushUnsubIn(BaseModel):
 	endpoint: str = Field(min_length=1, max_length=2000)
 
 
+class CorrectionIn(BaseModel):
+	claim: str = Field(min_length=1, max_length=500)
+	note: str = Field(default='', max_length=1000)
+
+
 class VoiceIn(BaseModel):
 	text: str = Field(min_length=1, max_length=5000)
 
@@ -122,6 +128,10 @@ def seed_indicators(db: DB) -> None:
 
 def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = True) -> FastAPI:
 	db = DB(config.db_path)
+	if config.demo_data and db.message_count() == 0:
+		from app.demo import load_demo
+
+		load_demo(db)  # a fictional person with 90 days of history, for showing the system
 	load_seed(db, config.seed_path)
 	seed_indicators(db)
 	mentor = Mentor(db, llm or ClaudeLLM(config.anthropic_api_key, config.model), config.owner_name)
@@ -311,6 +321,42 @@ def create_app(config: Config, llm: LLM | None = None, run_scheduler: bool = Tru
 	async def focus(body: FocusIn):
 		until = (datetime.now(UTC) + timedelta(minutes=body.minutes)).isoformat(timespec='seconds') if body.minutes else ''
 		return db.update_settings(focus_until=until).model_dump()
+
+	# --- "You": what the mentor has learned about this person -----------------
+
+	def you() -> dict:
+		now = datetime.now(UTC)
+		settings = db.get_settings()
+		messages = db.all_messages()
+		first = parse_iso(messages[0].created_at) if messages else None
+		model = db.person_model()
+		return {
+			'model': model.model_dump() if model else None,
+			'history': db.person_model_history(),
+			'corrections': [c.model_dump() for c in db.list_corrections()],
+			'learning': learning.summary(mentor.outcomes(now), settings.timezone),
+			'data': {
+				'messages': len(messages),
+				'days': (now - first).days + 1 if first else 0,
+				'memory': db.memory_count(),
+				'voice': sum(1 for m in messages if m.role == 'user' and m.kind == 'chat'),
+			},
+		}
+
+	@app.get('/api/you', dependencies=auth)
+	async def get_you():
+		return you()
+
+	@app.post('/api/you/rebuild', dependencies=auth)
+	async def rebuild_you():
+		if await mentor.distill() is None:
+			raise HTTPException(status_code=502, detail='could not rebuild right now, try again')
+		return you()
+
+	@app.post('/api/you/correct', dependencies=auth)
+	async def correct_you(body: CorrectionIn):
+		db.add_correction(body.claim, body.note)
+		return you()
 
 	# --- web push: notifications from the installed app itself ---------------
 

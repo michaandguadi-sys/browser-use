@@ -232,7 +232,7 @@ code { background: var(--chip); border-radius: 6px; padding: 1px 5px; word-break
 
 .tabs {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(5, 1fr);
 	border-top: 1px solid var(--line);
 	padding-bottom: env(safe-area-inset-bottom);
 	background: var(--bg);
@@ -243,6 +243,7 @@ code { background: var(--chip); border-radius: 6px; padding: 1px 5px; word-break
 	color: var(--muted);
 	border-radius: 0;
 	padding: 12px 0;
+	font-size: 15px;
 }
 
 .tabs button.active { color: var(--accent); font-weight: 600; }
@@ -276,3 +277,34 @@ code { background: var(--chip); border-radius: 6px; padding: 1px 5px; word-break
 .nudge.hidden { display: none; }
 .copy { display: flex; gap: 6px; align-items: center; }
 .copy code { flex: 1; min-width: 0; }
+
+/* --- You: what the mentor has learned ------------------------------------ */
+.you { display: grid; gap: 12px; padding: 12px 12px 24px; }
+.you h2 { margin: 0 0 6px; font-size: 17px; }
+.you .lede { font-size: 15px; line-height: 1.45; margin: 0; }
+.stats { display: flex; gap: 6px; flex-wrap: wrap; }
+.stat { background: var(--chip); border-radius: 999px; padding: 4px 10px; font-size: 13px; }
+.trait { display: grid; gap: 4px; padding: 8px 0; border-top: 1px solid var(--line); }
+.trait:first-of-type { border-top: 0; }
+.trait-head { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.bar { position: relative; height: 8px; border-radius: 999px; background: var(--chip); overflow: hidden; }
+.bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent); }
+.bar.mid::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); opacity: .6; }
+.why { font-size: 13px; color: var(--muted); }
+.notme { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); justify-self: start; }
+.values { display: flex; gap: 6px; flex-wrap: wrap; }
+.value { background: var(--chip); border-radius: 10px; padding: 6px 10px; font-size: 14px; }
+.value b { color: var(--accent); margin-right: 4px; }
+.needs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.need { border-radius: 12px; padding: 8px; font-size: 13px; text-align: center; background: var(--chip); }
+.need b { display: block; font-size: 14px; text-transform: capitalize; }
+.need.met { outline: 2px solid var(--accent); }
+.need.strained { outline: 2px solid var(--error); }
+.heat { display: grid; grid-template-columns: 64px repeat(9, 1fr); gap: 3px; font-size: 11px; align-items: center; }
+.heat span { text-align: center; color: var(--muted); }
+.heat i { display: block; height: 22px; border-radius: 5px; background: var(--accent); }
+.heat i.empty { background: var(--chip); opacity: .6; }
+.move { display: grid; grid-template-columns: 1fr 80px 70px; gap: 8px; align-items: center; font-size: 13px; padding: 4px 0; }
+.timeline { display: grid; gap: 8px; }
+.version { display: grid; grid-template-columns: 34px 1fr; gap: 8px; align-items: center; font-size: 13px; }
+.version b { font-size: 15px; }

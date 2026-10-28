@@ -27,8 +27,12 @@ class LLM(Protocol):
 class ClaudeLLM:
 	def __init__(self, api_key: str, model: str):
 		assert api_key, 'ANTHROPIC_API_KEY is required'
-		self._client = anthropic.AsyncAnthropic(api_key=api_key, max_retries=3, timeout=120.0)
+		self._client = anthropic.AsyncAnthropic(api_key=api_key, max_retries=3, timeout=300.0)
 		self._model = model
+
+	@property
+	def name(self) -> str:
+		return self._model
 
 	async def complete(
 		self,

@@ -21,6 +21,32 @@ MEMORY_KINDS = (
 	'lesson',
 	'commitment',
 )
+# Evidence-based coaching moves the mentor chooses between; per-person outcomes decide which it favours (see app/learning.py).
+MOVES: dict[str, str] = {
+	'implementation_intention': 'turn an intention into "if/when X, then I will Y" with a day (Gollwitzer & Sheeran 2006)',
+	'mental_contrasting': 'wish → best outcome → main inner obstacle → if-then plan (WOOP, Oettingen)',
+	'progress_check': 'ask for the actual number vs target and what moved it (progress monitoring, Harkin et al. 2016)',
+	'socratic_question': 'one open question that tests an assumption or a value conflict',
+	'values_reconnect': "link today's work to their own stated values or north star (self-concordance, autonomy support)",
+	'celebrate_progress': 'name concrete progress they made, then ask what made it possible (competence, small wins)',
+	'reflection_prompt': 'what happened, what they noticed, what they would do differently',
+	'wellbeing_check': 'energy, sleep, stress, relationships; care before push',
+	'human_routing': 'who could see this work or help next: a person, lab, fund, peer (relatedness, real networks)',
+	'red_team': 'argue the strongest case against the current plan, then ask what survives',
+}
+MoveName = Literal[
+	'implementation_intention',
+	'mental_contrasting',
+	'progress_check',
+	'socratic_question',
+	'values_reconnect',
+	'celebrate_progress',
+	'reflection_prompt',
+	'wellbeing_check',
+	'human_routing',
+	'red_team',
+]
+
 LENSES = ('socrates', 'story_editor', 'producer', 'career_strategist', 'red_team', 'craft_coach', 'wellbeing')
 
 MemoryKind = Literal[
@@ -108,6 +134,8 @@ class Message(BaseModel):
 	content: str
 	kind: Literal['chat', 'checkin', 'evening', 'weekly', 'ondemand', 'interview']
 	lens: str | None = None
+	move: str | None = None
+	tz: str | None = None  # the person's local timezone when it was sent (they travel)
 	reason: str | None = None
 	checkin_key: str | None = None
 	feedback: int | None = None
@@ -161,6 +189,7 @@ class CheckinDecision(BaseModel):
 
 	send: bool
 	lens: Lens
+	move: MoveName
 	reason: str  # why now, shown to the user
 	message: str  # empty when send is false
 
@@ -193,10 +222,11 @@ CHECKIN_SCHEMA = {
 	'properties': {
 		'send': {'type': 'boolean'},
 		'lens': {'type': 'string', 'enum': list(LENSES)},
+		'move': {'type': 'string', 'enum': list(MOVES)},
 		'reason': {'type': 'string'},
 		'message': {'type': 'string'},
 	},
-	'required': ['send', 'lens', 'reason', 'message'],
+	'required': ['send', 'lens', 'move', 'reason', 'message'],
 	'additionalProperties': False,
 }
 
@@ -230,3 +260,159 @@ MEMORY_UPDATE_SCHEMA = {
 	'required': ['add', 'complete_ids', 'log'],
 	'additionalProperties': False,
 }
+
+
+# --- person model: what the mentor has learned about how this person works -------------
+# Derived, never authoritative: rebuilt from the raw log (messages, logs, outcomes, corrections), so a
+# better model or more data simply produces a better person model. Every claim carries its evidence.
+
+BIG_FIVE = ('openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism')
+SCHWARTZ_VALUES = (
+	'self_direction',
+	'stimulation',
+	'hedonism',
+	'achievement',
+	'power',
+	'security',
+	'conformity',
+	'tradition',
+	'benevolence',
+	'universalism',
+)
+SDT_NEEDS = ('autonomy', 'competence', 'relatedness')
+
+
+class TraitEstimate(BaseModel):
+	model_config = ConfigDict(extra='forbid')
+
+	trait: Literal['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism']
+	score: int = Field(ge=0, le=100)  # 50 = average
+	confidence: float = Field(ge=0, le=1)
+	evidence: str  # short quote or observation that supports it
+	coaching_implication: str
+
+
+class ValueEstimate(BaseModel):
+	model_config = ConfigDict(extra='forbid')
+
+	value: Literal[
+		'self_direction',
+		'stimulation',
+		'hedonism',
+		'achievement',
+		'power',
+		'security',
+		'conformity',
+		'tradition',
+		'benevolence',
+		'universalism',
+	]
+	rank: int = Field(ge=1, le=10)
+	confidence: float = Field(ge=0, le=1)
+	evidence: str
+
+
+class NeedState(BaseModel):
+	model_config = ConfigDict(extra='forbid')
+
+	need: Literal['autonomy', 'competence', 'relatedness']
+	state: Literal['met', 'mixed', 'strained', 'unknown']
+	evidence: str
+
+
+class Pattern(BaseModel):
+	model_config = ConfigDict(extra='forbid')
+
+	pattern: str  # e.g. "admin tasks slip after travel days"
+	confidence: float = Field(ge=0, le=1)
+	evidence: str
+	implication: str  # what the mentor should do about it
+
+
+class PersonModelBody(BaseModel):
+	"""What the LLM produces (structured output)."""
+
+	model_config = ConfigDict(extra='forbid')
+
+	summary: str  # 2-3 sentences: who this person is right now
+	traits: list[TraitEstimate]
+	values: list[ValueEstimate]
+	needs: list[NeedState]
+	patterns: list[Pattern]
+	coaching_style: str  # how to talk to them: directness, pace, humour, language
+	avoid: list[str]  # what backfires with them
+	open_questions: list[str]  # what the mentor should learn next
+
+
+class PersonModel(PersonModelBody):
+	model_config = ConfigDict(extra='forbid')
+
+	id: str
+	version: int
+	built_at: str
+	built_with: str  # LLM that derived it
+	data_days: int  # span of history it was built from
+	data_messages: int
+
+
+class Correction(BaseModel):
+	id: str
+	claim: str
+	note: str
+	created_at: str
+
+
+def _person_model_schema() -> dict:
+	def obj(props: dict, required: list[str] | None = None) -> dict:
+		return {'type': 'object', 'properties': props, 'required': required or list(props), 'additionalProperties': False}
+
+	num01 = {'type': 'number'}
+	text = {'type': 'string'}
+	return obj(
+		{
+			'summary': text,
+			'traits': {
+				'type': 'array',
+				'items': obj(
+					{
+						'trait': {'type': 'string', 'enum': list(BIG_FIVE)},
+						'score': {'type': 'integer'},
+						'confidence': num01,
+						'evidence': text,
+						'coaching_implication': text,
+					}
+				),
+			},
+			'values': {
+				'type': 'array',
+				'items': obj(
+					{
+						'value': {'type': 'string', 'enum': list(SCHWARTZ_VALUES)},
+						'rank': {'type': 'integer'},
+						'confidence': num01,
+						'evidence': text,
+					}
+				),
+			},
+			'needs': {
+				'type': 'array',
+				'items': obj(
+					{
+						'need': {'type': 'string', 'enum': list(SDT_NEEDS)},
+						'state': {'type': 'string', 'enum': ['met', 'mixed', 'strained', 'unknown']},
+						'evidence': text,
+					}
+				),
+			},
+			'patterns': {
+				'type': 'array',
+				'items': obj({'pattern': text, 'confidence': num01, 'evidence': text, 'implication': text}),
+			},
+			'coaching_style': text,
+			'avoid': {'type': 'array', 'items': text},
+			'open_questions': {'type': 'array', 'items': text},
+		}
+	)
+
+
+PERSON_MODEL_SCHEMA = _person_model_schema()

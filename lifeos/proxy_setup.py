@@ -133,7 +133,7 @@ def setup_traefik(c: dict, domain: str) -> str:
 		diagnose(f'Traefik ({c["Name"].lstrip("/")}) runs here, but I could not find its Docker provider or its :443 entrypoint.')
 	if not resolver:
 		diagnose(f'Traefik ({c["Name"].lstrip("/")}) has no Let’s Encrypt certificate resolver configured.')
-	router = 'lifeos-mentor'
+	router = 'lifeos-' + re.sub(r'[^a-z0-9]+', '-', domain.lower()).strip('-')  # one router per domain: main and demo can coexist
 	labels = {
 		'traefik.enable': 'true',
 		f'traefik.http.routers.{router}.rule': f'Host(`{domain}`)',

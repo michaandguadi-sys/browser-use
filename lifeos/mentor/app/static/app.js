@@ -25,7 +25,7 @@ const LENS_LABELS = {
 	wellbeing: 'Wellbeing',
 };
 const KIND_TITLES = { checkin: 'Check-in', evening: 'Evening reflection', weekly: 'Weekly review', ondemand: 'You asked', interview: 'Profile interview' };
-const TABS = ['talk', 'progress', 'memory', 'settings'];
+const TABS = ['talk', 'you', 'progress', 'memory', 'settings'];
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const $ = (sel) => document.querySelector(sel);
@@ -91,6 +91,7 @@ function switchTab(name) {
 	for (const btn of document.querySelectorAll('.tabs button')) btn.classList.toggle('active', btn.dataset.tab === name);
 	for (const tab of TABS) $(`#tab-${tab}`).classList.toggle('hidden', tab !== name);
 	if (name === 'talk') scrollToBottom();
+	if (name === 'you') loadYou();
 }
 
 // --- talk ------------------------------------------------------------------
@@ -392,6 +393,109 @@ function renderSettings() {
 	$('#status').textContent = state.settings.paused ? 'paused' : (until && until > new Date() ? 'focus' : '');
 	renderPush();
 	renderSiri();
+}
+
+// --- You: what the mentor has learned about this person ----------------------
+
+const TRAIT_NAMES = { openness: 'Openness', conscientiousness: 'Conscientiousness', extraversion: 'Extraversion', agreeableness: 'Agreeableness', neuroticism: 'Emotional sensitivity' };
+const MOVE_NAMES = {
+	implementation_intention: 'If-then plans', mental_contrasting: 'Wish → obstacle → plan', progress_check: 'Number checks', socratic_question: 'Socratic questions',
+	values_reconnect: 'Back to values', celebrate_progress: 'Celebrating progress', reflection_prompt: 'Reflection', wellbeing_check: 'Wellbeing checks', human_routing: 'Who could help', red_team: 'Devil\'s advocate',
+};
+const label = (s) => s.replace(/_/g, ' ');
+
+function bar(fraction, { mid = false, opacity = 1 } = {}) {
+	const b = el('div', { class: `bar${mid ? ' mid' : ''}` });
+	const fill = el('i');
+	fill.style.width = `${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%`;
+	fill.style.opacity = String(opacity);
+	b.append(fill);
+	return b;
+}
+
+function notMe(claim) {
+	return el('button', { type: 'button', class: 'notme', onclick: async () => {
+		const note = prompt(`What is wrong about this?\n\n"${claim}"`);
+		if (note === null) return;
+		renderYou(await api('/api/you/correct', { method: 'POST', body: JSON.stringify({ claim, note }) }));
+	} }, 'Not me');
+}
+
+async function loadYou() {
+	try { renderYou(await api('/api/you')); } catch (err) { $('#you').replaceChildren(el('p', { class: 'error pad' }, err.message)); }
+}
+
+function renderYou(you) {
+	const box = $('#you');
+	const m = you.model;
+	const parts = [];
+	const d = you.data;
+	parts.push(el('div', { class: 'card stack' },
+		el('h2', {}, 'What I have learned about you'),
+		el('p', { class: 'lede' }, m ? m.summary : 'Not enough history yet. Talk to me for a few days, then I will build a first picture of how you tick.'),
+		el('div', { class: 'stats' },
+			el('span', { class: 'stat' }, `${d.days} days`),
+			el('span', { class: 'stat' }, `${d.messages} messages`),
+			el('span', { class: 'stat' }, `${you.learning.experiments} check-ins learned from`),
+			m ? el('span', { class: 'stat' }, `model v${m.version} · ${m.built_with}`) : null),
+		el('p', { class: 'why' }, 'Everything here is a hypothesis with a confidence level, rebuilt every night from all your data. Tap “Not me” to correct it; corrections always win.')));
+	if (m && m.traits.length) {
+		parts.push(el('div', { class: 'card' }, el('h2', {}, 'Personality (Big Five)'),
+			...m.traits.map((t) => el('div', { class: 'trait' },
+				el('div', { class: 'trait-head' }, el('b', {}, TRAIT_NAMES[t.trait] || t.trait), el('span', { class: 'muted' }, `${t.score}/100 · confidence ${Math.round(t.confidence * 100)}%`)),
+				bar(t.score / 100, { mid: true, opacity: 0.35 + 0.65 * t.confidence }),
+				el('div', { class: 'why' }, `Seen: ${t.evidence}`),
+				el('div', { class: 'why' }, `So I: ${t.coaching_implication}`),
+				notMe(`${t.trait} ${t.score}/100: ${t.evidence}`)))));
+	}
+	if (m && (m.values.length || m.needs.length)) {
+		parts.push(el('div', { class: 'card stack' }, el('h2', {}, 'What drives you'),
+			el('div', { class: 'values' }, ...[...m.values].sort((a, b) => a.rank - b.rank).map((v) => el('span', { class: 'value', title: v.evidence }, el('b', {}, v.rank), label(v.value)))),
+			el('div', { class: 'needs' }, ...m.needs.map((n) => el('div', { class: `need ${n.state}`, title: n.evidence }, el('b', {}, n.need), n.state))),
+			el('p', { class: 'why' }, 'Values: Schwartz’s ten basic values. Needs: autonomy, competence and relatedness from self-determination theory; a strained need is where I pay most attention.')));
+	}
+	if (m && m.patterns.length) {
+		parts.push(el('div', { class: 'card' }, el('h2', {}, 'Patterns I see'),
+			...m.patterns.map((p) => el('div', { class: 'trait' },
+				el('div', { class: 'trait-head' }, el('b', {}, p.pattern), el('span', { class: 'muted' }, `${Math.round(p.confidence * 100)}%`)),
+				el('div', { class: 'why' }, `Evidence: ${p.evidence}`),
+				el('div', { class: 'why' }, `So I: ${p.implication}`),
+				notMe(p.pattern)))));
+	}
+	const moves = you.learning.moves.filter((x) => x.tries);
+	if (moves.length) {
+		parts.push(el('div', { class: 'card' }, el('h2', {}, 'What works with you'),
+			el('p', { class: 'why' }, 'Share of my check-ins of each kind that you answered within 90 minutes or rated as good timing. I try the winners more often and still test the rest now and then.'),
+			...moves.map((x) => el('div', { class: 'move', title: x.what }, el('span', {}, MOVE_NAMES[x.move] || label(x.move)), bar(x.rate), el('span', { class: 'muted' }, `${Math.round(x.rate * 100)}% · ${x.tries}`)))));
+	}
+	const slots = you.learning.slots;
+	if (slots.some((x) => x.tries)) {
+		const blocks = [...new Set(slots.map((x) => x.slot.split(':')[1]))];
+		const grid = el('div', { class: 'heat' }, el('span'), ...blocks.map((b) => el('span', {}, `${Number(b)}h`)));
+		for (const dayType of ['weekday', 'weekend']) {
+			grid.append(el('span', {}, dayType === 'weekday' ? 'Mon–Fri' : 'Sat–Sun'));
+			for (const b of blocks) {
+				const s = slots.find((x) => x.slot === `${dayType}:${b}`);
+				const cell = el('i', { class: s && s.tries ? '' : 'empty', title: s && s.tries ? `${Math.round(s.rate * 100)}% of ${s.tries}` : 'not tested yet' });
+				if (s && s.tries) cell.style.opacity = String(0.12 + 0.88 * s.rate);
+				grid.append(cell);
+			}
+		}
+		parts.push(el('div', { class: 'card stack' }, el('h2', {}, 'When you are open to a message'),
+			grid, el('p', { class: 'why' }, 'Darker = you usually answer. I check in when you tend to be open, and stay quiet in your dead zones.')));
+	}
+	if (you.history.length) {
+		parts.push(el('div', { class: 'card stack' }, el('h2', {}, 'How the picture sharpened'),
+			el('div', { class: 'timeline' }, ...you.history.map((h) => el('div', { class: 'version' }, el('b', {}, `v${h.version}`),
+				el('div', { class: 'stack' }, el('span', { class: 'muted' }, `${fmtTime(h.built_at)} · ${h.data_days} days · ${h.data_messages} messages · ${h.built_with}`), bar(h.confidence))))),
+			el('p', { class: 'why' }, 'Each night I rebuild this from the full raw history. More data and better AI models both make it sharper, without losing anything you told me.')));
+	}
+	if (you.corrections.length) {
+		parts.push(el('div', { class: 'card stack' }, el('h2', {}, 'Your corrections'),
+			...you.corrections.map((c) => el('p', { class: 'why' }, `“${c.claim}” → ${c.note || 'not me'}`))));
+	}
+	parts.push(el('div', { class: 'row pad' }, pushButton(m ? 'Rebuild now' : 'Build my first picture', async () => renderYou(await api('/api/you/rebuild', { method: 'POST' })), 'ghost')));
+	box.replaceChildren(...parts);
 }
 
 // --- notifications (Web Push from the installed app) -----------------------

@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 import httpx
 
+from app import learning
 from app.db import DB
 from app.mentor import Mentor
 from app.notify import Notifier
@@ -14,6 +15,8 @@ from app.timing import base_gate, local_now, parse_iso, ritual_due, spontaneous_
 logger = logging.getLogger(__name__)
 
 PUSH_TITLES = {'checkin': 'Mentor', 'evening': 'Evening reflection', 'weekly': 'Weekly review'}
+RITUAL_MOVES = {'evening': 'reflection_prompt', 'weekly': 'progress_check'}
+DISTILL_HOURS = range(4, 7)  # local night window; the person model is rebuilt once a night from the full history
 
 
 class Scheduler:
@@ -61,7 +64,15 @@ class Scheduler:
 				last_user_at=parse_iso(last_user.created_at) if last_user else None,
 				last_decision_at=parse_iso(self.db.last_run('decision')),
 			)
-			if gate.ok:
+			slot = (
+				learning.receptive_now(self.mentor.outcomes(now_utc), now_utc, settings.timezone, self.mentor.rng)
+				if gate.ok
+				else None
+			)
+			if slot and not slot.ok:
+				# the timing learner says this slot rarely lands for this person; stay silent (it keeps sampling)
+				self.db.mark_run('decision', f'low receptivity {slot.arm.key} ({slot.sampled:.2f})', at=now_utc)
+			elif gate.ok:
 				decision = await self.mentor.decide_checkin(now_utc)
 				self.db.mark_run('decision', decision.reason if decision else 'error', at=now_utc)
 				if decision and decision.send:
@@ -74,10 +85,16 @@ class Scheduler:
 						reason=decision.reason,
 						checkin_key=f'checkin:{date_key}:{n}',
 						at=now_utc,
+						move=decision.move,
 					)
 					if msg:
 						await self.notifier.push(PUSH_TITLES['checkin'], decision.message, msg.id)
 						sent.append('checkin')
+
+		if local.hour in DISTILL_HOURS and not self.db.last_run(f'distill:{date_key}') and self._new_data_since_last_model():
+			self.db.mark_run(f'distill:{date_key}', at=now_utc)
+			if await self.mentor.distill(now_utc):
+				sent.append('distill')
 
 		self.db.mark_run('tick', ','.join(sent), at=now_utc)
 		await self._ping()
@@ -90,11 +107,15 @@ class Scheduler:
 		text = await self.mentor.write_ritual(kind, now_utc)
 		if not text:
 			return False
-		msg = self.db.add_message('mentor', text, kind=kind, checkin_key=key, at=now_utc)
+		msg = self.db.add_message('mentor', text, kind=kind, checkin_key=key, at=now_utc, move=RITUAL_MOVES.get(kind))
 		if not msg:
 			return False
 		await self.notifier.push(PUSH_TITLES[kind], text, msg.id)
 		return True
+
+	def _new_data_since_last_model(self) -> bool:
+		model = self.db.person_model()
+		return self.db.message_count() > (model.data_messages if model else 0)
 
 	async def _ping(self) -> None:
 		if not self.ping_url:

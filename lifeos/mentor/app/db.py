@@ -9,7 +9,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from app.views import MEMORY_KINDS, Indicator, MemoryItem, Message, Settings
+from app.views import MEMORY_KINDS, Correction, Indicator, MemoryItem, Message, PersonModel, PersonModelBody, Settings
+
+MIGRATIONS = (
+	('messages', 'move', 'TEXT'),
+	('messages', 'tz', 'TEXT'),
+)  # columns added after the first release: (table, column, type)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -55,6 +60,16 @@ CREATE TABLE IF NOT EXISTS indicator_logs (
 );
 CREATE INDEX IF NOT EXISTS indicator_logs_day ON indicator_logs(indicator_id, day);
 CREATE TABLE IF NOT EXISTS daily_state (day TEXT PRIMARY KEY, energy INTEGER, note TEXT, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS person_models (
+	id TEXT PRIMARY KEY,
+	version INTEGER NOT NULL,
+	built_at TEXT NOT NULL,
+	built_with TEXT NOT NULL,
+	data_days INTEGER NOT NULL,
+	data_messages INTEGER NOT NULL,
+	body TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS corrections (id TEXT PRIMARY KEY, claim TEXT NOT NULL, note TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS push_subs (
 	endpoint TEXT PRIMARY KEY,
 	p256dh TEXT NOT NULL,
@@ -83,6 +98,9 @@ class DB:
 		with self._lock:
 			self._conn.execute('PRAGMA journal_mode=WAL')
 			self._conn.executescript(SCHEMA)
+			for table, column, kind in MIGRATIONS:
+				if column not in {r['name'] for r in self._conn.execute(f'PRAGMA table_info({table})')}:
+					self._conn.execute(f'ALTER TABLE {table} ADD COLUMN {column} {kind}')
 
 	def _exec(self, sql: str, params: tuple[Any, ...] = ()) -> list[sqlite3.Row]:
 		with self._lock:
@@ -129,6 +147,66 @@ class DB:
 			(json.dumps(token),),
 		)
 		return token
+
+	def all_messages(self) -> list[Message]:
+		return [Message.model_validate(dict(r)) for r in self._exec('SELECT * FROM messages ORDER BY created_at, rowid')]
+
+	def message_count(self) -> int:
+		return self._exec('SELECT count(*) AS n FROM messages')[0]['n']
+
+	# --- person model (derived, versioned) -----------------------------------
+
+	def save_person_model(
+		self, body: PersonModelBody, built_with: str, data_days: int, data_messages: int, at: datetime | None = None
+	) -> PersonModel:
+		version = self._exec('SELECT coalesce(max(version), 0) + 1 AS v FROM person_models')[0]['v']
+		model_id = new_id()
+		self._exec(
+			'INSERT INTO person_models(id, version, built_at, built_with, data_days, data_messages, body) VALUES(?,?,?,?,?,?,?)',
+			(model_id, version, now_iso(at), built_with, data_days, data_messages, body.model_dump_json()),
+		)
+		return self.person_model(version)  # type: ignore[return-value]
+
+	def person_model(self, version: int | None = None) -> PersonModel | None:
+		sql = 'SELECT * FROM person_models ' + ('WHERE version=?' if version else 'ORDER BY version DESC LIMIT 1')
+		rows = self._exec(sql, (version,) if version else ())
+		if not rows:
+			return None
+		r = dict(rows[0])
+		body = json.loads(r.pop('body'))
+		return PersonModel.model_validate({**body, **r})
+
+	def person_model_history(self) -> list[dict[str, Any]]:
+		"""Version, date and average confidence per build: how the picture sharpened over time."""
+		out = []
+		for r in self._exec(
+			'SELECT version, built_at, built_with, data_days, data_messages, body FROM person_models ORDER BY version'
+		):
+			body = json.loads(r['body'])
+			confs = [t['confidence'] for t in body.get('traits', [])] + [p['confidence'] for p in body.get('patterns', [])]
+			out.append(
+				{
+					'version': r['version'],
+					'built_at': r['built_at'],
+					'built_with': r['built_with'],
+					'data_days': r['data_days'],
+					'data_messages': r['data_messages'],
+					'confidence': round(sum(confs) / len(confs), 2) if confs else 0.0,
+				}
+			)
+		return out
+
+	def add_correction(self, claim: str, note: str, at: datetime | None = None) -> Correction:
+		claim, note = claim.strip(), note.strip()
+		assert claim, 'claim must not be empty'
+		cid = new_id()
+		self._exec(
+			'INSERT INTO corrections(id, claim, note, created_at) VALUES(?,?,?,?)', (cid, claim[:500], note[:1000], now_iso(at))
+		)
+		return Correction.model_validate(dict(self._exec('SELECT * FROM corrections WHERE id=?', (cid,))[0]))
+
+	def list_corrections(self) -> list[Correction]:
+		return [Correction.model_validate(dict(r)) for r in self._exec('SELECT * FROM corrections ORDER BY created_at')]
 
 	# --- web push subscriptions ------------------------------------------
 
@@ -197,14 +275,15 @@ class DB:
 		reason: str | None = None,
 		checkin_key: str | None = None,
 		at: datetime | None = None,
+		move: str | None = None,
 	) -> Message | None:
 		"""Insert a message. Returns None if checkin_key was already used (idempotent check-ins)."""
 		assert role in ('user', 'mentor')
 		msg_id = new_id()
 		try:
 			self._exec(
-				'INSERT INTO messages(id, role, content, kind, lens, reason, checkin_key, created_at) VALUES(?,?,?,?,?,?,?,?)',
-				(msg_id, role, content, kind, lens, reason, checkin_key, now_iso(at)),
+				'INSERT INTO messages(id, role, content, kind, lens, move, reason, checkin_key, tz, created_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
+				(msg_id, role, content, kind, lens, move, reason, checkin_key, self.get_settings().timezone, now_iso(at)),
 			)
 		except sqlite3.IntegrityError:
 			return None
