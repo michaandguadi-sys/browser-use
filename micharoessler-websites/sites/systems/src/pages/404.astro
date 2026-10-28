@@ -1,15 +1,16 @@
 ---
 import Base from '../layouts/Base.astro';
+import { alts, href } from '../i18n';
 ---
 
-<Base lang="de" title="Seite nicht gefunden | Formatschnitt" description="Diese Seite gibt es nicht." alt={{ de: '/', en: '/en/' }}>
+<Base lang="de" title="Seite nicht gefunden | Formatschnitt" description="Diese Seite gibt es nicht." alt={alts('home')} noindex>
 	<div class="wrap nf">
 		<p class="eyebrow">404</p>
 		<h1>Diese Seite ist nicht im Schnitt gelandet.</h1>
 		<p class="nf-p">Die Seite gibt es nicht (mehr). <span lang="en">This page does not exist.</span></p>
 		<p class="nf-links">
-			<a class="btn btn--primary" href="/">Startseite</a>
-			<a class="btn" href="/en/">English</a>
+			<a class="btn btn--primary" href={href('de', 'home')}>Startseite</a>
+			<a class="btn" href={href('en', 'home')}>English</a>
 		</p>
 	</div>
 </Base>

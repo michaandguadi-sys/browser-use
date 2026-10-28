@@ -1,9 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
-import { href, type Lang } from '../i18n';
+import { href, formatschnitt, type Lang } from '../i18n';
 import Photo from '../components/Photo.astro';
 import ExpeditionMap from '../components/ExpeditionMap.astro';
 import { timelineOf } from '../data/timeline';
+import { factsOf } from '../data/facts';
 import Icon from '../components/Icon.astro';
 import portrait from '../assets/micha-portrait.jpg';
 
@@ -14,6 +15,7 @@ const { lang } = Astro.props;
 const en = lang === 'en';
 
 const timeline = timelineOf(lang);
+const facts = factsOf(lang);
 ---
 
 <Base
@@ -24,6 +26,8 @@ const timeline = timelineOf(lang);
 		: 'Expeditions- und Outdoor-Filmemacher, Kameramann und Dokumentarfilm-Cutter. Aufgewachsen in einem kleinen Dorf in Bayern, heute dauerhaft unterwegs.'}
 	alt={{ en: '/about/', de: '/de/ueber-mich/' }}
 	ogImage="kilimanjaro-ridge"
+	pageType="ProfilePage"
+	crumbs={[{ name: en ? 'About' : 'Über mich', path: href(lang, 'about') }]}
 >
 	<div class="wrap a">
 		<div class="a-grid">
@@ -58,6 +62,22 @@ const timeline = timelineOf(lang);
 			</figure>
 		</div>
 
+		<section class="sec facts" aria-labelledby="facts-h">
+			<div class="head">
+				<h2 id="facts-h" class="h2">{en ? 'In short' : 'Kurz gesagt'}</h2>
+			</div>
+			<dl>
+				{
+					facts.map(([k, v]) => (
+						<div>
+							<dt class="k">{k}</dt>
+							<dd>{k === (en ? 'Also' : 'Außerdem') ? <a href={formatschnitt(lang)}>{v}</a> : v}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</section>
+
 		<section class="sec tl" aria-labelledby="tl-h">
 			<div class="head">
 				<h2 id="tl-h" class="h2">{en ? 'Timeline' : 'Stationen'}</h2>
@@ -86,7 +106,7 @@ const timeline = timelineOf(lang);
 			<p class="k">{en ? 'Also' : 'Außerdem'}</p>
 			<p class="prose also-p">
 					{en ? 'I build edit systems for recurring video formats – templates, data-driven graphics and shorts pipelines – at ' : 'Für wiederkehrende Videoformate baue ich Schnitt-Systeme – Templates, datengetriebene Grafiken und Shorts-Pipelines – bei '}
-					<a href={en ? 'https://formatschnitt.de/en/' : 'https://formatschnitt.de/'}>formatschnitt.de</a>.
+					<a href={formatschnitt(lang)}>{en ? 'Formatschnitt, my editing service for company YouTube shows' : 'Formatschnitt, meinem Schnitt-Angebot für YouTube-Formate von Unternehmen'}</a>.
 				</p>
 			<a class="btn" href={href(lang, 'contact')}>{en ? 'Work with me' : 'Zusammenarbeiten'}<Icon name="arrow" /></a>
 		</section>
@@ -127,6 +147,28 @@ const timeline = timelineOf(lang);
 	}
 	.a-fig figcaption {
 		margin-top: 14px;
+	}
+	.facts dl > div {
+		display: grid;
+		grid-template-columns: 180px 1fr;
+		gap: 6px 18px;
+		padding: 16px 0;
+		border-bottom: 1px solid var(--line);
+		align-items: baseline;
+	}
+	.facts dl > div:first-child {
+		border-top: 1px solid var(--line);
+	}
+	.facts dd {
+		margin: 0;
+		max-width: 70ch;
+		line-height: 1.6;
+	}
+	.facts dd a {
+		border-bottom: 1px solid var(--line-2);
+	}
+	.facts dd a:hover {
+		border-color: var(--ink);
 	}
 	.tl li {
 		display: grid;
@@ -175,6 +217,9 @@ const timeline = timelineOf(lang);
 		}
 	}
 	@media (max-width: 560px) {
+		.facts dl > div {
+			grid-template-columns: 1fr;
+		}
 		.tl li {
 			grid-template-columns: 1fr;
 			gap: 6px;

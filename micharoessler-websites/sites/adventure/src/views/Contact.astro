@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { Picture } from 'astro:assets';
 import Icon from '../components/Icon.astro';
-import { type Lang } from '../i18n';
+import { href, type Lang } from '../i18n';
 import portrait from '../assets/micha-portrait.jpg';
 
 interface Props {
@@ -43,10 +43,12 @@ const L = en
 
 <Base
 	lang={lang}
-	title={en ? 'Contact – Book an Expedition Filmmaker | Micha Rössler' : 'Kontakt – Outdoor-Filmemacher buchen | Micha Rössler'}
+	title={en ? 'Contact – Book an Expedition Filmmaker | Micha Rössler' : 'Kontakt – Expeditionsfilmer buchen | Micha Rössler'}
 	description={en ? 'Book Micha Rössler as expedition filmmaker, camera operator or documentary editor. Reply within two working days.' : 'Micha Rössler als Expeditionsfilmer, Kameramann oder Doku-Cutter anfragen. Antwort innerhalb von zwei Werktagen.'}
 	alt={{ en: '/contact/', de: '/de/kontakt/' }}
 	cta={false}
+	pageType="ContactPage"
+	crumbs={[{ name: en ? 'Contact' : 'Kontakt', path: href(lang, 'contact') }]}
 >
 	<div class="c-sheet">
 		<div class="wrap c">

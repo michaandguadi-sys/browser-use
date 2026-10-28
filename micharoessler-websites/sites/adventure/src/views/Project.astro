@@ -7,7 +7,8 @@ import { preloadFor } from '../lib/img';
 import YouTube from '../components/YouTube.astro';
 import Terrain from '../components/Terrain.astro';
 import { terrainFor } from '../data/terrain';
-import { href, ui, type Lang } from '../i18n';
+import { href, ui, PERSON_ID, type Lang } from '../i18n';
+import { getImage } from 'astro:assets';
 import { projects, pic, type Project } from '../data/projects';
 
 interface Props {
@@ -27,31 +28,45 @@ const credits: [string, string][] = [
 	...(p.year ? [[t.year_l, p.year] as [string, string]] : []),
 ];
 
+const page = new URL(href(lang, p.slug), Astro.site).href;
+const coverOg = await getImage({ src: pic(p.cover), width: 1200, height: 630, fit: 'cover', format: 'jpg' });
+const year = p.year ? p.year.slice(0, 4) : undefined; // only the documented year – no invented dates
 const jsonLd: Record<string, unknown>[] = [
 	{
-		'@context': 'https://schema.org',
 		'@type': 'CreativeWork',
+		'@id': `${page}#work`,
 		name: p.title[lang],
+		genre: p.kicker[lang],
 		abstract: p.summary[lang],
-		creator: { '@id': 'https://micharoessler.com/#person' },
-		...(p.year ? { dateCreated: p.year.slice(0, 4) } : {}),
+		description: p.body.map((b) => b[lang]).join(' '),
+		url: page,
+		image: new URL(coverOg.src, Astro.site).href,
+		inLanguage: lang,
+		creator: { '@id': PERSON_ID },
+		...(year ? { dateCreated: year } : {}),
 		locationCreated: { '@type': 'Place', name: p.location[lang] },
+		mainEntityOfPage: { '@id': `${page}#webpage` },
+		...(p.youtube ? { video: { '@id': `${page}#video` } } : {}),
 	},
 	...(p.youtube
 		? [
 				{
-					'@context': 'https://schema.org',
 					'@type': 'VideoObject',
+					'@id': `${page}#video`,
 					name: p.title[lang],
 					description: p.summary[lang],
 					thumbnailUrl: `https://i.ytimg.com/vi/${p.youtube}/maxresdefault.jpg`,
 					embedUrl: `https://www.youtube-nocookie.com/embed/${p.youtube}`,
 					contentUrl: `https://www.youtube.com/watch?v=${p.youtube}`,
-					...(p.year ? { uploadDate: `${p.year.slice(0, 4)}-01-01` } : {}),
+					creator: { '@id': PERSON_ID },
+					...(year ? { uploadDate: year } : {}),
 				},
 			]
 		: []),
 ];
+// <title> ≤ 60 characters: drop the category line when the full title would be cut off in results
+const fullTitle = `${p.title[lang]} – ${p.kicker[lang]} | Micha Rössler`;
+const title = fullTitle.length <= 60 ? fullTitle : `${p.title[lang]} | Micha Rössler`;
 const area = terrainFor[p.slug];
 const peakFact = p.facts.find((f) => /\d.*m\b/.test(f.value[lang]) && f.value[lang].includes(' m'));
 const cover = pic(p.cover);
@@ -63,13 +78,17 @@ const pre = await preloadFor(cover, heroWidths, heroSizes, { ratio: 16 / 9 });
 
 <Base
 	lang={lang}
-	title={`${p.title[lang]} – ${p.kicker[lang]} | Micha Rössler`}
+	title={title}
 	description={p.summary[lang]}
 	alt={{ en: href('en', p.slug), de: href('de', p.slug) }}
 	ogImage={p.cover}
 	jsonLd={jsonLd}
 	preload={[pre]}
 	terrainCredit={!!area}
+	crumbs={[
+		{ name: t.nav.work, path: href(lang, 'work') },
+		{ name: p.title[lang], path: href(lang, p.slug) },
+	]}
 >
 	<article>
 		<header class="wrap p-head">

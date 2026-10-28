@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Deploy micharoessler.com (+ optionally formatschnitt.de) onto the VPS, behind the existing Traefik.
+# Deploy micharoessler.com onto the VPS, behind the existing Traefik.
+# The site has two sections, built from two Astro projects:
+#   https://micharoessler.com/                 sites/adventure  (film, EN at /, DE at /de/)
+#   https://micharoessler.com/formatschnitt/   sites/systems    (Formatschnitt, DE; EN at /formatschnitt/en/)
 #
 # Run from your Mac (same pattern as postiz-setup.sh):
 #   ssh root@82.112.238.211 'bash -s' < vps-deploy.sh
@@ -7,6 +10,8 @@
 #
 # Optional overrides (prefix the bash call), e.g.
 #   ssh root@82.112.238.211 'DOMAIN_B=formatschnitt.de bash -s' < vps-deploy.sh
+#   DOMAIN_B=…  an extra host (e.g. the old preview formatschnitt.agentbirdie.cloud, or formatschnitt.de) that keeps
+#               its HTTPS certificate and 301-redirects every path to https://$DOMAIN_A/formatschnitt/…
 #   AUTO_UPDATE=1   installs a cron job that redeploys within 10 min of every new commit
 #   TRAEFIK_NETWORK=…  CERT_RESOLVER=…  ENTRYPOINT=…  BRANCH=…
 # Settings are remembered in $BASE/deploy.env (edit it to remove one), so later runs need no prefixes.
@@ -29,7 +34,7 @@ REPO="${REPO:-https://github.com/michaandguadi-sys/browser-use.git}"
 RAW="${RAW:-https://raw.githubusercontent.com/michaandguadi-sys/browser-use}"
 BRANCH="${BRANCH:-claude/focused-cray-8uqvci}"
 DOMAIN_A="${DOMAIN_A:-micharoessler.com}"
-DOMAIN_B="${DOMAIN_B:-}" # set to formatschnitt.de once the domain is registered and points here
+DOMAIN_B="${DOMAIN_B:-}" # optional extra host for Formatschnitt – only redirects to $DOMAIN_A/formatschnitt/ (see above)
 AUTO_UPDATE="${AUTO_UPDATE:-0}"
 NGINX_IMAGE="nginx:1.27-alpine"
 NODE_IMAGE="node:22-bookworm-slim"
@@ -37,7 +42,7 @@ NAME="websites-nginx"
 
 # apex domains (example.com) also get www.; subdomains (preview.example.com) don't
 hosts_for() { case "$1" in *.*.*) echo "$1" ;; *) echo "$1 www.$1" ;; esac; }
-CANONICAL_B="formatschnitt.de" # site B's canonical URLs point here; any other host is a noindex preview
+SECTION_B="formatschnitt" # site B (sites/systems) is served at https://$DOMAIN_A/$SECTION_B/ (its astro.config `base`)
 
 log() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -110,7 +115,8 @@ echo "Commit: $(git -C "$BASE/src" log -1 --format='%h %s')"
 build() {
 	local site="$1"
 	log "Building $site"
-	docker run --rm -v "$BASE/src/micharoessler-websites/sites/$site:/app" -w /app "$NODE_IMAGE" \
+	# the whole sites/ folder is mounted: adventure's /llms.txt reads Formatschnitt's prices from sites/systems
+	docker run --rm -v "$BASE/src/micharoessler-websites/sites:/sites" -w "/sites/$site" "$NODE_IMAGE" \
 		sh -c 'npm ci --no-audit --no-fund --loglevel=error && npx astro build --silent' >/dev/null
 	[ -f "$BASE/src/micharoessler-websites/sites/$site/dist/index.html" ] || die "$site build produced no index.html"
 	# atomic swap so visitors never see a half-copied site
@@ -122,8 +128,10 @@ build() {
 	rm -rf "$BASE/www/$site.old"
 	echo "$site: $(find "$BASE/www/$site" -name '*.html' | wc -l) pages"
 }
-build adventure
+# systems first: adventure's /llms.txt imports sites/systems/src/data/content.ts, and Vite then resolves
+# sites/systems/tsconfig.json, which needs sites/systems/node_modules (installed by the systems build)
 build systems
+build adventure
 
 # ---------------------------------------------------------------- 4. nginx config
 log "Writing nginx config"
@@ -155,19 +163,61 @@ $extra
 }
 EOF
 }
+# A second Astro build mounted below a path of the main site (alias -> its own docroot and its own 404 page).
+# Its astro.config has base '/<path>', so every URL inside that build already starts with /<path>/.
+section_block() {
+	local path="$1" root="$2"
+	cat <<EOF
+	location = /$path {
+		return 301 /$path/;
+	}
+	location /$path/ {
+		alias /srv/$root/;
+		try_files \$uri \$uri/ \$uri.html =404;
+		error_page 404 /$path/404.html;
+	}
+	location /$path/_astro/ {
+		alias /srv/$root/_astro/;
+		expires 1y;
+		add_header Cache-Control "public, max-age=31536000, immutable";
+		try_files \$uri =404;
+		error_page 404 /$path/404.html;
+	}
+EOF
+}
+# A host that only forwards to the section on the main domain (path and query string kept).
+redirect_block() {
+	local names="$1" target="$2"
+	cat <<EOF
+server {
+	listen 80;
+	server_name $names;
+	location / {
+		return 301 $target\$request_uri;
+	}
+}
+EOF
+}
 {
 	echo "gzip on; gzip_comp_level 6; gzip_min_length 512;"
-	echo "gzip_types text/css application/javascript image/svg+xml application/json application/xml text/xml;"
+	echo "gzip_types text/plain text/css application/javascript image/svg+xml application/json application/xml text/xml;"
 	echo "server_tokens off;"
-	server_block "$(hosts_for "$DOMAIN_A")" adventure
+	# relative Location headers: nginx sits behind Traefik (TLS) and must not build http://… redirects itself
+	echo "absolute_redirect off;"
+	server_block "$(hosts_for "$DOMAIN_A")" adventure "$(section_block "$SECTION_B" systems)"
+	# the old preview host / own domain of site B: the host stays (Traefik keeps its certificate) and everything is
+	# sent to the section on the main domain. Nothing is served there, so nothing can be indexed twice.
 	if [ -n "$DOMAIN_B" ]; then
-		noindex=""
-		[ "$DOMAIN_B" = "$CANONICAL_B" ] || noindex='	add_header X-Robots-Tag "noindex" always;'
-		server_block "$(hosts_for "$DOMAIN_B")" systems "$noindex"
+		redirect_block "$(hosts_for "$DOMAIN_B")" "https://$DOMAIN_A/$SECTION_B"
 	fi
 	# anything else (IP access, unknown hosts) -> 404 instead of leaking a site
 	printf 'server {\n\tlisten 80 default_server;\n\treturn 404;\n}\n'
-} >"$BASE/nginx.conf"
+} >"$BASE/nginx.conf.new"
+
+# validate before anything is swapped: a broken config must never take the running sites down
+docker run --rm -v "$BASE/www:/srv:ro" -v "$BASE/nginx.conf.new:/etc/nginx/conf.d/default.conf:ro" "$NGINX_IMAGE" nginx -t -q ||
+	die "generated nginx config is invalid – the running container was left untouched (see $BASE/nginx.conf.new)"
+mv "$BASE/nginx.conf.new" "$BASE/nginx.conf"
 
 # ---------------------------------------------------------------- 5. (re)create the web container
 log "Starting $NAME"
@@ -206,8 +256,9 @@ add_host() {
 add_host site-a "$DOMAIN_A"
 [ "$(hosts_for "$DOMAIN_A")" = "$DOMAIN_A" ] || add_host site-a-www "www.$DOMAIN_A" websites-www
 if [ -n "$DOMAIN_B" ]; then
+	# routers stay so the certificates stay valid; nginx answers both hosts with a 301 to the main domain
 	add_host site-b "$DOMAIN_B"
-	[ "$(hosts_for "$DOMAIN_B")" = "$DOMAIN_B" ] || add_host site-b-www "www.$DOMAIN_B" websites-www
+	[ "$(hosts_for "$DOMAIN_B")" = "$DOMAIN_B" ] || add_host site-b-www "www.$DOMAIN_B"
 fi
 
 docker rm -f "$NAME" >/dev/null 2>&1 || true
@@ -223,16 +274,27 @@ docker run -d --name "$NAME" --restart unless-stopped \
 log "Self-test (inside the container, before DNS)"
 sleep 2
 check() {
-	local host="$1" path="$2"
-	local code
-	code="$(docker exec "$NAME" wget -q -S -O /dev/null --header "Host: $host" "http://127.0.0.1$path" 2>&1 | grep -o 'HTTP/[0-9.]* [0-9]*' | tail -n1 | awk '{print $2}' || true)"
-	printf '  %-28s %-22s %s\n' "$host" "$path" "${code:-ERR}"
+	local host="$1" path="$2" expect="$3" out mark=ok
+	# redirects are not followed: a 301 has to show up as 301 (curl ships in the nginx image; busybox wget as fallback)
+	out="$(docker exec "$NAME" sh -c 'if command -v curl >/dev/null; then curl -s -o /dev/null -w "%{http_code} %{redirect_url}" -H "Host: $1" "http://127.0.0.1$2"; else wget -q -S -O /dev/null --header "Host: $1" "http://127.0.0.1$2" 2>&1 | awk "/HTTP\\// && !c {c=\$2} /Location:/ && !l {l=\$2} END {print c, l}"; fi' sh "$host" "$path" 2>/dev/null || true)"
+	[ "${out%% *}" = "$expect" ] || mark="UNEXPECTED (want $expect)"
+	printf '  %-28s %-30s %s  %s\n' "$host" "$path" "${out:-ERR}" "$mark"
 }
-check "$DOMAIN_A" /
-check "$DOMAIN_A" /de/
-check "$DOMAIN_A" /work/bolivia-andes/
-check "$DOMAIN_A" /does-not-exist/   # expect 404
-[ -n "$DOMAIN_B" ] && check "$DOMAIN_B" /
+check "$DOMAIN_A" / 200
+check "$DOMAIN_A" /de/ 200
+check "$DOMAIN_A" /work/bolivia-andes/ 200
+check "$DOMAIN_A" /robots.txt 200
+check "$DOMAIN_A" /llms.txt 200
+check "$DOMAIN_A" "/$SECTION_B/" 200
+check "$DOMAIN_A" "/$SECTION_B/en/" 200
+check "$DOMAIN_A" "/$SECTION_B" 301
+check "$DOMAIN_A" "/$SECTION_B/sitemap-index.xml" 200
+check "$DOMAIN_A" /does-not-exist/ 404
+check "$DOMAIN_A" "/$SECTION_B/does-not-exist/" 404
+if [ -n "$DOMAIN_B" ]; then
+	check "$DOMAIN_B" / 301
+	check "$DOMAIN_B" "/en/?x=1" 301
+fi
 
 # ---------------------------------------------------------------- 7. remember settings, optional auto-update
 printf '%s\n' "REPO=$REPO" "RAW=$RAW" "BRANCH=$BRANCH" "DOMAIN_A=$DOMAIN_A" "DOMAIN_B=$DOMAIN_B" "AUTO_UPDATE=$AUTO_UPDATE" >"$BASE/deploy.env"

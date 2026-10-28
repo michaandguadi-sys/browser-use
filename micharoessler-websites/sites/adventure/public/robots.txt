@@ -1,4 +1,25 @@
+# micharoessler.com – everything may be crawled, by search engines and AI assistants alike.
+# Formatschnitt (editing systems for company YouTube shows) lives at /formatschnitt/.
+
 User-agent: *
 Allow: /
 
+# Search & AI crawlers, named explicitly
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: Google-Extended
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: DuckAssistBot
+Allow: /
+
 Sitemap: https://micharoessler.com/sitemap-index.xml
+Sitemap: https://micharoessler.com/formatschnitt/sitemap-index.xml

@@ -19,6 +19,16 @@ export const href = (lang: Lang, page: keyof typeof routes | string): string => 
 
 export const other = (lang: Lang): Lang => (lang === 'en' ? 'de' : 'en');
 
+// Formatschnitt (editing systems for company YouTube shows) – a section of this domain, built from sites/systems.
+export const formatschnitt = (lang: Lang) => (lang === 'de' ? '/formatschnitt/' : '/formatschnitt/en/');
+
+// Structured-data @ids shared by both sections of micharoessler.com (one entity graph).
+export const ORIGIN = 'https://micharoessler.com';
+export const PERSON_ID = `${ORIGIN}/#person`;
+export const ORG_ID = `${ORIGIN}/#organization`;
+export const WEBSITE_ID = `${ORIGIN}/#website`;
+export const SERVICE_ID = `${ORIGIN}/formatschnitt/#service`;
+
 export const ui = {
 	en: {
 		nav: { work: 'Work', about: 'About', contact: 'Contact' },
@@ -35,6 +45,7 @@ export const ui = {
 		imprint: 'Imprint',
 		privacy: 'Privacy',
 		switch: 'Deutsch',
+		fs: 'Formatschnitt – editing systems',
 		skip: 'Skip to content',
 	},
 	de: {
@@ -52,6 +63,7 @@ export const ui = {
 		imprint: 'Impressum',
 		privacy: 'Datenschutz',
 		switch: 'English',
+		fs: 'Formatschnitt',
 		skip: 'Zum Inhalt springen',
 	},
 } as const;

@@ -1,7 +1,8 @@
 ---
 import '../styles/global.css';
 import { getImage } from 'astro:assets';
-import { href, other, ui, type Lang } from '../i18n';
+import { href, other, ui, formatschnitt, ORIGIN, PERSON_ID, ORG_ID, WEBSITE_ID, SERVICE_ID, type Lang } from '../i18n';
+import { company } from '../data/legal';
 import { pic } from '../data/projects';
 import { audio } from '../data/site';
 import portrait from '../assets/micha-portrait.jpg';
@@ -18,9 +19,27 @@ interface Props {
 	preload?: { srcset: string; sizes: string; media?: string }[]; // LCP image candidates (AVIF)
 	terrainCredit?: boolean; // page shows real-terrain contours
 	cta?: boolean; // big e-mail call to action above the footer
+	crumbs?: { name: string; path: string }[]; // breadcrumb below Home (subpages); the last one is this page
+	pageType?: string; // schema.org type of this page (WebPage, ProfilePage, CollectionPage, ContactPage …)
+	about?: string; // @id of the page's main entity (defaults to the Person)
+	noindex?: boolean;
 }
 
-const { lang, title, description, alt, ogImage = 'bolivia-ridge-climbers', jsonLd = [], preload = [], terrainCredit = false, cta = true } = Astro.props;
+const {
+	lang,
+	title,
+	description,
+	alt,
+	ogImage = 'bolivia-ridge-climbers',
+	jsonLd = [],
+	preload = [],
+	terrainCredit = false,
+	cta = true,
+	crumbs = [],
+	pageType = 'WebPage',
+	about = PERSON_ID,
+	noindex = false,
+} = Astro.props;
 const t = ui[lang];
 const en = lang === 'en';
 const site = Astro.site!;
@@ -29,26 +48,95 @@ const og = await getImage({ src: pic(ogImage), width: 1200, height: 630, fit: 'c
 const ogUrl = new URL(og.src, site).href;
 const face = await getImage({ src: portrait, width: 800, format: 'jpg' });
 
-const person = {
-	'@context': 'https://schema.org',
-	'@type': 'Person',
-	'@id': 'https://micharoessler.com/#person',
-	name: 'Micha Rössler',
-	alternateName: 'Micha Roessler',
-	jobTitle: en ? 'Expedition & adventure filmmaker' : 'Expeditions- & Outdoor-Filmemacher',
-	url: 'https://micharoessler.com/',
-	email: 'mailto:hello@micharoessler.com',
-	knowsLanguage: ['de', 'en'],
-	image: new URL(face.src, site).href,
-	worksFor: { '@type': 'Organization', name: 'Micha Roessler LLC' },
-	sameAs: ['https://www.instagram.com/michaaroessler/', 'https://www.youtube.com/@GuadiandMicha', 'https://formatschnitt.de/'],
-};
+const abs = (p: string) => new URL(p, site).href;
+// The entity graph for the whole domain. Formatschnitt (sites/systems) uses the same @ids.
+// sameAs: only profiles that exist (the links in the footer below) – never guessed handles.
+const graph: Record<string, unknown>[] = [
+	{
+		'@type': 'Person',
+		'@id': PERSON_ID,
+		name: 'Micha Rössler',
+		alternateName: 'Micha Roessler',
+		jobTitle: en ? 'Expedition & adventure filmmaker' : 'Expeditions- & Outdoor-Filmemacher',
+		description: en
+			? 'German expedition and adventure filmmaker, camera operator and documentary editor.'
+			: 'Deutscher Expeditions- und Outdoor-Filmemacher, Kameramann und Dokumentarfilm-Cutter.',
+		url: `${ORIGIN}/`,
+		email: 'mailto:hello@micharoessler.com',
+		image: abs(face.src),
+		nationality: { '@type': 'Country', name: 'Germany' },
+		knowsLanguage: ['de', 'en'],
+		knowsAbout: en
+			? ['Expedition film', 'Mountain film', 'Documentary film', 'Camera operation', 'Drone and FPV filming', 'Documentary editing', 'Destination and hospitality film']
+			: ['Expeditionsfilm', 'Bergfilm', 'Dokumentarfilm', 'Kamera', 'Drohnen- und FPV-Aufnahmen', 'Dokumentarfilm-Schnitt', 'Destinations- und Hotelfilm'],
+		worksFor: { '@id': ORG_ID },
+		sameAs: ['https://www.instagram.com/michaaroessler/', 'https://www.youtube.com/@GuadiandMicha'],
+	},
+	{
+		'@type': 'Organization',
+		'@id': ORG_ID,
+		name: company.name,
+		url: `${ORIGIN}/`,
+		email: `mailto:${company.email}`,
+		address: { '@type': 'PostalAddress', streetAddress: company.street, addressLocality: 'Sheridan', addressRegion: 'WY', postalCode: '82801', addressCountry: 'US' },
+		founder: { '@id': PERSON_ID },
+		subOrganization: { '@id': SERVICE_ID },
+	},
+	{
+		// the Formatschnitt section (defined in full on /formatschnitt/)
+		'@type': 'ProfessionalService',
+		'@id': SERVICE_ID,
+		name: 'Formatschnitt',
+		url: `${ORIGIN}${formatschnitt('de')}`,
+		description: en ? 'Monthly video editing retainer for company YouTube shows.' : 'YouTube-Videos schneiden lassen: Videoschnitt im Abo für YouTube-Formate von Unternehmen.',
+		founder: { '@id': PERSON_ID },
+		parentOrganization: { '@id': ORG_ID },
+	},
+	{
+		'@type': 'WebSite',
+		'@id': WEBSITE_ID,
+		url: `${ORIGIN}/`,
+		name: 'Micha Rössler',
+		alternateName: 'micharoessler.com',
+		inLanguage: ['en', 'de'],
+		publisher: { '@id': PERSON_ID },
+	},
+	{
+		'@type': pageType,
+		'@id': `${canonical}#webpage`,
+		url: canonical,
+		name: title,
+		description,
+		inLanguage: lang,
+		isPartOf: { '@id': WEBSITE_ID },
+		about: { '@id': about },
+		...(pageType === 'ProfilePage' ? { mainEntity: { '@id': PERSON_ID } } : {}),
+		primaryImageOfPage: { '@type': 'ImageObject', url: ogUrl, width: 1200, height: 630 },
+		...(crumbs.length ? { breadcrumb: { '@id': `${canonical}#breadcrumb` } } : {}),
+	},
+	...(crumbs.length
+		? [
+				{
+					'@type': 'BreadcrumbList',
+					'@id': `${canonical}#breadcrumb`,
+					itemListElement: [{ name: 'Micha Rössler', path: href(lang, 'home') }, ...crumbs].map((c, i) => ({
+						'@type': 'ListItem',
+						position: i + 1,
+						name: c.name,
+						item: abs(c.path),
+					})),
+				},
+			]
+		: []),
+	...jsonLd,
+];
+const ld = { '@context': 'https://schema.org', '@graph': graph };
 const path = Astro.url.pathname;
 const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefined);
 ---
 
 <!doctype html>
-<html lang={lang === 'de' ? 'de-DE' : 'en'}>
+<html lang={lang}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -57,16 +145,19 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 		<link rel="preload" href={monoFont} as="font" type="font/woff2" crossorigin />
 		{preload.map((p) => <link rel="preload" as="image" type="image/avif" imagesrcset={p.srcset} imagesizes={p.sizes} media={p.media} fetchpriority="high" />)}
 		<meta name="description" content={description} />
-		<link rel="canonical" href={canonical} />
-		<link rel="alternate" hreflang="en" href={new URL(alt.en, site).href} />
-		<link rel="alternate" hreflang="de-DE" href={new URL(alt.de, site).href} />
-		<link rel="alternate" hreflang="x-default" href={new URL(alt.en, site).href} />
+		{noindex && <meta name="robots" content="noindex" />}
+		{!noindex && <link rel="canonical" href={canonical} />}
+		{!noindex && <link rel="alternate" hreflang="en" href={abs(alt.en)} />}
+		{!noindex && <link rel="alternate" hreflang="de" href={abs(alt.de)} />}
+		{!noindex && <link rel="alternate" hreflang="x-default" href={abs(alt.en)} />}
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta name="author" content="Micha Rössler" />
 		<meta name="theme-color" content="#0f0f0f" />
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content="Micha Rössler" />
 		<meta property="og:locale" content={lang === 'de' ? 'de_DE' : 'en_US'} />
+		<meta property="og:locale:alternate" content={lang === 'de' ? 'en_US' : 'de_DE'} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonical} />
@@ -74,10 +165,13 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
 		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogUrl} />
 		<script type="speculationrules" is:inline>
 			{ "prerender": [{ "where": { "href_matches": "/*" }, "eagerness": "moderate" }] }
 		</script>
-		<script type="application/ld+json" set:html={JSON.stringify([person, ...jsonLd])} />
+		<script type="application/ld+json" set:html={JSON.stringify(ld)} />
 	</head>
 	<body>
 		<a class="skip" href="#main">{t.skip}</a>
@@ -144,7 +238,7 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 				</li>
 				<li class="rule" aria-hidden="true"></li>
 				<li>
-					<a href="https://formatschnitt.de/" rel="me">{en ? 'Format editing & workflow → formatschnitt.de' : 'Format-Schnitt & Workflow → formatschnitt.de'}</a>
+					<a href={formatschnitt(lang)}>{en ? 'Editing systems for company YouTube shows → Formatschnitt' : 'Schnitt-Systeme für YouTube-Formate → Formatschnitt'}</a>
 				</li>
 			</ul>
 		</div>
@@ -157,6 +251,7 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 					<a href={href(lang, 'work')}>{t.nav.work}</a>
 					<a href={href(lang, 'about')}>{t.nav.about}</a>
 					<a href={href(lang, 'contact')}>{t.nav.contact}</a>
+					<a href={formatschnitt(lang)}>{t.fs}</a>
 				</nav>
 			</div>
 			<div class="f-box">
@@ -360,7 +455,8 @@ const current = (p: string) => (path.startsWith(href(lang, p)) ? 'page' : undefi
 			}
 			.f-nav {
 				display: flex;
-				gap: 24px;
+				flex-wrap: wrap;
+				gap: 0 24px;
 				color: var(--ink-2);
 			}
 			.f-nav a,

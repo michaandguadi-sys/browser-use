@@ -4,7 +4,7 @@
 // Chapters are scrubbed by native scroll (GSAP ScrollTrigger on a CSS-sticky stage; no scroll hijacking).
 // Static hero (same lines + CTA, no pinning) for: no JS, prefers-reduced-motion, Save-Data, no (hardware) WebGL2.
 // QA: ?story=live forces the live story on software WebGL (e.g. headless capture).
-import { type Lang } from '../i18n';
+import { url, type Lang } from '../i18n';
 import { hero, booking, cinema } from '../data/content';
 
 interface Props {
@@ -107,7 +107,7 @@ const splinters = Array.from({ length: 8 }, (_, i) => ({ a: (i / 8) * 360 + rnd(
 		<canvas class="story-canvas" aria-hidden="true"></canvas>
 		<!-- generated footage: a slow glass macro for chapters a + f (desktop), and the tunnel the camera flies
 		     through in chapter c (scrubbed by scroll). Posters only until the story runs; nothing autoplays otherwise. -->
-		<video class="story-amb" data-amb muted loop playsinline preload="none" poster="/media/bg/glass-ambient.jpg" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>
+		<video class="story-amb" data-amb muted loop playsinline preload="none" poster={url('/media/bg/glass-ambient.jpg')} aria-hidden="true" tabindex="-1" disablepictureinpicture></video>
 		<video class="story-tunnel" data-tunnel muted playsinline preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>
 		<div class="story-grain" aria-hidden="true"></div>
 		<div class="story-veil" aria-hidden="true"></div>

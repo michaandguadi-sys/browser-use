@@ -1,70 +1,116 @@
 ---
 import '../styles/global.css';
 import { getImage } from 'astro:assets';
-import { href, other, type Lang } from '../i18n';
+import { href, other, url, mainHome, areaServed, ORIGIN, PERSON_ID, ORG_ID, WEBSITE_ID, SERVICE_ID, type Lang } from '../i18n';
 import portrait from '../assets/micha-portrait.jpg';
-import { booking } from '../data/content';
+import { booking, meta } from '../data/content';
 
 interface Props {
 	lang: Lang;
 	title: string;
 	description: string;
-	alt: Record<Lang, string>;
-	jsonLd?: Record<string, unknown>[];
+	alt: Record<Lang, string>; // the same page in both languages (base-prefixed paths, see href()/alts())
+	jsonLd?: Record<string, unknown>[]; // extra nodes for the page's @graph
+	crumb?: string; // breadcrumb name of a page below the Formatschnitt home (legal pages)
+	noindex?: boolean;
 }
-const { lang, title, description, alt, jsonLd = [] } = Astro.props;
+const { lang, title, description, alt, jsonLd = [], crumb, noindex = false } = Astro.props;
 const de = lang === 'de';
 const site = Astro.site!;
-const canonical = new URL(alt[lang], site).href;
+const abs = (p: string) => new URL(p, site).href;
+const canonical = abs(alt[lang]);
 const home = href(lang, 'home');
 const face = await getImage({ src: portrait, width: 800, format: 'jpg' });
+const ogImage = abs(url('/og.png'));
 
-const org = {
-	'@context': 'https://schema.org',
-	'@type': 'ProfessionalService',
-	'@id': 'https://formatschnitt.de/#service',
-	name: 'Formatschnitt',
-	url: 'https://formatschnitt.de/',
-	description,
-	email: 'hello@micharoessler.com',
-	areaServed: ['DE', 'AT', 'CH', 'GB', 'EU'],
-	knowsLanguage: ['de', 'en'],
-	priceRange: '€€€',
-	founder: {
+// One entity graph across micharoessler.com: Person, LLC and WebSite are defined in full on the main site
+// (same @ids); here they are referenced with their core facts so this page stands on its own.
+const graph: Record<string, unknown>[] = [
+	{
 		'@type': 'Person',
-		'@id': 'https://micharoessler.com/#person',
+		'@id': PERSON_ID,
 		name: 'Micha Rössler',
-		url: 'https://micharoessler.com/',
-		image: new URL(face.src, site).href,
+		alternateName: 'Micha Roessler',
+		url: `${ORIGIN}/`,
+		image: abs(face.src),
+		jobTitle: de ? 'Editor & Filmemacher' : 'Editor & filmmaker',
+		worksFor: { '@id': ORG_ID },
 	},
-	parentOrganization: { '@type': 'Organization', name: 'Micha Roessler LLC' },
-	sameAs: ['https://micharoessler.com/'],
-};
+	{ '@type': 'Organization', '@id': ORG_ID, name: 'Micha Roessler LLC', url: `${ORIGIN}/`, founder: { '@id': PERSON_ID } },
+	{ '@type': 'WebSite', '@id': WEBSITE_ID, url: `${ORIGIN}/`, name: 'Micha Rössler', publisher: { '@id': PERSON_ID } },
+	{
+		'@type': 'ProfessionalService',
+		'@id': SERVICE_ID,
+		name: 'Formatschnitt',
+		url: abs(href('de', 'home')),
+		description: meta.description[lang],
+		email: booking.email,
+		image: ogImage,
+		logo: abs(url('/favicon.svg')),
+		areaServed: areaServed(lang),
+		knowsLanguage: ['de', 'en'],
+		contactPoint: { '@type': 'ContactPoint', contactType: de ? 'Anfragen' : 'enquiries', email: booking.email, availableLanguage: ['de', 'en'] },
+		founder: { '@id': PERSON_ID },
+		parentOrganization: { '@id': ORG_ID },
+	},
+	{
+		'@type': 'WebPage',
+		'@id': `${canonical}#webpage`,
+		url: canonical,
+		name: title,
+		description,
+		inLanguage: lang,
+		isPartOf: { '@id': WEBSITE_ID },
+		about: { '@id': SERVICE_ID },
+		primaryImageOfPage: { '@type': 'ImageObject', url: ogImage, width: 1200, height: 630 },
+		breadcrumb: { '@id': `${canonical}#breadcrumb` },
+	},
+	{
+		'@type': 'BreadcrumbList',
+		'@id': `${canonical}#breadcrumb`,
+		itemListElement: [
+			{ name: 'Micha Rössler', item: abs(mainHome(lang)) },
+			{ name: 'Formatschnitt', item: abs(home) },
+			...(crumb ? [{ name: crumb, item: canonical }] : []),
+		].map((x, i) => ({ '@type': 'ListItem', position: i + 1, ...x })),
+	},
+	...jsonLd,
+];
+const ld = { '@context': 'https://schema.org', '@graph': graph };
 ---
 
 <!doctype html>
-<html lang={de ? 'de-DE' : 'en'}>
+<html lang={lang}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{title}</title>
 		<meta name="description" content={description} />
-		<link rel="canonical" href={canonical} />
-		<link rel="alternate" hreflang="de-DE" href={new URL(alt.de, site).href} />
-		<link rel="alternate" hreflang="en" href={new URL(alt.en, site).href} />
-		<link rel="alternate" hreflang="x-default" href={new URL(alt.de, site).href} />
-		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-		<link rel="sitemap" href="/sitemap-index.xml" />
+		{noindex && <meta name="robots" content="noindex" />}
+		{!noindex && <link rel="canonical" href={canonical} />}
+		{!noindex && <link rel="alternate" hreflang="de" href={abs(alt.de)} />}
+		{!noindex && <link rel="alternate" hreflang="en" href={abs(alt.en)} />}
+		{!noindex && <link rel="alternate" hreflang="x-default" href={abs(alt.de)} />}
+		<link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+		<link rel="sitemap" href={url('/sitemap-index.xml')} />
+		<meta name="author" content="Micha Rössler" />
 		<meta name="theme-color" content="#f5f5f7" />
 		<meta property="og:type" content="website" />
-		<meta property="og:site_name" content="Formatschnitt" />
+		<meta property="og:site_name" content="Formatschnitt · Micha Rössler" />
 		<meta property="og:locale" content={de ? 'de_DE' : 'en_GB'} />
+		<meta property="og:locale:alternate" content={de ? 'en_GB' : 'de_DE'} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonical} />
-		<meta property="og:image" content={new URL('/og.png', site).href} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content={de ? 'Formatschnitt – Schnitt-Systeme für wiederkehrende YouTube-Formate' : 'Formatschnitt – editing systems for recurring YouTube shows'} />
 		<meta name="twitter:card" content="summary_large_image" />
-		<script type="application/ld+json" set:html={JSON.stringify([org, ...jsonLd])} />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+		<script type="application/ld+json" set:html={JSON.stringify(ld)} />
 		<script is:inline>document.documentElement.classList.add('js');</script>
 		<script type="speculationrules" is:inline>{"prerender":[{"where":{"href_matches":"/*"},"eagerness":"moderate"}]}</script>
 	</head>
@@ -72,10 +118,13 @@ const org = {
 		<a class="skip" href="#main">{de ? 'Zum Inhalt springen' : 'Skip to content'}</a>
 		<header class="hd">
 			<div class="bar">
-				<a class="brand" href={href(lang, 'home')} aria-label="Formatschnitt">
-					<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2" y="5" width="12" height="6" rx="3" fill="#5546ff"></rect><rect x="9" y="13" width="13" height="6" rx="3" fill="#1d1d1f"></rect><rect x="15" y="2" width="2" height="20" rx="1" fill="#5546ff"></rect></svg>
-					<span>Formatschnitt</span>
-				</a>
+				<div class="brand-wrap">
+					<a class="brand" href={href(lang, 'home')} aria-label="Formatschnitt">
+						<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="2" y="5" width="12" height="6" rx="3" fill="#5546ff"></rect><rect x="9" y="13" width="13" height="6" rx="3" fill="#1d1d1f"></rect><rect x="15" y="2" width="2" height="20" rx="1" fill="#5546ff"></rect></svg>
+						<span>Formatschnitt</span>
+					</a>
+					<a class="by" href={mainHome(lang)}>{de ? 'von' : 'by'} Micha Rössler</a>
+				</div>
 				<nav aria-label={de ? 'Hauptnavigation' : 'Main'}>
 					<a class="nl" href={`${home}#ablauf`}>{de ? 'So läuft’s' : 'How it works'}</a>
 					<a class="nl" href={`${home}#pakete`}>{de ? 'Preise' : 'Pricing'}</a>
@@ -96,10 +145,11 @@ const org = {
 				<div>
 					<p class="ft-brand">Formatschnitt</p>
 					<p class="muted">{de ? 'Schnitt-Systeme für wiederkehrende Videoformate' : 'Editing systems for recurring video shows'}</p>
+					<p class="muted">{de ? 'Ein Angebot von ' : 'A service by '}<a href={mainHome(lang)}>Micha Rössler</a></p>
 				</div>
 				<ul>
 					<li><a href="mailto:hello@micharoessler.com">hello@micharoessler.com</a></li>
-					<li><a href={de ? 'https://micharoessler.com/de/' : 'https://micharoessler.com/'}>{de ? 'Outdoor- & Expeditionsfilm → micharoessler.com' : 'Outdoor & expedition film → micharoessler.com'}</a></li>
+					<li><a href={mainHome(lang)}>{de ? 'Micha Rössler – Expeditions- & Dokumentarfilm' : 'Micha Rössler – expedition & documentary film'}</a></li>
 				</ul>
 				<ul>
 					<li><a href={href(lang, 'imprint')}>{de ? 'Impressum' : 'Legal notice'}</a></li>
@@ -149,6 +199,24 @@ const org = {
 					0 0 0 1px rgba(29, 29, 31, 0.06),
 					0 8px 24px -12px rgba(16, 24, 40, 0.18);
 			}
+			.brand-wrap {
+				display: flex;
+				align-items: baseline;
+				gap: 10px;
+				min-width: 0;
+			}
+			.by {
+				display: inline-flex;
+				align-items: center;
+				min-height: 24px; /* touch target (WCAG 2.5.8) */
+				font-size: 13px;
+				color: var(--ink-2);
+				text-decoration: none;
+				white-space: nowrap;
+			}
+			.by:hover {
+				color: var(--iris);
+			}
 			.brand {
 				display: flex;
 				align-items: center;
@@ -190,6 +258,19 @@ const org = {
 			@media (max-width: 860px) {
 				nav > a.nl {
 					display: none;
+				}
+			}
+			@media (max-width: 560px) {
+				.brand-wrap {
+					flex-direction: column;
+					align-items: flex-start;
+					gap: 0;
+				}
+				.by {
+					font-size: 11.5px;
+					line-height: 1.2;
+					padding-left: 32px;
+					margin-top: -3px;
 				}
 			}
 			@media (max-width: 400px) {

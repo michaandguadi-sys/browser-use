@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
-import { type Lang } from '../i18n';
-import { hero, compare, how, packages, pricing, calc, faq, contact, meta, booking } from '../data/content';
+import { href, alts, areaServed, PERSON_ID, SERVICE_ID, type Lang } from '../i18n';
+import { hero, compare, how, packages, pricing, calc, faq, facts, contact, meta, booking } from '../data/content';
 import Story from '../components/Story.astro';
 import GlassSystem from '../components/GlassSystem.astro';
 import Calculator from '../components/Calculator.astro';
@@ -18,27 +18,53 @@ const de = lang === 'de';
 const t = (x: { de: string; en: string }) => x[lang];
 const ctaHref = booking.bookingUrl || '#kontakt';
 
-const faqLd = {
-	'@context': 'https://schema.org',
-	'@type': 'FAQPage',
-	mainEntity: faq.map((f) => ({ '@type': 'Question', name: t(f.q), acceptedAnswer: { '@type': 'Answer', text: t(f.a) } })),
+const site = Astro.site!;
+const page = new URL(href(lang, 'home'), site).href;
+const area = areaServed(lang);
+// Service + offers (prices from `offer` via `packages`) and the visible FAQ – nodes of the page's @graph (Base.astro).
+const serviceLd = {
+	'@type': 'Service',
+	'@id': `${SERVICE_ID.replace('#service', '#editing')}`,
+	name: de ? 'Videoschnitt für YouTube-Formate von Unternehmen' : 'Video editing for company YouTube shows',
+	serviceType: de ? 'Videoschnitt im Abo' : 'Video editing retainer',
+	description: t(facts.lead),
+	provider: { '@id': PERSON_ID },
+	brand: { '@id': SERVICE_ID },
+	areaServed: area,
+	availableLanguage: ['de', 'en'],
+	audience: { '@type': 'BusinessAudience', audienceType: de ? 'Unternehmen mit wiederkehrendem YouTube-Format' : 'Companies with a recurring YouTube show' },
+	url: page,
+	hasOfferCatalog: {
+		'@type': 'OfferCatalog',
+		name: de ? 'Formatschnitt Pakete' : 'Formatschnitt packages',
+		itemListElement: packages.map((p) => ({
+			'@type': 'Offer',
+			name: t(p.name),
+			url: `${page}#pakete`,
+			price: p.amount,
+			priceCurrency: 'EUR',
+			priceSpecification: {
+				'@type': 'UnitPriceSpecification',
+				price: p.amount,
+				priceCurrency: 'EUR',
+				valueAddedTaxIncluded: false,
+				...(p.monthly ? { unitCode: 'MON', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' } } : {}),
+			},
+			description: `${t(p.sub)} ${p.points.map((x) => t(x)).join('; ')}.`,
+			seller: { '@id': SERVICE_ID },
+		})),
+	},
 };
-const offerLd = {
-	'@context': 'https://schema.org',
-	'@type': 'OfferCatalog',
-	name: de ? 'Formatschnitt Pakete' : 'Formatschnitt packages',
-	itemListElement: packages.map((p) => ({
-		'@type': 'Offer',
-		name: t(p.name),
-		priceCurrency: 'EUR',
-		price: p.amount,
-		...(p.monthly ? { priceSpecification: { '@type': 'UnitPriceSpecification', price: p.amount, priceCurrency: 'EUR', unitCode: 'MON', referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' } } } : {}),
-		description: [t(p.sub), ...p.points.map((x) => t(x))].join('; '),
-	})),
+const faqLd = {
+	'@type': 'FAQPage',
+	'@id': `${page}#faq`,
+	isPartOf: { '@id': `${page}#webpage` },
+	inLanguage: lang,
+	mainEntity: faq.map((f) => ({ '@type': 'Question', name: t(f.q), acceptedAnswer: { '@type': 'Answer', text: t(f.a) } })),
 };
 ---
 
-<Base lang={lang} title={t(meta.title)} description={t(meta.description)} alt={{ de: '/', en: '/en/' }} jsonLd={[faqLd, offerLd]}>
+<Base lang={lang} title={t(meta.title)} description={t(meta.description)} alt={alts('home')} jsonLd={[serviceLd, faqLd]}>
 	<Story lang={lang} />
 
 	<section id="vergleich" class="sec cmp-sec" aria-labelledby="cmp-h">
@@ -154,6 +180,25 @@ const offerLd = {
 				<p class="reveal">{t(calc.sub)}</p>
 			</div>
 			<Calculator lang={lang} />
+		</div>
+	</section>
+
+	<section id="fakten" class="sec sec--tight" aria-labelledby="facts-h">
+		<div class="wrap">
+			<div class="sec-h">
+				<h2 id="facts-h" class="reveal">{t(facts.h2)}</h2>
+				<p class="reveal">{t(facts.lead)}</p>
+			</div>
+			<dl class="facts glass">
+				{
+					facts.rows.map((r) => (
+						<div>
+							<dt>{t(r.k)}</dt>
+							<dd>{t(r.v)}</dd>
+						</div>
+					))
+				}
+			</dl>
 		</div>
 	</section>
 
@@ -608,6 +653,41 @@ const offerLd = {
 	}
 
 	/* ---------- faq ---------- */
+	/* ---------- auf einen Blick ---------- */
+	.facts {
+		max-width: 52rem;
+		margin: 0 auto;
+		padding: 8px 28px;
+	}
+	.facts > div {
+		display: grid;
+		grid-template-columns: 11em 1fr;
+		gap: 4px 24px;
+		padding: 16px 0;
+	}
+	.facts > div + div {
+		border-top: 1px solid var(--line);
+	}
+	.facts dt {
+		font-size: 14px;
+		font-weight: 650;
+		color: var(--ink-2);
+		padding-top: 2px;
+	}
+	.facts dd {
+		margin: 0;
+		font-weight: 560;
+		letter-spacing: -0.01em;
+		line-height: 1.4;
+	}
+	@media (max-width: 719px) {
+		.facts {
+			padding: 4px 20px;
+		}
+		.facts > div {
+			grid-template-columns: 1fr;
+		}
+	}
 	.faq {
 		max-width: 52rem;
 		margin-inline: auto;

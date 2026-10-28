@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import WorkGrid from '../components/WorkGrid.astro';
 import FilmStrip from '../components/FilmStrip.astro';
-import { type Lang } from '../i18n';
+import { href, type Lang } from '../i18n';
 import { projects } from '../data/projects';
 
 interface Props {
@@ -16,11 +16,13 @@ const films = projects.filter((p) => p.youtube);
 
 <Base
 	lang={lang}
-	title={en ? 'Work – Expedition, Documentary & Destination Films | Micha Rössler' : 'Projekte – Expeditions-, Doku- & Destinationsfilme | Micha Rössler'}
+	title={en ? 'Work – Expedition & Documentary Films | Micha Rössler' : 'Projekte – Expeditions- & Dokumentarfilme | Micha Rössler'}
 	description={en
 		? 'Expedition films from the Bolivian Andes and Kilimanjaro, documentaries with 1.2M and 1.4M views, destination and hospitality films.'
 		: 'Expeditionsfilme aus den bolivianischen Anden und vom Kilimandscharo, Dokus mit 1,2 und 1,4 Mio. Aufrufen, Destinations- und Hotelfilme.'}
 	alt={{ en: '/work/', de: '/de/work/' }}
+	pageType="CollectionPage"
+	crumbs={[{ name: en ? 'Work' : 'Projekte', path: href(lang, 'work') }]}
 >
 	<div class="wrap w">
 		<p class="k">{en ? 'Index' : 'Übersicht'} · {projects.length}</p>

@@ -80,7 +80,7 @@ export const privacy = (host: string): Record<'de' | 'en', Section[]> => ({
 		{
 			h: '3. Hosting und Server-Logs',
 			p: [
-				`Die Website wird bei ${host} gehostet. Beim Aufruf verarbeitet der Hoster technisch notwendige Daten (IP-Adresse, Datum/Uhrzeit, aufgerufene Seite, Browser-Informationen) in Server-Logs, um die Seite sicher auszuliefern. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren Betrieb). Mit dem Hoster besteht ein Auftragsverarbeitungsvertrag; Übermittlungen in die USA erfolgen auf Basis des EU-U.S. Data Privacy Framework bzw. der Standardvertragsklauseln.`,
+				`Die Website wird bei ${host} gehostet. Beim Aufruf verarbeitet der Hoster technisch notwendige Daten (IP-Adresse, Datum/Uhrzeit, aufgerufene Seite, Browser-Informationen) in Server-Logs, um die Seite sicher auszuliefern. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren Betrieb). Mit dem Hoster besteht ein Auftragsverarbeitungsvertrag (Art. 28 DSGVO).`,
 			],
 		},
 		{
@@ -118,7 +118,7 @@ export const privacy = (host: string): Record<'de' | 'en', Section[]> => ({
 		{
 			h: '3. Hosting and server logs',
 			p: [
-				`This site is hosted by ${host}. When you visit, the host processes technically necessary data (IP address, date/time, requested page, browser information) in server logs to deliver the site securely. Legal basis: Art. 6(1)(f) GDPR. A data processing agreement is in place; transfers to the USA rely on the EU-U.S. Data Privacy Framework or standard contractual clauses.`,
+				`This site is hosted by ${host}. When you visit, the host processes technically necessary data (IP address, date/time, requested page, browser information) in server logs to deliver the site securely. Legal basis: Art. 6(1)(f) GDPR. A data processing agreement (Art. 28 GDPR) is in place with the host.`,
 			],
 		},
 		{

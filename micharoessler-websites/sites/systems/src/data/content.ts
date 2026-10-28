@@ -347,22 +347,65 @@ export const check = {
 	stored: { de: 'Nichts wird gespeichert – alles bleibt in eurem Browser.', en: 'Nothing is stored – it all stays in your browser.' },
 };
 
+// FAQ (also the FAQPage structured data). Answers lead with the direct answer and name Formatschnitt, so each one
+// can be quoted on its own (search snippets, AI answers). Price answers are built from `offer` – never type a price here.
 export const faq: { q: L; a: L }[] = [
+	{
+		q: { de: 'Was kostet es, ein YouTube-Format schneiden zu lassen?', en: 'What does it cost to have a YouTube show edited?' },
+		a: {
+			de: `Bei Formatschnitt: ${de0(offer.pilot)} für den bezahlten Pilot, ${de0(offer.setup)} einmalig für das Setup und danach ein festes Folgen-Abo – ${de0(offer.aboS.price)} pro Monat für ${offer.aboS.episodes} Folgen (Abo S) oder ${de0(offer.aboM.price)} pro Monat für ${offer.aboM.episodes} Folgen (Abo M), jeweils mit ${offer.shortsPerEpisode} Shorts pro Folge. Alle Preise netto; der Pilot wird voll auf das Setup angerechnet.`,
+			en: `At Formatschnitt: ${en0(offer.pilot)} for the paid pilot, a ${en0(offer.setup)} one-off setup, then a fixed monthly plan – ${en0(offer.aboS.price)} a month for ${offer.aboS.episodes} episodes (plan S) or ${en0(offer.aboM.price)} a month for ${offer.aboM.episodes} episodes (plan M), each with ${offer.shortsPerEpisode} shorts per episode. All prices net; the pilot is fully credited to the setup.`,
+		},
+	},
+	{
+		q: { de: 'Wie läuft der Start ab?', en: 'How do we get started?' },
+		a: {
+			de: `Mit einem kostenlosen 15-Minuten-Erstgespräch, danach meist dem bezahlten Pilot: eine fertige Folge plus ${offer.shortsPerEpisode} Shorts aus eurem Material. Überzeugt der Pilot nicht, endet es dort – ohne Folgekosten.`,
+			en: `With a free 15-minute intro call, then usually the paid pilot: one finished episode plus ${offer.shortsPerEpisode} shorts from your footage. If the pilot doesn’t convince you, it ends there – no further costs.`,
+		},
+	},
 	{
 		q: { de: 'Wie viel Arbeit bleibt bei uns?', en: 'How much work stays with us?' },
 		a: {
-			de: 'Ihr liefert Material und gebt Feedback – gebündelt, als eine Änderungsliste. Wie viel Zeit das spart, misst der Pilot.',
-			en: 'You send footage and give feedback – as one list of changes. The pilot measures how much time that saves.',
+			de: 'Bei euch bleiben nur Material und Freigabe: Ihr liefert das Material und gebt Feedback – gebündelt, als eine Änderungsliste. Wie viel Zeit das spart, misst der Pilot.',
+			en: 'Only the footage and the sign-off stay with you: you send footage and give feedback – as one list of changes. The pilot measures how much time that saves.',
 		},
 	},
 	{
 		q: { de: 'Ersetzt du unser Team?', en: 'Do you replace our team?' },
 		a: {
-			de: 'Nein – ich übernehme die Routine-Folgen, euer Team bekommt Zeit für kreative Aufgaben. Alles ist dokumentiert.',
-			en: 'No – I take on the routine episodes, so your team gets time for creative work. Everything is documented.',
+			de: 'Nein – ich übernehme die Routine-Folgen eures Formats, euer Team bekommt Zeit für kreative Aufgaben. Alles ist dokumentiert.',
+			en: 'No – I take on your show’s routine episodes, so your team gets time for creative work. Everything is documented.',
 		},
 	},
 ];
+
+// "Auf einen Blick": a short, quotable summary of the offer (facts only, all from this file).
+export const facts = {
+	h2: { de: 'YouTube-Videos schneiden lassen', en: 'Your video editing retainer at a glance' },
+	lead: {
+		de: `Formatschnitt ist das Angebot von Micha Rössler, Cutter für YouTube-Formate von Unternehmen: Euer Format wird einmal als Schnitt-System eingerichtet, danach schneide ich jeden Monat fertige Folgen mit je ${offer.shortsPerEpisode} Shorts – zum Festpreis im Folgen-Abo, ab ca. ${de0(perEpM)} pro Folge.`,
+		en: `Formatschnitt is Micha Rössler’s monthly video editing retainer for companies with a recurring YouTube show: your show is set up once as an editing system, then I edit finished episodes with ${offer.shortsPerEpisode} shorts each, every month – at a fixed monthly price, from about ${en0(perEpM)} per episode.`,
+	},
+	rows: [
+		{ k: { de: 'Für wen', en: 'Who it’s for' }, v: { de: 'Unternehmen und Marken mit einem wiederkehrenden YouTube-Format', en: 'Companies and brands with a recurring YouTube show' } },
+		{
+			k: { de: 'Was ihr bekommt', en: 'What you get' },
+			v: { de: `Jeden Monat fertige Folgen mit je ${offer.shortsPerEpisode} Shorts, im gleichen Standard`, en: `Finished episodes with ${offer.shortsPerEpisode} shorts each, every month, to the same standard` },
+		},
+		{
+			k: { de: 'Preise (netto)', en: 'Prices (net)' },
+			v: {
+				de: `Pilot ${de0(offer.pilot)} · Setup ${de0(offer.setup)} einmalig · Abo S ${de0(offer.aboS.price)}/Monat (${offer.aboS.episodes} Folgen) · Abo M ${de0(offer.aboM.price)}/Monat (${offer.aboM.episodes} Folgen)`,
+				en: `Pilot ${en0(offer.pilot)} · setup ${en0(offer.setup)} one-off · plan S ${en0(offer.aboS.price)}/month (${offer.aboS.episodes} episodes) · plan M ${en0(offer.aboM.price)}/month (${offer.aboM.episodes} episodes)`,
+			},
+		},
+		{ k: { de: 'Start', en: 'Getting started' }, v: { de: '15-Minuten-Erstgespräch (kostenlos), dann der Pilot', en: '15-minute intro call (free), then the pilot' } },
+		{ k: { de: 'Zusammenarbeit', en: 'Working together' }, v: { de: 'Remote, auf Deutsch oder Englisch · Antwort in zwei Werktagen', en: 'Remote, in German or English · reply within two working days' } },
+		{ k: { de: 'Wer schneidet', en: 'Who edits' }, v: { de: 'Micha Rössler, Editor & Filmemacher – direkt, ohne Agentur', en: 'Micha Rössler, editor & filmmaker – directly, no agency' } },
+		{ k: { de: 'Referenz', en: 'Reference' }, v: { de: 'Unter anderem Carwow Deutschland – Review-Serie, 2025', en: 'Among others Carwow Germany – review series, 2025' } },
+	] as { k: L; v: L }[],
+};
 
 // Intro-call booking. While bookingUrl is empty, the page shows its own request widget (day + 15-min slot →
 // prefilled email + .ics). Set it to a real scheduling page later and every intro-call CTA links there instead.
@@ -409,13 +452,14 @@ export const contact = {
 	note: { de: 'Öffnet euer Mailprogramm. Hier wird nichts gespeichert.', en: 'Opens your email app. Nothing is stored here.' },
 };
 
+// <title> ≤ 60 and description ≤ 155 characters (search snippets); keyword first, facts only.
 export const meta = {
 	title: {
-		de: 'Formatschnitt – Freelance-Cutter für YouTube-Formate von Unternehmen',
-		en: 'Formatschnitt – Freelance Video Editor for Company YouTube Shows',
+		de: 'YouTube-Videos schneiden lassen – Festpreis | Formatschnitt',
+		en: 'Video Editing Retainer for YouTube Shows | Formatschnitt',
 	},
 	description: {
-		de: `Keine Zeit fürs Editing? Ich richte euer YouTube-Format einmal als Schnitt-System ein und schneide jede Folge. Festpreise ab ca. ${de0(perEpM)} pro Folge.`,
-		en: `No time for editing? I turn your company’s YouTube show into an editing system, then edit every episode. Fixed prices from about ${en0(perEpM)} per episode.`,
+		de: `Cutter für YouTube-Formate von Unternehmen: Ich schneide jede Folge samt Shorts – Festpreis pro Folge ab ca. ${de0(perEpM)}, Start mit einem Pilot für ${de0(offer.pilot)}.`,
+		en: `Monthly video editing retainer for your company’s YouTube show: every episode plus shorts, fixed price per episode from about ${en0(perEpM)}. Pilot ${en0(offer.pilot)}.`,
 	},
 };

@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { CH, type StoryState } from './story-ch';
+import { url } from '../i18n';
 
 export function initStory() {
 	const root = document.querySelector<HTMLElement>('[data-story-root]');
@@ -246,12 +247,12 @@ export function initStory() {
 		if (tunLoaded || !tunnelOn) return;
 		tunLoaded = true;
 		const src = tall
-			? [['/media/bg/tunnel-tall.mp4', 'video/mp4']]
+			? [[url('/media/bg/tunnel-tall.mp4'), 'video/mp4']]
 			: [
-					['/media/bg/tunnel-wide.webm', 'video/webm'],
-					['/media/bg/tunnel-wide.mp4', 'video/mp4'],
+					[url('/media/bg/tunnel-wide.webm'), 'video/webm'],
+					[url('/media/bg/tunnel-wide.mp4'), 'video/mp4'],
 				];
-		tun.poster = tall ? '/media/bg/tunnel-tall.jpg' : '/media/bg/tunnel-wide.jpg';
+		tun.poster = url(tall ? '/media/bg/tunnel-tall.jpg' : '/media/bg/tunnel-wide.jpg');
 		for (const [u, t] of src) tun.append(Object.assign(document.createElement('source'), { src: u, type: t }));
 		tun.preload = 'auto';
 		tun.load();
@@ -272,7 +273,7 @@ export function initStory() {
 	// ambient glass (desktop): attached after the page has loaded, plays only in chapters a and f while on screen
 	const loadAmbient = () => {
 		if (lite || root.dataset.ambient === 'false') return;
-		amb.append(Object.assign(document.createElement('source'), { src: '/media/bg/glass-ambient.mp4', type: 'video/mp4' }));
+		amb.append(Object.assign(document.createElement('source'), { src: url('/media/bg/glass-ambient.mp4'), type: 'video/mp4' }));
 		amb.preload = 'auto';
 		amb.load();
 		amb.addEventListener('canplay', () => ((ambReady = true), footage()), { once: true });

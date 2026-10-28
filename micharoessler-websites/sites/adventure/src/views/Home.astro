@@ -97,12 +97,17 @@ const next = en
 			['Jul. 2027', 'Arctic Circle Trail, Grönland', 'Geplant'],
 		];
 
-const title = en
-	? 'Micha Rössler – Expedition & Adventure Filmmaker, Camera Operator'
-	: 'Micha Rössler – Expeditionsfilmer, Outdoor-Filmemacher & Kameramann';
+// <title> ≤ 60, description ≤ 155 characters
+const title = en ? 'Expedition & Documentary Filmmaker – Micha Rössler' : 'Micha Rössler – Kameramann & Expeditionsfilmer';
 const description = en
-	? 'Expedition & adventure filmmaker for outdoor brands, expedition teams and tourism boards: mountain film, camera operator, documentary editing.'
-	: 'Expeditions- & Outdoor-Filmemacher für Outdoor-Marken, Expeditionsteams und Tourismus: Bergfilm, Kameramann, Dokumentarfilm-Schnitt.';
+	? 'Expedition & documentary filmmaker and camera operator for outdoor brands, expedition teams and tourism boards: mountain film, camera and editing.'
+	: 'Kameramann & Expeditionsfilmer buchen – für Outdoor-Marken, Expeditionsteams und Tourismus: Bergfilm, Abenteuer-Dokumentation, Kamera und Schnitt.';
+const faqLd = {
+	'@type': 'FAQPage',
+	'@id': `${new URL(href(lang, 'home'), Astro.site).href}#faq`,
+	inLanguage: lang,
+	mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q[lang], acceptedAnswer: { '@type': 'Answer', text: f.a[lang] } })),
+};
 // Hero statement: the existing lede, split at its first dash into headline + continuation (text unchanged).
 const lede = en
 	? 'I film people at the edge of what they can do – on mountains, in snow, on multi-day journeys – and edit it into stories that are honest about what it took.'
@@ -140,7 +145,7 @@ const chapters = [
 ];
 ---
 
-<Base lang={lang} title={title} description={description} alt={{ en: '/', de: '/de/' }} preload={art.sources.map((s) => ({ srcset: s.avif, sizes: s.sizes, media: s.media ?? '(min-width: 701px)' }))}>
+<Base lang={lang} title={title} description={description} alt={{ en: '/', de: '/de/' }} jsonLd={[faqLd]} preload={art.sources.map((s) => ({ srcset: s.avif, sizes: s.sizes, media: s.media ?? '(min-width: 701px)' }))}>
 	<div class="rail" aria-hidden="true">
 		{
 			chapters.map(([h, l], i) => (

@@ -12,7 +12,9 @@ export default defineConfig({
 	},
 	integrations: [
 		sitemap({
-			i18n: { defaultLocale: 'en', locales: { en: 'en', de: 'de-DE' } },
+			i18n: { defaultLocale: 'en', locales: { en: 'en', de: 'de' } },
+			// one index for the whole domain: Formatschnitt (sites/systems) is served at /formatschnitt/
+			customSitemaps: ['https://micharoessler.com/formatschnitt/sitemap-0.xml'],
 		}),
 	],
 	image: { responsiveStyles: true },
