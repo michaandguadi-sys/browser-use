@@ -1,0 +1,59 @@
+# Life OS mentor stack. Run ./install.sh once; afterwards: docker compose up -d
+# Profiles (set in .env as COMPOSE_PROFILES): "caddy" = bundled HTTPS proxy, "ntfy" = optional extra push server.
+# Without "caddy", the mentor only listens on 127.0.0.1 for your own reverse proxy.
+
+services:
+  mentor:
+    build: ./mentor
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NTFY_URL: http://ntfy:80
+    volumes:
+      - mentor-data:/data
+      - ./seed_profile.json:/srv/seed/seed_profile.json:ro  # private starter memory, created by install.sh
+    ports:
+      - "127.0.0.1:${MENTOR_PORT:-8787}:8000"
+
+  ntfy:
+    image: binwiederhier/ntfy:v2.14.0
+    profiles: ["ntfy"]
+    command: serve
+    restart: unless-stopped
+    environment:
+      NTFY_BASE_URL: ${NTFY_PUBLIC_URL}
+      NTFY_CACHE_FILE: /var/lib/ntfy/cache.db
+      NTFY_AUTH_FILE: /var/lib/ntfy/user.db
+      NTFY_AUTH_DEFAULT_ACCESS: deny-all
+      NTFY_BEHIND_PROXY: "true"
+      # iOS push relay: ntfy.sh only receives a message ID to wake the phone, never the content.
+      NTFY_UPSTREAM_BASE_URL: https://ntfy.sh
+      NTFY_ENABLE_LOGIN: "true"
+    volumes:
+      - ntfy-data:/var/lib/ntfy
+    ports:
+      - "127.0.0.1:${NTFY_PORT:-8788}:80"
+
+  caddy:
+    image: caddy:2.10.2
+    profiles: ["caddy"]
+    restart: unless-stopped
+    environment:
+      MENTOR_DOMAIN: ${MENTOR_DOMAIN}
+      PUSH_DOMAIN: ${PUSH_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy-sites:/etc/caddy/sites:ro  # install.sh drops ntfy.caddy here when ntfy is enabled
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - mentor
+
+volumes:
+  mentor-data:
+  ntfy-data:
+  caddy-data:
+  caddy-config:
